@@ -9,14 +9,15 @@ namespace TimeControl.Adapters;
 internal sealed record ClockSettings(float ClockRate, bool IsIdleFreezeOn, float IdleFreezeDelaySeconds);
 
 /// <summary>
-/// Ten times a second: works out whether the day clock is frozen and how fast it runs, keeps the chosen slow speed
-/// held, remembers the speed to resume to, and keeps the page's drawn clock in step.
+/// Ten times a second: pauses the game while the player idles at home and resumes it on their next order, keeps the
+/// chosen slow speed held, remembers the speed to resume to, sets the day clock's pace and keeps the page's drawn
+/// clock in step.
 /// </summary>
 public sealed class ClockTicker : MonoBehaviour
 {
     private const float CheckSeconds = 0.1f;
     private const float PageSeconds = 0.5f;
-    private const float HealLogSeconds = 60f;
+    private const float RepeatLogSeconds = 60f;
     private const float SpeedTolerance = 0.001f;
     private const int MaxLoggedFailures = 3;
 
@@ -25,12 +26,14 @@ public sealed class ClockTicker : MonoBehaviour
     internal static Action<string> LogFileOnly = _ => { };
     internal static PageClockLink? Page;
 
-    private IdleClock _idle = IdleClock.Start;
-    private bool _isFrozen;
+    private IdlePause _idle = IdlePause.Start;
+    private IntPtr _timeSeen;
     private float _nextCheckAt;
     private float _lastCheckAt = -1f;
     private float _nextPageAt;
     private float _nextHealLogAt;
+    private float _nextFanOutLogAt;
+    private bool _isSingleWorldLogged;
     private int _failures;
 
     public ClockTicker(IntPtr pointer) : base(pointer)
@@ -54,21 +57,28 @@ public sealed class ClockTicker : MonoBehaviour
         }
         catch (Exception ex)
         {
-            // A clock left frozen by a failed check would stop the day for good, so a failure always lets it run.
-            SpeedPatches.ClockFactor = 1f;
-            _idle = IdleClock.Start;
-            _failures++;
-
-            if (_failures <= MaxLoggedFailures) Log($"clock check failed (logged {_failures} of {MaxLoggedFailures}): {ex}");
+            RecoverFromFailure(ex);
         }
     }
 
     private void Check(float now, float elapsed)
     {
-        if (GameClock.Find() is not { IsGameStart: true } time)
+        ReportFanOut(now);
+
+        if (GameClock.Find() is not { } time)
         {
             SpeedPatches.ClockFactor = 1f;
-            _idle = IdleClock.Start;
+            _idle = IdlePause.Start;
+            _timeSeen = IntPtr.Zero;
+
+            return;
+        }
+
+        ForgetPauseOnNewWorld(time);
+
+        if (!time.IsGameStart)
+        {
+            SpeedPatches.ClockFactor = 1f;
 
             return;
         }
@@ -79,28 +89,57 @@ public sealed class ClockTicker : MonoBehaviour
         if (!isPaused) SpeedPatches.LastRunningLevel = time.GetSpeedLevel();
 
         KeepSlowSpeedHeld(time, isPaused, now);
-        SpeedPatches.ClockFactor = ClockPace.Factor(Settings.ClockRate, UpdateIdle(time, isPaused, isDayClock, elapsed), isDayClock);
-
-        if (now < _nextPageAt) return;
-
-        _nextPageAt = now + PageSeconds;
-        Page?.Sync(SpeedPatches.ClockFactor, time.BattleTimeScale, SpeedPatches.HeldSlowSpeed(time) is { } held ? SlowGear.Label(held) : "");
+        UpdateIdlePause(time, isPaused, isDayClock, elapsed);
+        SpeedPatches.ClockFactor = ClockPace.Factor(Settings.ClockRate, isDayClock);
+        SyncPage(time, now);
     }
 
-    private bool UpdateIdle(GameTimeManager time, bool isPaused, bool isDayClock, float elapsed)
+    /// <summary>A load replaces the world, and a pause this mod made on the old one went with it.</summary>
+    private void ForgetPauseOnNewWorld(GameTimeManager time)
     {
-        var canFreeze = Settings.IsIdleFreezeOn && isDayClock && !isPaused && !IsFastForwarding(time);
-        var isBusy = canFreeze && time.IsLeadingRoleBusy();
+        if (time.Pointer == _timeSeen) return;
 
-        _idle = _idle.Advance(canFreeze, isBusy, elapsed);
+        _timeSeen = time.Pointer;
+        _idle = IdlePause.Start;
+    }
 
-        var isFrozen = _idle.IsFrozen(Settings.IdleFreezeDelaySeconds);
+    /// <summary>The command is carried out before the new state is kept, so a failed resume is tried again next check.</summary>
+    private void UpdateIdlePause(GameTimeManager time, bool isPaused, bool isDayClock, float elapsed)
+    {
+        var canFreeze = Settings.IsIdleFreezeOn && isDayClock && !IsFastForwarding(time);
+        var isBusy = (canFreeze || _idle is not IdlePause.Watching) && time.IsLeadingRoleBusy();
+        var seen = new IdleSnapshot(canFreeze, isBusy, isPaused, elapsed, SpeedPatches.LastRunningLevel);
+        var step = IdlePause.Next(_idle, seen, Settings.IdleFreezeDelaySeconds);
 
-        if (isFrozen != _isFrozen) LogFileOnly(isFrozen ? "idle: day clock frozen" : "day clock running");
+        Carry(time, step.Command);
+        LogTransition(_idle, step);
+        _idle = step.State;
+    }
 
-        _isFrozen = isFrozen;
+    private static void Carry(GameTimeManager time, IdleCommand command)
+    {
+        switch (command)
+        {
+            case IdleCommand.Pause:
+                time.ChangeGameSpeed(PauseToggle.Paused);
+                break;
+            case IdleCommand.Resume resume when time.IsPausedScale():
+                time.ChangeGameSpeed(resume.Level);
+                break;
+        }
+    }
 
-        return isFrozen;
+    private static void LogTransition(IdlePause from, IdleStep step)
+    {
+        var line = (from, step.State, step.Command) switch
+        {
+            (_, _, IdleCommand.Pause) => "idle: paused the game",
+            (_, _, IdleCommand.Resume resume) => $"idle: order given, resumed at speed level {resume.Level}",
+            (IdlePause.Frozen, IdlePause.Released, _) => "idle: time was resumed while idle, it runs until the next order",
+            _ => null,
+        };
+
+        if (line != null) LogFileOnly(line);
     }
 
     /// <summary>
@@ -115,11 +154,64 @@ public sealed class ClockTicker : MonoBehaviour
 
         if (now >= _nextHealLogAt)
         {
-            _nextHealLogAt = now + HealLogSeconds;
+            _nextHealLogAt = now + RepeatLogSeconds;
             Log($"slow button: game speed was {time.BattleTimeScale:0.###}x, putting {SlowGear.Label(held)} back (logged at most once a minute)");
         }
 
         GameClock.HoldSpeed(time, held);
+    }
+
+    private void SyncPage(GameTimeManager time, float now)
+    {
+        if (now < _nextPageAt) return;
+
+        _nextPageAt = now + PageSeconds;
+        Page?.Sync(SpeedPatches.ClockFactor, time.BattleTimeScale, SpeedPatches.HeldSlowSpeed(time) is { } held ? SlowGear.Label(held) : "");
+    }
+
+    /// <summary>
+    /// One speed change reaching several time managers means worlds the game replaced are still answering its events,
+    /// and each of them acts on a trade or an order as well. Logged so a session's health can be read off the log.
+    /// </summary>
+    private void ReportFanOut(float now)
+    {
+        var reached = SpeedPatches.TakeLargestFanOut();
+
+        if (reached > 1 && now >= _nextFanOutLogAt)
+        {
+            _nextFanOutLogAt = now + RepeatLogSeconds;
+            Log($"speed change reached {reached} time managers in one frame (expected 1): leftover game worlds are answering events (logged at most once a minute)");
+        }
+        else if (reached == 1 && !_isSingleWorldLogged)
+        {
+            _isSingleWorldLogged = true;
+            Log("speed change reached 1 time manager, as it should");
+        }
+    }
+
+    /// <summary>A failed check must never leave the game paused by this mod or the clock off its pace.</summary>
+    private void RecoverFromFailure(Exception ex)
+    {
+        SpeedPatches.ClockFactor = 1f;
+
+        if (_idle is IdlePause.Frozen frozen) TryResume(frozen.ResumeLevel);
+
+        _idle = IdlePause.Start;
+        _failures++;
+
+        if (_failures <= MaxLoggedFailures) Log($"clock check failed (logged {_failures} of {MaxLoggedFailures}): {ex}");
+    }
+
+    private static void TryResume(int level)
+    {
+        try
+        {
+            if (GameClock.Find() is { } time && time.IsPausedScale()) time.ChangeGameSpeed(level);
+        }
+        catch (Exception)
+        {
+            // Best effort inside a failure already being logged; the player can still press play.
+        }
     }
 
     private static bool IsFastForwarding(GameTimeManager time) => time.TempSpeedUpBeforeScale >= 0f;

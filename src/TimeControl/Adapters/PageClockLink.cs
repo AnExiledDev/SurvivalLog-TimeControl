@@ -34,14 +34,16 @@ internal sealed class PageClockLink
         _log(_reply == Ok ? "page clock: reachable again" : "page clock: " + _reply);
     }
 
+    /// <summary>Never throws: a page that cannot be reached costs the drawn clock, never the ticker's pause handling.</summary>
     private bool Run(string script)
     {
-        var webView = BaseSingleton<ReduxUISystem>.Instance?.GetWebUILayer()?.canvasWebViewPrefab?.WebView;
-
-        if (webView == null) return false;
-
         try
         {
+            var ui = BaseSingleton<ReduxUISystem>.IsInstanceCreated ? BaseSingleton<ReduxUISystem>.Instance : null;
+            var webView = ui?.GetWebUILayer()?.canvasWebViewPrefab?.WebView;
+
+            if (webView == null) return false;
+
             webView.ExecuteJavaScript(script, (Action<string>)(reply => _reply = reply ?? "no reply"));
 
             return true;

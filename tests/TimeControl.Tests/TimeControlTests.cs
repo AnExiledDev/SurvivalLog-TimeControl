@@ -57,66 +57,145 @@ public class SlowGearTests
     }
 }
 
-public class IdleClockTests
+public class IdlePauseTests
 {
-    [Fact]
-    public void Standing_idle_past_the_delay_freezes_the_clock()
-    {
-        var clock = IdleClock.Start.Advance(true, false, 0.6f).Advance(true, false, 0.6f);
+    private const float Delay = 1f;
 
-        Assert.True(clock.IsFrozen(1f));
+    private static IdleSnapshot Idle(float seconds, int runningLevel = PauseToggle.Normal) =>
+        new(CanFreeze: true, IsBusy: false, IsPaused: false, seconds, runningLevel);
+
+    private static IdleSnapshot IdleWhilePaused(float seconds) =>
+        new(CanFreeze: true, IsBusy: false, IsPaused: true, seconds, PauseToggle.Normal);
+
+    private static IdleSnapshot OrderGiven(bool isPaused) =>
+        new(CanFreeze: true, IsBusy: true, IsPaused: isPaused, 0.1f, PauseToggle.Normal);
+
+    private static IdleStep Run(IdlePause state, params IdleSnapshot[] checks)
+    {
+        var step = new IdleStep(state, IdleCommand.Nothing);
+
+        foreach (var seen in checks) step = IdlePause.Next(step.State, seen, Delay);
+
+        return step;
     }
 
     [Fact]
-    public void A_short_pause_between_actions_does_not_freeze_the_clock()
+    public void Standing_idle_past_the_delay_pauses_the_game_and_remembers_the_speed_it_ran_at()
     {
-        var clock = IdleClock.Start.Advance(true, false, 0.5f);
+        var step = Run(IdlePause.Start, Idle(0.6f, runningLevel: 2), Idle(0.6f, runningLevel: 2));
 
-        Assert.False(clock.IsFrozen(1f));
+        Assert.Equal(IdleCommand.PauseGame, step.Command);
+        Assert.Equal(new IdlePause.Frozen(2), step.State);
     }
 
     [Fact]
-    public void Starting_an_action_unfreezes_at_once()
+    public void Idling_shorter_than_the_delay_leaves_the_game_running()
     {
-        var clock = IdleClock.Start.Advance(true, false, 5f).Advance(true, true, 0.1f);
+        var step = Run(IdlePause.Start, Idle(0.5f));
 
-        Assert.False(clock.IsFrozen(1f));
+        Assert.Equal(IdleCommand.Nothing, step.Command);
+        Assert.IsType<IdlePause.Watching>(step.State);
     }
 
     [Fact]
-    public void Idle_time_while_freezing_is_not_allowed_never_counts()
+    public void An_order_between_two_short_idles_starts_the_count_over()
     {
-        var clock = IdleClock.Start.Advance(false, false, 5f).Advance(true, false, 0.5f);
+        var step = Run(IdlePause.Start, Idle(0.6f), OrderGiven(isPaused: false), Idle(0.6f));
 
-        Assert.False(clock.IsFrozen(1f));
+        Assert.Equal(IdleCommand.Nothing, step.Command);
+    }
+
+    [Fact]
+    public void An_order_while_paused_by_idling_resumes_at_the_remembered_speed()
+    {
+        var step = Run(new IdlePause.Frozen(2), OrderGiven(isPaused: true));
+
+        Assert.Equal(new IdleCommand.Resume(2), step.Command);
+        Assert.Equal(IdlePause.Start, step.State);
+    }
+
+    [Fact]
+    public void A_remembered_speed_that_is_not_a_running_one_resumes_at_normal_speed()
+    {
+        var step = Run(IdlePause.Start, Idle(2f, runningLevel: PauseToggle.Paused));
+
+        Assert.Equal(new IdlePause.Frozen(PauseToggle.Normal), step.State);
+    }
+
+    [Fact]
+    public void The_players_own_pause_never_counts_as_idling_and_is_never_undone()
+    {
+        var step = Run(IdlePause.Start, IdleWhilePaused(5f), OrderGiven(isPaused: true), IdleWhilePaused(5f));
+
+        Assert.Equal(IdleCommand.Nothing, step.Command);
+        Assert.Equal(IdlePause.Start, step.State);
+    }
+
+    [Fact]
+    public void Pressing_play_while_paused_by_idling_lets_time_run_until_the_next_order()
+    {
+        var released = Run(new IdlePause.Frozen(PauseToggle.Normal), Idle(0.1f), Idle(10f));
+
+        Assert.Equal(IdleCommand.Nothing, released.Command);
+        Assert.IsType<IdlePause.Released>(released.State);
+
+        var afterOrder = Run(released.State, OrderGiven(isPaused: false), Idle(0.6f), Idle(0.6f));
+
+        Assert.Equal(IdleCommand.PauseGame, afterOrder.Command);
+    }
+
+    [Fact]
+    public void Leaving_home_or_sleeping_while_paused_by_idling_resumes_the_game()
+    {
+        var leftHome = new IdleSnapshot(CanFreeze: false, IsBusy: false, IsPaused: true, 0.1f, PauseToggle.Normal);
+
+        var step = Run(new IdlePause.Frozen(3), leftHome);
+
+        Assert.Equal(new IdleCommand.Resume(3), step.Command);
+    }
+
+    [Fact]
+    public void Idle_time_where_pausing_is_not_allowed_never_counts()
+    {
+        var awayFromHome = new IdleSnapshot(CanFreeze: false, IsBusy: false, IsPaused: false, 5f, PauseToggle.Normal);
+
+        var step = Run(IdlePause.Start, awayFromHome, Idle(0.5f));
+
+        Assert.Equal(IdleCommand.Nothing, step.Command);
     }
 
     [Fact]
     public void A_zero_delay_still_needs_a_moment_of_idling()
     {
-        Assert.False(IdleClock.Start.IsFrozen(0f));
-        Assert.True(IdleClock.Start.Advance(true, false, 0.1f).IsFrozen(0f));
+        var noTimePassed = IdlePause.Next(IdlePause.Start, Idle(0f), delaySeconds: 0f);
+        var aMomentPassed = IdlePause.Next(IdlePause.Start, Idle(0.1f), delaySeconds: 0f);
+
+        Assert.Equal(IdleCommand.Nothing, noTimePassed.Command);
+        Assert.Equal(IdleCommand.PauseGame, aMomentPassed.Command);
+    }
+
+    [Fact]
+    public void A_broken_delay_setting_falls_back_to_something_sane()
+    {
+        Assert.Equal(1f, IdlePause.ClampDelay(float.NaN));
+        Assert.Equal(1f, IdlePause.ClampDelay(float.PositiveInfinity));
+        Assert.Equal(0f, IdlePause.ClampDelay(-3f));
+        Assert.Equal(2.5f, IdlePause.ClampDelay(2.5f));
     }
 }
 
 public class ClockPaceTests
 {
     [Fact]
-    public void A_frozen_day_clock_stops()
+    public void The_day_clock_follows_the_configured_rate()
     {
-        Assert.Equal(0f, ClockPace.Factor(0.5f, isFrozen: true, isDayClock: true));
-    }
-
-    [Fact]
-    public void A_running_day_clock_follows_the_configured_rate()
-    {
-        Assert.Equal(0.5f, ClockPace.Factor(0.5f, isFrozen: false, isDayClock: true));
+        Assert.Equal(0.5f, ClockPace.Factor(0.5f, isDayClock: true));
     }
 
     [Fact]
     public void Exploration_timers_keep_the_games_pace()
     {
-        Assert.Equal(1f, ClockPace.Factor(0.5f, isFrozen: true, isDayClock: false));
+        Assert.Equal(1f, ClockPace.Factor(0.5f, isDayClock: false));
     }
 
     [Fact]
@@ -147,6 +226,60 @@ public class PauseToggleTests
     public void Resuming_with_no_known_speed_goes_to_normal_speed()
     {
         Assert.Equal(PauseToggle.Normal, PauseToggle.Target(isPaused: true, lastRunningLevel: 0));
+    }
+
+    [Fact]
+    public void A_speed_level_the_game_does_not_have_resumes_at_normal_speed()
+    {
+        Assert.Equal(PauseToggle.Normal, PauseToggle.RunningLevel(7));
+        Assert.Equal(PauseToggle.Normal, PauseToggle.RunningLevel(-1));
+    }
+}
+
+public class SpeedChangeFanOutTests
+{
+    [Fact]
+    public void A_speed_change_reaching_two_time_managers_in_one_frame_counts_two()
+    {
+        var fanOut = new SpeedChangeFanOut();
+
+        fanOut.Record(frame: 10, timeManager: 111);
+        fanOut.Record(frame: 10, timeManager: 222);
+
+        Assert.Equal(2, fanOut.TakeLargest());
+    }
+
+    [Fact]
+    public void One_time_manager_changing_twice_in_a_frame_counts_once()
+    {
+        var fanOut = new SpeedChangeFanOut();
+
+        fanOut.Record(frame: 10, timeManager: 111);
+        fanOut.Record(frame: 10, timeManager: 111);
+
+        Assert.Equal(1, fanOut.TakeLargest());
+    }
+
+    [Fact]
+    public void Changes_in_separate_frames_are_not_added_together()
+    {
+        var fanOut = new SpeedChangeFanOut();
+
+        fanOut.Record(frame: 10, timeManager: 111);
+        fanOut.Record(frame: 11, timeManager: 222);
+
+        Assert.Equal(1, fanOut.TakeLargest());
+    }
+
+    [Fact]
+    public void Taking_the_count_starts_it_over()
+    {
+        var fanOut = new SpeedChangeFanOut();
+
+        fanOut.Record(frame: 10, timeManager: 111);
+        fanOut.TakeLargest();
+
+        Assert.Equal(0, fanOut.TakeLargest());
     }
 }
 

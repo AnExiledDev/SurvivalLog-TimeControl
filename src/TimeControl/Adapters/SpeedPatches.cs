@@ -4,6 +4,7 @@ using GameCore.HotUpdate;
 using GameCore.HotUpdate.Battle.Logic;
 using GameCore.HotUpdate.Battle.Show;
 using HarmonyLib;
+using Il2CppInterop.Runtime;
 using TimeControl.Core;
 using UnityEngine;
 
@@ -18,17 +19,22 @@ internal static class SpeedPatches
 {
     private const int MaxLoggedFailures = 3;
 
+    private static readonly SpeedChangeFanOut FanOut = new();
+
     private static IReadOnlyList<float> _slowSpeeds = Array.Empty<float>();
     private static KeyCode _pauseKey = KeyCode.None;
+    private static IntPtr _listeningActionField;
+    private static IntPtr _listeningActionClass;
     private static int _slowIndex = -1;
     private static bool _wasSlowBeforeChange;
+    private static float? _lastLoggedHeld;
     private static int _failures;
     private static Action<string> _log = _ => { };
 
-    /// <summary>Multiplies the day clock's frame delta: 1 runs it at game pace, 0 freezes it.</summary>
+    /// <summary>Multiplies the day clock's frame delta: 1 runs it at game pace.</summary>
     internal static float ClockFactor = 1f;
 
-    /// <summary>The speed level the pause key resumes to.</summary>
+    /// <summary>The speed level the pause key and idle freeze resume to.</summary>
     internal static int LastRunningLevel = PauseToggle.Normal;
 
     public static bool OwnsSlowGear => _slowSpeeds.Count > 0;
@@ -40,21 +46,23 @@ internal static class SpeedPatches
         _log = log;
 
         Patch(harmony, typeof(GameTimeManager), nameof(GameTimeManager.Update), prefix: nameof(ScaleDayClock),
-            done: "day clock pace hooked", consequence: "ClockRate and IdleFreeze will do nothing");
+            done: "day clock pace hooked", consequence: "ClockRate will do nothing");
+        Patch(harmony, typeof(GameTimeManager), nameof(GameTimeManager.ChangeGameSpeed), prefix: nameof(BeforeSpeedChange),
+            done: "speed changes watched", consequence: "leftover game worlds cannot be detected and the slow button keeps the game's behaviour");
 
         if (OwnsSlowGear)
         {
-            Patch(harmony, typeof(GameTimeManager), nameof(GameTimeManager.ChangeGameSpeed), prefix: nameof(RememberWhetherSlow), postfix: nameof(HoldChosenSlowSpeed),
+            Patch(harmony, typeof(GameTimeManager), nameof(GameTimeManager.ChangeGameSpeed), postfix: nameof(HoldChosenSlowSpeed),
                 done: $"slow button holds {string.Join(" then ", Labels())}", consequence: "the slow button keeps the game's behaviour");
             Patch(harmony, typeof(GameTimeManager), nameof(GameTimeManager.UpdateIdleSlowdown), prefix: nameof(SkipGameIdleSlowdown),
                 done: "the game's own idle slowdown is off while the slow button is ours", consequence: "the game may drop the slow speed to 0.3x when idle");
         }
 
-        if (pauseKey != KeyCode.None)
-        {
-            Patch(harmony, typeof(HotKeyManager), nameof(HotKeyManager.Update), prefix: nameof(TogglePauseOnKey), isLast: true,
-                done: $"{pauseKey} toggles pause", consequence: $"{pauseKey} will not toggle pause");
-        }
+        if (pauseKey == KeyCode.None) return;
+
+        FindListeningActionField();
+        Patch(harmony, typeof(HotKeyManager), nameof(HotKeyManager.Update), prefix: nameof(TogglePauseOnKey), isLast: true,
+            done: $"{pauseKey} toggles pause", consequence: $"{pauseKey} will not toggle pause");
     }
 
     /// <summary>The slow speed being held, or null when the slow button is not in use or not ours.</summary>
@@ -64,6 +72,9 @@ internal static class SpeedPatches
 
         return _slowSpeeds[Math.Clamp(_slowIndex, 0, _slowSpeeds.Count - 1)];
     }
+
+    /// <summary>The most time managers one frame's speed change reached since the last call; 0 when none changed speed.</summary>
+    public static int TakeLargestFanOut() => FanOut.TakeLargest();
 
     private static IEnumerable<string> Labels()
     {
@@ -89,16 +100,49 @@ internal static class SpeedPatches
     private static HarmonyMethod Hook(string name, bool isLast) =>
         new(typeof(SpeedPatches), name) { priority = isLast ? Priority.Last : Priority.Normal };
 
+    /// <summary>
+    /// The game's getter for HotKeyManager._listeningAction boxes the nullable, and il2cpp boxes an empty nullable to
+    /// null, so the getter throws whenever no key is being rebound. The field and the nullable's class are looked up
+    /// once here so <see cref="IsRebindingAKey"/> can box it itself and check for null.
+    /// </summary>
+    private static void FindListeningActionField()
+    {
+        try
+        {
+            _listeningActionField = IL2CPP.GetIl2CppField(Il2CppClassPointerStore<HotKeyManager>.NativeClassPtr, "_listeningAction");
+            _listeningActionClass = Il2CppClassPointerStore<Il2CppSystem.Nullable<HotKeyAction>>.NativeClassPtr;
+        }
+        catch (Exception ex)
+        {
+            _listeningActionField = IntPtr.Zero;
+            _log("could not look up the key rebinding state: " + ex.Message);
+        }
+
+        if (_listeningActionField == IntPtr.Zero || _listeningActionClass == IntPtr.Zero)
+        {
+            _listeningActionField = IntPtr.Zero;
+            _log("the key rebinding state was not found, so the pause key also works while a key is being rebound");
+        }
+    }
+
     // Runs every frame, so it only reads the factor the ticker already worked out.
     private static void ScaleDayClock(ref float deltaTime) => deltaTime *= ClockFactor;
 
     private static bool SkipGameIdleSlowdown() => false;
 
-    /// <summary>A press while paused resumes rather than cycles, so only a running slow speed counts as already slow.</summary>
-    private static void RememberWhetherSlow(GameTimeManager __instance)
+    /// <summary>
+    /// Every speed change is counted per frame, to catch leftover worlds answering the game's events. Only the live
+    /// world's change counts for the slow button, and a press while paused resumes rather than cycles, so only a
+    /// running slow speed counts as already slow.
+    /// </summary>
+    private static void BeforeSpeedChange(GameTimeManager __instance)
     {
         try
         {
+            FanOut.Record(Time.frameCount, __instance.Pointer.ToInt64());
+
+            if (!OwnsSlowGear || !GameClock.IsLive(__instance)) return;
+
             _wasSlowBeforeChange = __instance.IsSlowGearActive && !__instance.IsPausedScale();
         }
         catch (Exception ex)
@@ -115,11 +159,17 @@ internal static class SpeedPatches
 
         try
         {
+            if (!GameClock.IsLive(__instance)) return;
+
             _slowIndex = SlowGear.NextIndex(_slowIndex, _slowSpeeds.Count, _wasSlowBeforeChange);
 
             var held = _slowSpeeds[_slowIndex];
 
             GameClock.HoldSpeed(__instance, held);
+
+            if (held == _lastLoggedHeld) return;
+
+            _lastLoggedHeld = held;
             _log($"slow button: holding {SlowGear.Label(held)}");
         }
         catch (Exception ex)
@@ -153,9 +203,19 @@ internal static class SpeedPatches
         keys._worldStateType == WorldStateType.PostDisaster &&
         !keys._isTimePaused &&
         !keys._isInputDisabled &&
-        keys._listeningAction?.hasValue != true &&
+        !IsRebindingAKey(keys) &&
         !HotKeyManager.IsUGUIInputFocused() &&
         !HotKeyManager.IsKeyTakenByOtherAction(_pauseKey);
+
+    /// <summary>Boxing an empty nullable gives null, so a non-null box means a key is being rebound.</summary>
+    private static bool IsRebindingAKey(HotKeyManager keys)
+    {
+        if (_listeningActionField == IntPtr.Zero) return false;
+
+        var field = IL2CPP.Il2CppObjectBaseToPtrNotNull(keys) + (int)IL2CPP.il2cpp_field_get_offset(_listeningActionField);
+
+        return IL2CPP.il2cpp_value_box(_listeningActionClass, field) != IntPtr.Zero;
+    }
 
     private static void Fail(string doing, Exception ex)
     {
