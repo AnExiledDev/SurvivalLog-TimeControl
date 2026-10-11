@@ -15,7 +15,7 @@ namespace TimeControl;
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.timecontrol";
-    private const string Version = "0.1.0";
+    private const string Version = "0.2.0";
 
     public override void Load()
     {
@@ -24,19 +24,19 @@ public sealed class Plugin : BasePlugin
         var clockRate = Config.Bind("Clock", "ClockRate", 1f,
             "How fast the day clock runs, from 0.05 to 4. 0.5 makes each day last twice as long; walking and actions keep their speed. 1 is the game's pace.").Value;
         var isIdleFreezeOn = Config.Bind("Clock", "IdleFreeze", true,
-            "Stop the day clock while your character stands idle with nothing queued, at home.").Value;
+            "Pause the game while your character stands idle at home with nothing queued, and resume it on your next order. Press play or the pause key while it is paused to let time run until your next order.").Value;
         var idleDelay = Config.Bind("Clock", "IdleFreezeDelaySeconds", 1f,
-            "Real seconds of idling before the clock stops, so the short gap between two actions does not count.").Value;
+            "Real seconds of idling before the game pauses, so the short gap between two orders does not count.").Value;
         var pauseKeyText = Config.Bind("Keys", "PauseToggleKey", "Space",
             "A key that pauses, and on the next press resumes the speed you had. Ignored if the game already uses that key. None turns it off.").Value;
 
         var log = new TimeLog(Log, Path.Combine(Paths.BepInExRootPath, "time-control.log"));
         var pauseKey = ParseKey(pauseKeyText, log.Write);
         var speeds = SlowGear.ParseSpeeds(slowSpeeds);
-        var settings = new ClockSettings(ClockPace.ClampRate(clockRate), isIdleFreezeOn, Math.Max(0f, idleDelay));
+        var settings = new ClockSettings(ClockPace.ClampRate(clockRate), isIdleFreezeOn, IdlePause.ClampDelay(idleDelay));
 
         log.TrimIfLarge();
-        log.Write($"===== Time Control {Version} started: clock rate {settings.ClockRate:0.##}, idle freeze {(isIdleFreezeOn ? $"after {settings.IdleFreezeDelaySeconds:0.#}s" : "off")}");
+        log.Write($"===== Time Control {Version} started: clock rate {settings.ClockRate:0.##}, idle pause {(isIdleFreezeOn ? $"after {settings.IdleFreezeDelaySeconds:0.#}s" : "off")}");
         SpeedPatches.Apply(new Harmony(Guid), speeds, pauseKey, log.Write);
         LogGamePauseKey(log.Write);
         ClockTicker.Settings = settings;

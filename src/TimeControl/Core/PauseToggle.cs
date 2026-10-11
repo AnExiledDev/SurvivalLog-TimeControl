@@ -7,10 +7,8 @@ public static class PauseToggle
     public const int Normal = 1;
     public const int Slow = 4;
 
-    public static int Target(bool isPaused, int lastRunningLevel)
-    {
-        if (!isPaused) return Paused;
+    public static int Target(bool isPaused, int lastRunningLevel) => isPaused ? RunningLevel(lastRunningLevel) : Paused;
 
-        return lastRunningLevel is >= Normal and <= Slow ? lastRunningLevel : Normal;
-    }
+    /// <summary>The level to resume at; anything that is not a running speed resumes at normal speed.</summary>
+    public static int RunningLevel(int level) => level is >= Normal and <= Slow ? level : Normal;
 }

@@ -14,10 +14,5 @@ public static class ClockPace
     public static float ClampRate(float rate) => float.IsFinite(rate) ? Math.Clamp(rate, SlowestRate, FastestRate) : 1f;
 
     /// <summary>The multiplier for the clock's frame delta; outside the day clock the game's own pace is kept.</summary>
-    public static float Factor(float rate, bool isFrozen, bool isDayClock)
-    {
-        if (!isDayClock) return 1f;
-
-        return isFrozen ? 0f : ClampRate(rate);
-    }
+    public static float Factor(float rate, bool isDayClock) => isDayClock ? ClampRate(rate) : 1f;
 }

@@ -7,7 +7,15 @@ namespace TimeControl.Adapters;
 /// <summary>The game's time manager, and the three writes that make a game speed stick everywhere it is read.</summary>
 internal static class GameClock
 {
-    public static GameTimeManager? Find() => BaseSingleton<BattleLogicWorld>.Instance?._GameTimeManager;
+    /// <summary>
+    /// The live world's time manager, or null before the game has made one. Reading the singleton's Instance would
+    /// build a world when none exists yet, before the game's configs load, and a world built that way registers the
+    /// game's event handlers as well; so the world is only read once the game has created it.
+    /// </summary>
+    public static GameTimeManager? Find() =>
+        BaseSingleton<BattleLogicWorld>.IsInstanceCreated ? BaseSingleton<BattleLogicWorld>.Instance?._GameTimeManager : null;
+
+    public static bool IsLive(GameTimeManager time) => Find() is { } live && live.Pointer == time.Pointer;
 
     public static bool IsDayClock(GameTimeManager time) => time.Timer?.TryCast<CountUpTimer>() != null;
 
