@@ -61,7 +61,8 @@ public abstract record IdlePause
     {
         Watching watching => Watch(watching, seen, delaySeconds),
         Frozen frozen => Hold(frozen, seen),
-        _ => Stay(seen.IsBusy || !seen.CanFreeze ? Start : LetRun),
+        Released => Stay(seen.IsBusy || !seen.CanFreeze ? Start : LetRun),
+        _ => throw new ArgumentOutOfRangeException(nameof(state), state, "an idle pause state Next does not handle"),
     };
 
     /// <summary>

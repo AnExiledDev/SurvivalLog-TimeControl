@@ -115,6 +115,15 @@ public class IdlePauseTests
     }
 
     [Fact]
+    public void Standing_idle_while_paused_by_idling_keeps_the_game_paused()
+    {
+        var step = Run(new IdlePause.Frozen(2), IdleWhilePaused(0.1f), IdleWhilePaused(5f));
+
+        Assert.Equal(IdleCommand.Nothing, step.Command);
+        Assert.Equal(new IdlePause.Frozen(2), step.State);
+    }
+
+    [Fact]
     public void A_remembered_speed_that_is_not_a_running_one_resumes_at_normal_speed()
     {
         var step = Run(IdlePause.Start, Idle(2f, runningLevel: PauseToggle.Paused));
@@ -142,6 +151,16 @@ public class IdlePauseTests
         var afterOrder = Run(released.State, OrderGiven(isPaused: false), Idle(0.6f), Idle(0.6f));
 
         Assert.Equal(IdleCommand.PauseGame, afterOrder.Command);
+    }
+
+    [Fact]
+    public void Time_let_run_while_idle_freezes_again_after_a_trip_away_from_home()
+    {
+        var awayFromHome = new IdleSnapshot(CanFreeze: false, IsBusy: false, IsPaused: false, 5f, PauseToggle.Normal);
+
+        var step = Run(new IdlePause.Released(), awayFromHome, Idle(0.6f), Idle(0.6f));
+
+        Assert.Equal(IdleCommand.PauseGame, step.Command);
     }
 
     [Fact]

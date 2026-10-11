@@ -103,17 +103,24 @@ public sealed class ClockTicker : MonoBehaviour
         _idle = IdlePause.Start;
     }
 
-    /// <summary>The command is carried out before the new state is kept, so a failed resume is tried again next check.</summary>
+    /// <summary>
+    /// A pause is kept as Frozen before it is made, so one that fails halfway is still undone by the recovery; a resume
+    /// is kept after, so one that fails is tried again by it. Whether the player is busy only matters while time runs
+    /// at home or the game is held by this mod.
+    /// </summary>
     private void UpdateIdlePause(GameTimeManager time, bool isPaused, bool isDayClock, float elapsed)
     {
         var canFreeze = Settings.IsIdleFreezeOn && isDayClock && !IsFastForwarding(time);
-        var isBusy = (canFreeze || _idle is not IdlePause.Watching) && time.IsLeadingRoleBusy();
+        var isBusy = ((canFreeze && !isPaused) || _idle is not IdlePause.Watching) && time.IsLeadingRoleBusy();
         var seen = new IdleSnapshot(canFreeze, isBusy, isPaused, elapsed, SpeedPatches.LastRunningLevel);
-        var step = IdlePause.Next(_idle, seen, Settings.IdleFreezeDelaySeconds);
+        var before = _idle;
+        var step = IdlePause.Next(before, seen, Settings.IdleFreezeDelaySeconds);
+
+        if (step.Command is IdleCommand.Pause) _idle = step.State;
 
         Carry(time, step.Command);
-        LogTransition(_idle, step);
         _idle = step.State;
+        LogTransition(before, step);
     }
 
     private static void Carry(GameTimeManager time, IdleCommand command)
@@ -121,10 +128,10 @@ public sealed class ClockTicker : MonoBehaviour
         switch (command)
         {
             case IdleCommand.Pause:
-                time.ChangeGameSpeed(PauseToggle.Paused);
+                SpeedPatches.ChangeSpeed(time, PauseToggle.Paused);
                 break;
             case IdleCommand.Resume resume when time.IsPausedScale():
-                time.ChangeGameSpeed(resume.Level);
+                SpeedPatches.ChangeSpeed(time, resume.Level);
                 break;
         }
     }
@@ -206,7 +213,7 @@ public sealed class ClockTicker : MonoBehaviour
     {
         try
         {
-            if (GameClock.Find() is { } time && time.IsPausedScale()) time.ChangeGameSpeed(level);
+            if (GameClock.Find() is { } time && time.IsPausedScale()) SpeedPatches.ChangeSpeed(time, level);
         }
         catch (Exception)
         {
