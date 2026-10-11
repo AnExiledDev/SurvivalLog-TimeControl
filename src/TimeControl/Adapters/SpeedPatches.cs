@@ -28,6 +28,7 @@ internal static class SpeedPatches
     private static int _slowIndex = -1;
     private static bool _wasSlowBeforeChange;
     private static float? _lastLoggedHeld;
+    private static bool _isOwnChange;
     private static int _failures;
     private static Action<string> _log = _ => { };
 
@@ -75,6 +76,24 @@ internal static class SpeedPatches
 
     /// <summary>The most time managers one frame's speed change reached since the last call; 0 when none changed speed.</summary>
     public static int TakeLargestFanOut() => FanOut.TakeLargest();
+
+    /// <summary>
+    /// A speed change this mod makes goes straight to the live time manager, so it would always count one and say
+    /// nothing about leftover worlds; only the game's own changes, which reach every manager listening, are counted.
+    /// </summary>
+    public static void ChangeSpeed(GameTimeManager time, int level)
+    {
+        _isOwnChange = true;
+
+        try
+        {
+            time.ChangeGameSpeed(level);
+        }
+        finally
+        {
+            _isOwnChange = false;
+        }
+    }
 
     private static IEnumerable<string> Labels()
     {
@@ -139,7 +158,7 @@ internal static class SpeedPatches
     {
         try
         {
-            FanOut.Record(Time.frameCount, __instance.Pointer.ToInt64());
+            if (!_isOwnChange) FanOut.Record(Time.frameCount, __instance.Pointer.ToInt64());
 
             if (!OwnsSlowGear || !GameClock.IsLive(__instance)) return;
 
@@ -186,7 +205,7 @@ internal static class SpeedPatches
         {
             if (!AreSpeedKeysLive(__instance) || GameClock.Find() is not { IsGameStart: true } time) return;
 
-            time.ChangeGameSpeed(PauseToggle.Target(time.IsPausedScale(), LastRunningLevel));
+            ChangeSpeed(time, PauseToggle.Target(time.IsPausedScale(), LastRunningLevel));
         }
         catch (Exception ex)
         {

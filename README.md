@@ -16,13 +16,14 @@ A BepInEx 6 (IL2CPP) plugin for Survival Log that gives finer control over time:
 - `Clock/IdleFreeze` (default `true`) and `Clock/IdleFreezeDelaySeconds` (default `1`): pause the game after this many real seconds of idling.
 - `Keys/PauseToggleKey` (default `Space`): any Unity key name, or `None`.
 
-What it did is logged to `BepInEx/time-control.log`. A line reading `speed change reached N time managers in one frame (expected 1)` means leftover game worlds are answering the game's events; one trade or one order can then happen several times. Restart the game if you see it.
+What it did is logged to `BepInEx/time-control.log`. A line reading `speed change reached N time managers in one frame (expected 1)` means leftover game worlds are answering the game's events; one trade or one order can then happen several times. Restart the game if you see it. The line counts only the game's own speed changes and only time managers, so its absence is a good sign rather than proof; `speed change reached 1 time manager, as it should` after your first use of the speed buttons is the healthy reading.
 
 ## Known limits
 
 - Idle freeze and `ClockRate` act at home only; exploration keeps the game's pace.
 - `ClockRate` slows only the day clock. Idle freeze is a real pause, the same as the game's pause button.
 - "Idle" is the game's own test (no order from you in your character's queue), the same one the game's idle slowdown uses. Something your character does on its own does not count as an order, so the game can pause during it.
+- Pressing the game's own pause button while idle freeze holds the game does not make the pause yours: your next order still resumes. Press play first, then pause, to keep it paused.
 
 ## Install
 
