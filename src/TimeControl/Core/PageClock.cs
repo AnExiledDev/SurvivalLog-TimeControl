@@ -12,8 +12,11 @@ public readonly record struct PageClockUpdate(float? ClockScale, string SlowLabe
 
 public static class PageClock
 {
-    /// <summary>Finds the CoreUI1 frame from the root page, the same way WebUI Doctor's clock watch does.</summary>
-    private const string FindFrame =
+    /// <summary>
+    /// Finds the CoreUI1 frame from the root page, the same way WebUI Doctor's clock watch does, as <c>w</c>; shared
+    /// with the pause badge.
+    /// </summary>
+    internal const string FindFrame =
         "var fs=document.querySelectorAll('iframe'),w=null;" +
         "for(var i=0;i<fs.length;i++){var c=fs[i].contentWindow;if(!c)continue;" +
         "try{if(!/CoreUI1\\.html/i.test(String(c.location)))continue;}catch(e){continue;}w=c;break;}" +

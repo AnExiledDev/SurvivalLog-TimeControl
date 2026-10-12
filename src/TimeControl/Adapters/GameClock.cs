@@ -19,8 +19,8 @@ internal static class GameClock
     public static bool IsLive(GameTimeManager time) => Find() is { } live && live.Pointer == time.Pointer;
 
     /// <summary>
-    /// Which timer runs: the game counts the day clock up, and counts down both the prologue before the disaster and
-    /// an exploration trip; the world state tells those two apart, as the game's own countdown sync does.
+    /// Which timer runs: the game counts the day clock up and the prologue before the disaster down, and gives an
+    /// expedition's world a frozen timer (GameTimeManager.Initialize picks it for the exploration mode only).
     /// </summary>
     public static GameTimer Timer(GameTimeManager time)
     {
@@ -29,6 +29,7 @@ internal static class GameClock
         return GameTimers.Classify(
             isCountingUp: timer?.TryCast<CountUpTimer>() != null,
             isCountingDown: timer?.TryCast<CountDownTimer>() != null,
+            isFrozen: timer?.TryCast<FrozenTimer>() != null,
             isBeforeDisaster: time.WorldStateType == WorldStateType.PreDisaster);
     }
 

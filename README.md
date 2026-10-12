@@ -1,53 +1,114 @@
 # Time Control
 
-A BepInEx 6 (IL2CPP) plugin for Survival Log that gives finer control over time:
+A true slow speed, a super speed, a pause that waits for you, and fast sleep.
 
-- **A slow button that really slows.** The game's slow button runs at full speed until you stand idle, then drops to 0.3x. With this mod it holds a true slow speed from the moment you press it: 0.5x on the first press, 0.25x on the next, then back to 0.5x. The button's tooltip shows the speed in use.
-- **A super speed.** Press the fast button (or key 3) again while at the game's high speed and it goes to twice that speed; once more goes back to high. The fast button stays lit and keeps the game's own tooltip. Pausing and resuming, by Space or idle freeze, comes back to super speed; keys 1 and 2 and the slow button leave it.
-- **Idle freeze.** At home and in the countdown before the disaster, the game pauses for real once your character has stood idle with nothing queued for 3 seconds: the clock, zombies, plants, trade countdowns and the drone all stop. Your next order resumes it at the speed you had. Press play (or the pause key) while it is paused and time keeps running until your next order; a pause you made yourself is never undone by the mod.
-- **Fast sleep, and a pause on waking.** Sleep and naps run at super speed in place of the game's own sleep speed-up, and the game pauses when your character wakes, however the sleep ended. Your next order, play or Space resumes the speed you had before the sleep. Pick another speed during a sleep and it is kept until you wake.
-- **A slower day.** `ClockRate` slows (or speeds) only the day clock, so a day lasts longer while walking and actions keep their speed.
-- **A pause toggle key.** Space pauses; pressing it again resumes the speed you had. It works in the countdown before the disaster too, where the mod also answers the game's own speed keys. The game had Space on centering the camera on your character, so that moves to G; a key you set in the game's own key settings still wins, and the pause key stays out of the way of any key the game uses.
-- **Hover highlights while paused.** Objects highlight under the mouse while the game is paused or slowed, as they do at normal speed.
+Survival Log's slow button only slows the game once you stand idle, the clock keeps running while you think, and there is no way to pause before the disaster or on an expedition. Time Control adds a real slow speed and a faster one, pauses the game while your character has nothing to do, fast-forwards sleep, and gives you a pause key that works everywhere you play.
 
-## Config
+## Features
 
-`BepInEx/config/com.dev.survivallog.timecontrol.cfg`, written on the first launch:
+- **A slow button that really slows**: the game's slow button runs at full speed until you stand idle, then drops to 0.3x. With this mod it holds a true slow speed from the moment you press it: 0.5x on the first press, 0.25x on the next, then back to 0.5x. The button's tooltip shows the speed in use.
+- **Super speed**: press the fast button (or key `3`) again while at the game's high speed and the game runs at twice that speed. Press it once more to go back to high speed. Pausing and resuming comes back to super speed; keys `1` and `2` and the slow button leave it.
+- **Idle pause**: once your character has stood idle with nothing queued for 3 seconds, the game pauses for real. The clock, zombies, plants, trade countdowns and the drone all stop. Your next order resumes the speed you had. Press play (or the pause key) while it is paused and time keeps running until your next order. A pause you made yourself is never undone by the mod.
+- **Fast sleep, and a pause on waking**: sleep and naps run at super speed in place of the game's own sleep speed-up. When your character wakes, however the sleep ended, the game pauses. Your next order, play or the pause key resumes the speed you had before the sleep. Pick another speed during a sleep and it is kept until you wake.
+- **A slower day**: `ClockRate` slows (or speeds up) only the day clock, so a day lasts longer while walking and actions keep their speed. The clock on screen follows it.
+- **A pause key**: `Space` pauses, and pressing it again resumes the speed you had. It works at home, in the countdown before the disaster and on expeditions. The game had `Space` on centering the camera on your character, so that moves to `G`.
+- **Pausing before the disaster**: the game ignores its own speed keys in the countdown before the disaster. The mod answers them there, so you can pause, slow down and speed up while you prepare. The idle pause works there too.
+- **Time control on expeditions**: the game also ignores its speed keys on an expedition. With this mod the pause key, the game's speed keys, the slow and super speeds and the idle pause all work there. The day clock stands still while you are away and the exposure meter fills on game time, so pausing stops the meter and super speed fills it faster.
+- **A pause badge**: while the idle pause holds the game, a small "Paused: idle" chip sits just above the speed buttons, in the game's own chip style. While a pause you made with the pause key holds it (or with the game's own pause key, before the disaster and on expeditions), the chip says "Paused". The game's own pause at home after the disaster gets no chip; the game lights its pause button there. It goes away the moment time runs again. Where the screen shows no speed buttons, the chip sits at the top centre.
+- **Hover highlights while paused**: objects highlight under the mouse while the game is paused or slowed, as they do at normal speed.
+- **A time log**: what the mod did (idle pauses, speed changes, sleep and wake) is written to `BepInEx\time-control.log`.
 
-- `SlowButton/SlowSpeeds` (default `0.5,0.25`): speeds the slow button holds, each between 0.05 and 0.95. Empty leaves the game's slow button alone.
-- `Clock/ClockRate` (default `1`): day clock pace, 0.05 to 4. `0.5` makes each day last twice as long.
-- `FastButton/FastSpeeds` (default `2`): faster speeds above the game's high speed, as multiples of it, each between 1.1 and 10. The speed held never goes past 40x, since the game moves its world one step per frame and past that each step at 30 frames a second is longer than its own speeds allow. Empty leaves the game's fast button alone.
-- `Clock/IdleFreeze` (default `true`) and `Clock/IdleFreezeDelaySeconds` (default `3`): pause the game after this many real seconds of idling.
-- `Sleep/FastForwardSleep` (default `true`): run sleep and naps at the fastest `FastSpeeds` speed. Off leaves the game's own sleep speed-up as it is.
-- `Sleep/PauseOnWake` (default `true`): pause the game when your character wakes.
-- `Keys/PauseToggleKey` (default `Space`): any Unity key name, or `None`.
-- `Keys/CenterCameraKey` (default `G`): the game's default key for centering the camera on your character. `None` leaves it with no key.
+Time Control adds no data of its own to your save and does not edit game files. It does change how fast game time runs, and that time is saved with your game: a day played slower or paused is still a normal day to the save. You can remove the mod at any time; the game goes back to its own speeds and keys at the next start. If centering the camera is still on `G` after you remove it, set it back in the game's key settings.
 
-What it did is logged to `BepInEx/time-control.log`. A line reading `speed change reached N time managers in one frame (expected 1)` means leftover game worlds are answering the game's events; one trade or one order can then happen several times. Restart the game if you see it. The line counts only the game's own speed changes and only time managers, so its absence is a good sign rather than proof; `speed change reached 1 time manager, as it should` after your first use of the speed buttons is the healthy reading.
+| Key | What it does |
+| --- | --- |
+| `Space` | Pause. Press again to resume the speed you had. Works at home, in the countdown before the disaster and on expeditions. Change it with `PauseToggleKey`. |
+| `G` | Center the camera on your character (the game's default for this was `Space`). Change it with `CenterCameraKey`. |
+| `1`, `2`, `3` | The game's own speed keys. Press `3` again at the game's high speed for super speed. In the countdown before the disaster and on expeditions the mod answers them, since the game does not. |
+| The game's pause and slow keys | The game's own keys, whatever they are bound to. The mod answers them in the countdown before the disaster and on expeditions. |
 
-## Known limits
+A key you set in the game's own key settings always wins. If the game uses your pause key for one of its own actions, the pause key stands aside and the log says so. The pause key does nothing while you type in a text box or rebind a key.
 
-- Idle freeze acts at home and in the countdown before the disaster, and `ClockRate` at home only; exploration keeps the game's pace.
-- Super speed moves the world in bigger steps per frame, so fights and walking are coarser than at the game's own speeds, and a low frame rate caps how fast it really runs.
+## How it works
+
+**Idle** is the game's own test: no order from you in your character's queue, the same test the game's idle slowdown uses. Something your character does on its own does not count as an order, so the game can pause during it.
+
+**Super speed** is a multiple of the game's high speed (2x by default, set by `FastSpeeds`). The speed never goes past 40x: the game moves its world one step per frame, and past 40x each step at 30 frames a second is longer than the game's own speeds allow.
+
+**The pause badge** shows only for pauses the mod knows the reason for:
+
+- The idle pause shows "Paused: idle".
+- A pause made with `PauseToggleKey` anywhere shows "Paused".
+- A pause made with the game's own pause key shows "Paused" in the countdown before the disaster and on expeditions, where the mod answers that key.
+- The game's own pause button gets no badge, and neither does the game's pause key at home after the disaster, where the game answers it itself and lights its own pause button.
+
+**Expeditions**: the day clock stands still while you are away and the exposure meter does the counting. The mod controls the expedition's game time, so the meter stops while paused and fills faster at super speed. `ClockRate` only changes the day clock at home, so it does nothing on an expedition. Set `TimeControlOnExpeditions` to `false` to leave expeditions at the game's own pace.
+
+## Known issues and limits
+
+Game time is finicky. Events, sleep, zombie waves and expedition timers all run on it, and this mod changes how fast it runs. If anything happens at an odd time, too early, too late, twice or not at all, please tell me (see [Feedback](#feedback-and-bug-reports)), even if you are not sure the mod caused it.
+
+- **Back up your save before trying it for the first time.**
+- Expedition support and the pause badge are new in 0.4.0 and have not been played through in the game yet. If the keys, the pause or the badge misbehave, set `TimeControlOnExpeditions`, `IdleBadge` or `PauseKeyBadge` to `false` and report it.
+- On an expedition the game's exposure alarm keeps sounding while the game is paused, because the game plays it on real time. The meter itself stops.
+- The badge can blink out for up to half a second when the game redraws its speed buttons, then comes back.
+- Where the screen shows no speed buttons, the badge sits at the top centre and may cover part of the game's display there.
+- Super speed moves the world in bigger steps per frame, so fights and walking are coarser than at the game's own speeds. A low frame rate caps how fast it really runs.
 - While `FastForwardSleep` is on, the game's own sleep speed-up never starts, so anything the game shows only during its speed-up does not show.
-- An order you queued before waking does not resume the game after the wake pause; give a new order, press play or press Space.
-- `ClockRate` slows only the day clock. Idle freeze is a real pause, the same as the game's pause button.
-- "Idle" is the game's own test (no order from you in your character's queue), the same one the game's idle slowdown uses. Something your character does on its own does not count as an order, so the game can pause during it.
-- Pressing the game's own pause button while idle freeze holds the game does not make the pause yours: your next order still resumes. Press play first, then pause, to keep it paused.
+- An order you queued before waking does not resume the game after the wake pause. Give a new order, press play or press the pause key.
+- Pressing the game's own pause button while the idle pause holds the game does not make the pause yours: your next order still resumes. Press play first, then pause, to keep it paused.
+- The idle pause works at home, in the countdown before the disaster and on expeditions. Any other timer keeps the game's pace.
+- A line in the log reading `speed change reached N time managers in one frame (expected 1)` means leftover game worlds are answering the game's events, so one trade or one order can happen several times. Restart the game if you see it. `speed change reached 1 time manager, as it should` after your first use of the speed buttons is the healthy reading.
+
+## Requirements
+
+- Survival Log 1.1.18317. Built and tested on this version; a game update can break it until the mod is updated.
+- The [BepInEx Pack for Survival Log](https://www.nexusmods.com/survivallog/mods/12), the BepInEx 6 (IL2CPP) build for the game.
 
 ## Install
 
-Download `TimeControl.dll` from the [latest release](https://github.com/AnExiledDev/SurvivalLog-TimeControl/releases/latest) and copy it into `BepInEx/plugins`. Needs BepInEx 6 (IL2CPP build).
+1. Install the [BepInEx Pack for Survival Log](https://www.nexusmods.com/survivallog/mods/12) (if no other mods were installed before, start the game once so BepInEx finishes setup, then quit).
+2. Download `TimeControl.dll` from the [latest release](https://github.com/AnExiledDev/SurvivalLog-TimeControl/releases/latest) and put it in the `BepInEx\plugins` folder inside the game folder (the folder with the game .exe). Full path example:
+   `C:\Program Files (x86)\Steam\steamapps\common\Survival Log\BepInEx\plugins\TimeControl.dll`
 
-## Build and test
+## Uninstall
 
-```sh
-dotnet build src/TimeControl -c Release -p:GameDir="D:\path\to\Survival Log"
+Delete `TimeControl.dll` from the `BepInEx\plugins` folder. For a clean slate, also delete `BepInEx\config\com.dev.survivallog.timecontrol.cfg` and `BepInEx\time-control.log`.
+
+## Configuration
+
+Settings live in `BepInEx\config\com.dev.survivallog.timecontrol.cfg`, created the first time the game starts with the mod. Edit it while the game is closed; changes apply at the next game start. See [CONFIG.md](CONFIG.md) for every setting.
+
+## Troubleshooting
+
+Tested on Survival Log 1.1.18317 with BepInEx `6.0.0-be.788`.
+
+Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.4.0 started`. It lists the clock rate and which features are on. The next lines say which game hooks are in place and what the game's own pause key is; a line starting `could not hook` names a feature that will not work.
+
+The same lines, plus every idle pause, sleep and wake, are in `BepInEx\time-control.log`, which survives restarts and trims itself past 1 MB.
+
+If `Space` does not pause, look in the log for a line saying it is bound to one of the game's own actions, and rebind that action in the game's key settings or pick another `PauseToggleKey`.
+
+## Feedback and bug reports
+
+Found a bug, have an idea, or something feels off? Come say so on the Core Directive Discord: https://discord.gg/trTsyxUFqg . You can also leave a comment on the Nexus page or [open an issue](https://github.com/AnExiledDev/SurvivalLog-TimeControl/issues). When reporting a bug, attach `BepInEx\LogOutput.log` and `BepInEx\time-control.log`.
+
+## Build
+
+This is a BepInEx 6 IL2CPP plugin. It compiles against BepInEx and the game's IL2CPP interop assemblies, so a game install with BepInEx set up and started once is required. Those assemblies come from the game and are not part of this repo. The .NET 8 SDK is required.
+
+```
+dotnet build src/TimeControl -c Release -p:GameDir="C:\path\to\Survival Log"
+```
+
+`GameDir` is the game folder. The default in the project file is a local path you will almost certainly need to override. The output DLL is at `src\TimeControl\bin\Release\TimeControl.dll`.
+
+The unit tests cover the pure timing rules and need nothing from the game:
+
+```
 dotnet test tests/TimeControl.Tests
 ```
 
-The build references BepInEx and the game's interop assemblies under `GameDir`, so BepInEx must be installed and the game launched once. The tests compile only the pure `Core` code and need nothing from the game.
-
 ## License
 
-MIT, see [LICENSE](LICENSE).
+MIT. Copyright (c) 2026 AnExiledDev. See [LICENSE](LICENSE).
