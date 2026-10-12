@@ -2,8 +2,6 @@ using System;
 using System.IO;
 using BepInEx;
 using BepInEx.Unity.IL2CPP;
-using GameCore.HotUpdate;
-using GameCore.HotUpdate.Battle.Show;
 using HarmonyLib;
 using TimeControl.Adapters;
 using TimeControl.Core;
@@ -38,7 +36,6 @@ public sealed class Plugin : BasePlugin
         log.TrimIfLarge();
         log.Write($"===== Time Control {Version} started: clock rate {settings.ClockRate:0.##}, idle pause {(isIdleFreezeOn ? $"after {settings.IdleFreezeDelaySeconds:0.#}s" : "off")}");
         SpeedPatches.Apply(new Harmony(Guid), speeds, pauseKey, log.Write);
-        LogGamePauseKey(log.Write);
         ClockTicker.Settings = settings;
         ClockTicker.Log = log.Write;
         ClockTicker.LogFileOnly = log.WriteFileOnly;
@@ -53,17 +50,5 @@ public sealed class Plugin : BasePlugin
         log($"PauseToggleKey '{text}' is not a Unity key name, pause toggle off");
 
         return KeyCode.None;
-    }
-
-    private static void LogGamePauseKey(Action<string> log)
-    {
-        try
-        {
-            log($"the game's own pause key is {HotKeyManager.Bind(HotKeyAction.SpeedPause)}");
-        }
-        catch (Exception ex)
-        {
-            log("could not read the game's pause key: " + ex.Message);
-        }
     }
 }
