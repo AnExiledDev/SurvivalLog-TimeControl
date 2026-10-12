@@ -29,6 +29,7 @@ internal static class SpeedPatches
     private static bool _wasSlowBeforeChange;
     private static float? _lastLoggedHeld;
     private static bool _isOwnChange;
+    private static bool _hasLoggedGamePauseKey;
     private static int _failures;
     private static Action<string> _log = _ => { };
 
@@ -199,6 +200,8 @@ internal static class SpeedPatches
 
     private static void TogglePauseOnKey(HotKeyManager __instance, bool __runOriginal)
     {
+        LogGamePauseKeyOnce();
+
         if (!__runOriginal || !Input.GetKeyDown(_pauseKey)) return;
 
         try
@@ -210,6 +213,26 @@ internal static class SpeedPatches
         catch (Exception ex)
         {
             Fail("toggling pause", ex);
+        }
+    }
+
+    /// <summary>
+    /// Read on the first key frame rather than at plugin load: the read goes through the game's SettingManager, and
+    /// reading it at load would build it before the game does.
+    /// </summary>
+    private static void LogGamePauseKeyOnce()
+    {
+        if (_hasLoggedGamePauseKey) return;
+
+        _hasLoggedGamePauseKey = true;
+
+        try
+        {
+            _log($"the game's own pause key is {HotKeyManager.Bind(HotKeyAction.SpeedPause)}");
+        }
+        catch (Exception ex)
+        {
+            _log("could not read the game's pause key: " + ex.Message);
         }
     }
 
