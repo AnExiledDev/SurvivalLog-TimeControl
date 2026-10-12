@@ -109,6 +109,29 @@ public class PauseOverlayPageTests
     }
 
     [Fact]
+    public void Only_the_paused_strip_fades_not_the_games_sleep_or_slowdown_strip()
+    {
+        var css = PauseOverlay.Css(0.5f);
+        var selectors = css.Split('}', StringSplitOptions.RemoveEmptyEntries)
+            .SelectMany(rule => rule.Substring(0, rule.IndexOf('{')).Split(','))
+            .Select(selector => selector.Trim())
+            .ToList();
+
+        Assert.NotEmpty(selectors);
+        Assert.All(selectors, selector => Assert.Equal(PauseRule, selector));
+    }
+
+    [Fact]
+    public void A_page_whose_name_only_ends_in_SpeedUp_is_not_taken_for_the_strip_page()
+    {
+        var ui = new FakeWebUi("var other = openFrame('CompostSpeedUp', null); var speedUp = openSpeedUp();");
+
+        Assert.Equal("ok", ui.Send(Half));
+        Assert.False(ui.Is("overlayStyleOn(other)"));
+        Assert.True(ui.Is("overlayStyleOn(speedUp)"));
+    }
+
+    [Fact]
     public void Sending_on_every_refresh_keeps_one_style_and_follows_a_new_opacity()
     {
         var ui = new FakeWebUi(AllPages);
