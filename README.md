@@ -75,7 +75,7 @@ Game time is finicky. Events, sleep, zombie waves and expedition timers all run 
 - Pause on alerts is new in 0.5.0 and has not been played through in the game yet. If an alert pauses at the wrong moment, twice or not at all, set its `PauseOn` setting to `false` and report it.
 - The speed buttons before the disaster and on expeditions are new in 0.6.0 and have not been played through in the game yet. If they show in the wrong place, cover something or do not respond, set `SpeedButtons` to `false` and report it.
 - A click on those speed buttons can take up to a tenth of a second to change the speed.
-- The badge's new place beside the speed buttons and the see-through paused banner are new in 0.6.0 and have not been played through in the game yet. If either covers something, set `PauseOverlayOpacity` to `1` or turn the badge off, and report it.
+- The badge's new place beside the speed buttons and the see-through paused banner are new in 0.6.1 and have not been played through in the game yet. If either covers something, set `PauseOverlayOpacity` to `1` or turn the badge off, and report it.
 - When a pause starts, the paused banner can show at full strength for up to half a second before it turns see-through.
 - In the countdown before the disaster, the speed buttons' tooltips are in English, because that screen has no text for them in your language. They hide while the planning view is open, along with the game's buttons in the bottom left corner.
 - An alert that starts while your character sleeps does not pause the game. `PauseOnWake` pauses it when they wake.
@@ -104,7 +104,7 @@ Settings live in `BepInEx\config\com.dev.survivallog.timecontrol.cfg`, created t
 
 Tested on Survival Log 1.1.18317 with BepInEx `6.0.0-be.788`.
 
-Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.6.0 started`. It lists the clock rate and which features are on. The next lines say which game hooks are in place and what the game's own pause key is; a line starting `could not hook` names a feature that will not work.
+Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.6.1 started`. It lists the clock rate and which features are on. The next lines say which game hooks are in place and what the game's own pause key is; a line starting `could not hook` names a feature that will not work.
 
 The same lines, plus every idle pause, alert pause, sleep and wake, are in `BepInEx\time-control.log`, which survives restarts and trims itself past 1 MB.
 

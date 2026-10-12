@@ -39,7 +39,7 @@ Time Control adds no data of its own to your save and does not edit game files. 
 [*]The speed buttons before the disaster and on expeditions are new in 0.6.0 and have not been played through in the game yet. Turn them off with SpeedButtons in the config if they get in the way. Before the disaster their tooltips are in English only.[/*]
 [*]On an expedition the exposure alarm keeps sounding while paused. The meter itself stops.[/*]
 [*]The badge can blink out for up to half a second when the game redraws its speed buttons.[/*]
-[*]The badge's place beside the speed buttons and the see-through paused banner are new in 0.6.0 and have not been played through in the game yet. Set PauseOverlayOpacity to 1 to keep the game's banner as it is.[/*]
+[*]The badge's place beside the speed buttons and the see-through paused banner are new in 0.6.1 and have not been played through in the game yet. Set PauseOverlayOpacity to 1 to keep the game's banner as it is.[/*]
 [/list]
 If you run into anything strange, please tell me (see Feedback below).
 
