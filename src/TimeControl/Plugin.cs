@@ -13,7 +13,7 @@ namespace TimeControl;
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.timecontrol";
-    private const string Version = "0.4.0";
+    private const string Version = "0.5.0";
 
     public override void Load()
     {
@@ -37,10 +37,20 @@ public sealed class Plugin : BasePlugin
             "The game's default key for centering the camera on your character, moved off Space so Space can pause. A key you set in the game's own key settings still wins. None leaves centering the camera with no key.").Value;
         var isExpeditionOn = Config.Bind("Expedition", "TimeControlOnExpeditions", true,
             "Let the pause key, the game's speed keys (1, 2, 3 and its pause and slow keys), the slow and fast buttons' speeds and the idle pause work on expeditions, where pausing also stops the exposure meter. Off leaves expeditions at the game's own pace, as before 0.4.0.").Value;
+        var isPauseOnWaveOn = Config.Bind("Alerts", "PauseOnWave", true,
+            "Pause the game once when a zombie wave starts. Play or the pause key resumes the speed you had; the wave never pauses it again.").Value;
+        var isPauseOnEmergencyOn = Config.Bind("Alerts", "PauseOnEmergency", true,
+            "Pause the game once when an emergency fires. Play or the pause key resumes the speed you had.").Value;
+        var isPauseOnDroneArrivalOn = Config.Bind("Alerts", "PauseOnDroneArrival", false,
+            "Pause the game once when a trade drone comes home from a trip. Play or the pause key resumes the speed you had.").Value;
+        var isPauseOnQueueEmptyOn = Config.Bind("Alerts", "PauseOnQueueEmpty", false,
+            "Pause the game once when your character finishes the last order in their queue. Play or the pause key resumes the speed you had. Unlike IdleFreeze it pauses at once and stays paused until you resume it.").Value;
         var isIdleBadgeOn = Config.Bind("Display", "IdleBadge", true,
             "Show a small \"Paused: idle\" badge above the speed buttons while the idle pause holds the game. It goes away the moment time runs again.").Value;
         var isPauseKeyBadgeOn = Config.Bind("Display", "PauseKeyBadge", true,
             "Show a small \"Paused\" badge above the speed buttons while the pause key holds the game. It goes away the moment time runs again.").Value;
+        var isAlertBadgeOn = Config.Bind("Display", "AlertBadge", true,
+            "Show a small badge naming the alert, such as \"Paused: wave\", above the speed buttons while a pause on an alert holds the game. It goes away the moment time runs again.").Value;
 
         var log = new TimeLog(Log, Path.Combine(Paths.BepInExRootPath, "time-control.log"));
         var speeds = new SpeedSettings(
@@ -50,6 +60,7 @@ public sealed class Plugin : BasePlugin
             ParseKey("CenterCameraKey", centerCameraKeyText, KeyCode.G, "using G", log.Write),
             isSleepFastForwardOn,
             isExpeditionOn);
+        var alerts = new AlertSettings(isPauseOnWaveOn, isPauseOnEmergencyOn, isPauseOnDroneArrivalOn, isPauseOnQueueEmptyOn);
         var settings = new ClockSettings(
             ClockPace.ClampRate(clockRate),
             isIdleFreezeOn,
@@ -57,13 +68,17 @@ public sealed class Plugin : BasePlugin
             isSleepFastForwardOn,
             isPauseOnWakeOn,
             isExpeditionOn,
-            new BadgeSettings(isIdleBadgeOn, isPauseKeyBadgeOn));
+            alerts,
+            new BadgeSettings(isIdleBadgeOn, isPauseKeyBadgeOn, isAlertBadgeOn));
+        var harmony = new Harmony(Guid);
 
         log.TrimIfLarge();
         log.Write($"===== Time Control {Version} started: clock rate {settings.ClockRate:0.##}, idle pause {(isIdleFreezeOn ? $"after {settings.IdleFreezeDelaySeconds:0.#}s" : "off")}, " +
             $"sleep fast-forward {OnOff(isSleepFastForwardOn)}, pause on waking {OnOff(isPauseOnWakeOn)}, on expeditions {OnOff(isExpeditionOn)}, " +
-            $"idle badge {OnOff(isIdleBadgeOn)}, pause key badge {OnOff(isPauseKeyBadgeOn)}");
-        SpeedPatches.Apply(new Harmony(Guid), speeds, log.Write);
+            $"pause on wave {OnOff(alerts.IsWaveOn)}, on emergency {OnOff(alerts.IsEmergencyOn)}, on drone arrival {OnOff(alerts.IsDroneArrivalOn)}, on queue empty {OnOff(alerts.IsQueueEmptyOn)}, " +
+            $"idle badge {OnOff(isIdleBadgeOn)}, pause key badge {OnOff(isPauseKeyBadgeOn)}, alert badge {OnOff(isAlertBadgeOn)}");
+        SpeedPatches.Apply(harmony, speeds, log.Write);
+        AlertSignals.Apply(harmony, alerts, log.Write);
         ClockTicker.Settings = settings;
         ClockTicker.Log = log.Write;
         ClockTicker.LogFileOnly = log.WriteFileOnly;

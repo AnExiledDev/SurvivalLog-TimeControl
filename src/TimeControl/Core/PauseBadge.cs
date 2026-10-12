@@ -1,9 +1,10 @@
+using System;
 using System.Text;
 
 namespace TimeControl.Core;
 
 /// <summary>Which pauses get a badge; fixed for the session.</summary>
-public readonly record struct BadgeSettings(bool IsIdleBadgeOn, bool IsPauseKeyBadgeOn);
+public readonly record struct BadgeSettings(bool IsIdleBadgeOn, bool IsPauseKeyBadgeOn, bool IsAlertBadgeOn);
 
 /// <summary>
 /// A small chip on the game's HUD saying why the game stands still, so a stopped drone or a frozen clock never looks
@@ -22,19 +23,32 @@ public static class PauseBadge
     private const string NativeChipClass = "idle-slow-chip";
 
     /// <summary>
-    /// What the badge says now; empty hides it. Only a pause still holding the game gets one, and the idle pause
-    /// names itself because it is the one that looks like a bug; any other pause keeps the game's own display.
+    /// What the badge says now; empty hides it. Only a pause still holding the game gets one, and the idle pause and
+    /// an alert pause name themselves because a pause the player did not make looks like a bug; any other pause keeps
+    /// the game's own display.
     /// </summary>
     /// <param name="isIdleHolding">The idle pause made the pause and still owns it.</param>
     /// <param name="isPauseKeyHolding">The player's last speed change through the mod's keys was a pause.</param>
-    public static string Text(BadgeSettings settings, bool isPaused, bool isIdleHolding, bool isPauseKeyHolding)
+    /// <param name="alertHolding">The alert an alert pause made the pause for and still holds it for, if any.</param>
+    public static string Text(BadgeSettings settings, bool isPaused, bool isIdleHolding, bool isPauseKeyHolding, Alert? alertHolding = null)
     {
         if (!isPaused) return "";
 
         if (isIdleHolding) return settings.IsIdleBadgeOn ? IdleText : "";
 
+        if (alertHolding is { } alert) return settings.IsAlertBadgeOn ? AlertText(alert) : "";
+
         return isPauseKeyHolding && settings.IsPauseKeyBadgeOn ? PauseKeyText : "";
     }
+
+    public static string AlertText(Alert alert) => alert switch
+    {
+        Alert.Wave => "Paused: wave",
+        Alert.Emergency => "Paused: emergency",
+        Alert.DroneArrival => "Paused: drone back",
+        Alert.QueueEmpty => "Paused: queue empty",
+        _ => throw new ArgumentOutOfRangeException(nameof(alert), alert, "an alert with no badge text"),
+    };
 
     /// <summary>
     /// A change goes out at once, so the badge leaves the moment time runs. A shown badge is also sent again on every

@@ -67,7 +67,7 @@ public abstract record IdlePause
     /// fast-forward such as sleep is the game deliberately running time, so neither freezes.
     /// </summary>
     public static bool CanFreeze(bool isIdleFreezeOn, GameTimer timer, bool isFastForwarding) =>
-        isIdleFreezeOn && (timer is GameTimer.DayClock or GameTimer.PrologueCountdown or GameTimer.Expedition) && !isFastForwarding;
+        isIdleFreezeOn && GameTimers.IsWaitedOut(timer) && !isFastForwarding;
 
     public static IdleStep Next(IdlePause state, IdleSnapshot seen, float delaySeconds) => state switch
     {

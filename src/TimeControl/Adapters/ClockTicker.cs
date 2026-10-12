@@ -13,13 +13,14 @@ internal sealed record ClockSettings(
     bool IsSleepFastForwardOn,
     bool IsPauseOnWakeOn,
     bool IsExpeditionOn,
+    AlertSettings Alerts,
     BadgeSettings Badges);
 
 /// <summary>
 /// Ten times a second: pauses the game while the player idles at home, in the countdown to the disaster or on an
-/// expedition and resumes it on their next order, fast-forwards sleep and pauses on waking, keeps the chosen slow or
-/// fast speed held, remembers the speed to resume to, sets the day clock's pace, shows the pause badge and keeps the
-/// page's drawn clock in step.
+/// expedition and resumes it on their next order, fast-forwards sleep and pauses on waking, pauses once when an alert
+/// starts, keeps the chosen slow or fast speed held, remembers the speed to resume to, sets the day clock's pace, shows
+/// the pause badge and keeps the page's drawn clock in step.
 /// </summary>
 public sealed class ClockTicker : MonoBehaviour
 {
@@ -29,13 +30,15 @@ public sealed class ClockTicker : MonoBehaviour
     private const float SpeedTolerance = 0.001f;
     private const int MaxLoggedFailures = 3;
 
-    internal static ClockSettings Settings = new(1f, false, IdlePause.DefaultDelaySeconds, false, false, false, new BadgeSettings(false, false));
+    internal static ClockSettings Settings = new(1f, false, IdlePause.DefaultDelaySeconds, false, false, false,
+        new AlertSettings(false, false, false, false), new BadgeSettings(false, false, false));
     internal static Action<string> Log = _ => { };
     internal static Action<string> LogFileOnly = _ => { };
     internal static PageClockLink? Page;
 
     private IdlePause _idle = IdlePause.Start;
     private SleepWatch _sleep = SleepWatch.Start;
+    private AlertPause _alert = AlertPause.Start;
     private IntPtr _timeSeen;
     private float _nextCheckAt;
     private float _lastCheckAt = -1f;
@@ -79,6 +82,7 @@ public sealed class ClockTicker : MonoBehaviour
             SpeedPatches.ClockFactor = 1f;
             _idle = IdlePause.Start;
             _sleep = SleepWatch.Start;
+            _alert = AlertPause.Start;
             _timeSeen = IntPtr.Zero;
             HideBadge();
 
@@ -90,6 +94,7 @@ public sealed class ClockTicker : MonoBehaviour
         if (!time.IsGameStart)
         {
             SpeedPatches.ClockFactor = 1f;
+            _alert = AlertPause.Start;
             HideBadge();
 
             return;
@@ -104,6 +109,7 @@ public sealed class ClockTicker : MonoBehaviour
 
         var isAsleep = UpdateSleep(time, isPaused);
 
+        UpdateAlertPause(time, timer, isAsleep);
         UpdateIdlePause(time, time.IsPausedScale(), timer, elapsed, isAsleep);
         SpeedPatches.ClockFactor = ClockPace.Factor(Settings.ClockRate, isDayClock: timer == GameTimer.DayClock);
         SyncPage(time, now);
@@ -117,6 +123,7 @@ public sealed class ClockTicker : MonoBehaviour
         _timeSeen = time.Pointer;
         _idle = IdlePause.Start;
         _sleep = SleepWatch.Start;
+        _alert = AlertPause.Start;
         SpeedPatches.ForgetWorld();
     }
 
@@ -196,6 +203,42 @@ public sealed class ClockTicker : MonoBehaviour
         : $"speed level {speed.Level}";
 
     /// <summary>
+    /// Runs before idle freeze, so an alert starting as the player falls idle is the pause that holds the game rather
+    /// than one their next order would resume. The counts are taken on every check, so ones from before a world's first
+    /// check, or from while alerts cannot pause, are let go rather than saved up.
+    /// </summary>
+    private void UpdateAlertPause(GameTimeManager time, GameTimer timer, bool isAsleep)
+    {
+        var alerts = Settings.Alerts;
+        var emergenciesFired = AlertSignals.TakeEmergenciesFired();
+        var dronesLanded = AlertSignals.TakeDronesLanded();
+
+        if (!alerts.IsAnyOn) return;
+
+        var canPause = AlertPause.CanPause(timer, IsFastForwarding(time) || isAsleep);
+        var isWaveActive = alerts.IsWaveOn && AlertSignals.IsWaveActive();
+        var isBusy = alerts.IsQueueEmptyOn && time.IsLeadingRoleBusy();
+        var seen = new AlertSnapshot(canPause, time.IsPausedScale(), isWaveActive, emergenciesFired, dronesLanded, isBusy);
+        var step = AlertPause.Next(_alert, seen, alerts);
+
+        _alert = step.State;
+
+        if (step.PauseFor is not { } alert) return;
+
+        SpeedPatches.ChangeSpeed(time, PauseToggle.Paused);
+        LogFileOnly($"alert: {Describe(alert)}, paused the game; play or the pause key resumes speed level {SpeedPatches.LastRunningLevel}");
+    }
+
+    private static string Describe(Alert alert) => alert switch
+    {
+        Alert.Wave => "a zombie wave started",
+        Alert.Emergency => "an emergency fired",
+        Alert.DroneArrival => "a trade drone came home",
+        Alert.QueueEmpty => "the order queue ran out",
+        _ => throw new ArgumentOutOfRangeException(nameof(alert), alert, "an alert with no description"),
+    };
+
+    /// <summary>
     /// A pause is kept as Frozen before it is made, so one that fails halfway is still undone by the recovery; a resume
     /// is kept after, so one that fails is tried again by it. Whether the player is busy only matters while time runs
     /// where idle freeze applies or the game is held by this mod.
@@ -271,7 +314,8 @@ public sealed class ClockTicker : MonoBehaviour
     private void SyncPage(GameTimeManager time, float now)
     {
         var isRefreshDue = now >= _nextPageAt;
-        var badge = PauseBadge.Text(Settings.Badges, time.IsPausedScale(), _idle is IdlePause.Frozen, SpeedPatches.IsPausedByKey);
+        Alert? alertHolding = _alert is AlertPause.Holding holding ? holding.Reason : null;
+        var badge = PauseBadge.Text(Settings.Badges, time.IsPausedScale(), _idle is IdlePause.Frozen, SpeedPatches.IsPausedByKey, alertHolding);
 
         Page?.SyncBadge(badge, isRefreshDue);
 
@@ -303,7 +347,10 @@ public sealed class ClockTicker : MonoBehaviour
         }
     }
 
-    /// <summary>A failed check must never leave the game paused by this mod or the clock off its pace.</summary>
+    /// <summary>
+    /// A failed check must never leave the game paused by this mod or the clock off its pace. An alert pause is left
+    /// as it is: it holds the game until the player resumes it in any case, and only its badge goes.
+    /// </summary>
     private void RecoverFromFailure(Exception ex)
     {
         SpeedPatches.ClockFactor = 1f;
@@ -314,6 +361,7 @@ public sealed class ClockTicker : MonoBehaviour
 
         _idle = IdlePause.Start;
         _sleep = SleepWatch.Start;
+        _alert = AlertPause.Start;
         _failures++;
 
         if (_failures <= MaxLoggedFailures) Log($"clock check failed (logged {_failures} of {MaxLoggedFailures}): {ex}");
