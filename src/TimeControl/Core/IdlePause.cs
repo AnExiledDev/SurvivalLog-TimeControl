@@ -3,7 +3,7 @@ using System;
 namespace TimeControl.Core;
 
 /// <summary>What the ticker saw on one check.</summary>
-/// <param name="CanFreeze">Idle freeze is on, the day clock at home or the countdown to the disaster is running, and no fast-forward such as sleep is.</param>
+/// <param name="CanFreeze">Idle freeze is on, the day clock at home, the countdown to the disaster or an expedition is running, and no fast-forward such as sleep is.</param>
 /// <param name="IsBusy">The player's character has an order queued, the game's own test for "not idle".</param>
 /// <param name="IsPaused">The game is paused, by anyone.</param>
 /// <param name="ElapsedSeconds">Real seconds since the last check.</param>
@@ -32,7 +32,7 @@ public readonly record struct IdleStep(IdlePause State, IdleCommand Command);
 
 /// <summary>
 /// Idle freeze: the game is paused for real (zombies, plants, trades, the drone and the clock all stop) while the
-/// player stands idle at home or while preparing for the disaster, and resumes the moment they give an order. A pause
+/// player stands idle at home, while preparing for the disaster or on an expedition, and resumes the moment they give an order. A pause
 /// someone else made is never undone by this, and a player who resumes time while idle keeps it running until their
 /// next order.
 /// </summary>
@@ -62,12 +62,12 @@ public abstract record IdlePause
     public static float ClampDelay(float seconds) => float.IsFinite(seconds) ? Math.Max(0f, seconds) : DefaultDelaySeconds;
 
     /// <summary>
-    /// Idle freeze applies to the two timers the player waits out by standing around: the day clock at home and the
-    /// countdown to the disaster. Exploration trips keep the game's pace, and a fast-forward such as sleep is the
-    /// game deliberately running time, so neither freezes.
+    /// Idle freeze applies to the timers the player waits out by standing around: the day clock at home, the
+    /// countdown to the disaster and an expedition's exposure meter. Any other timer keeps the game's pace, and a
+    /// fast-forward such as sleep is the game deliberately running time, so neither freezes.
     /// </summary>
     public static bool CanFreeze(bool isIdleFreezeOn, GameTimer timer, bool isFastForwarding) =>
-        isIdleFreezeOn && (timer is GameTimer.DayClock or GameTimer.PrologueCountdown) && !isFastForwarding;
+        isIdleFreezeOn && (timer is GameTimer.DayClock or GameTimer.PrologueCountdown or GameTimer.Expedition) && !isFastForwarding;
 
     public static IdleStep Next(IdlePause state, IdleSnapshot seen, float delaySeconds) => state switch
     {

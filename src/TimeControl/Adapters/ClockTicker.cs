@@ -6,12 +6,20 @@ using UnityEngine;
 namespace TimeControl.Adapters;
 
 /// <summary>The settings the ticker reads; fixed for the session.</summary>
-internal sealed record ClockSettings(float ClockRate, bool IsIdleFreezeOn, float IdleFreezeDelaySeconds, bool IsSleepFastForwardOn, bool IsPauseOnWakeOn);
+internal sealed record ClockSettings(
+    float ClockRate,
+    bool IsIdleFreezeOn,
+    float IdleFreezeDelaySeconds,
+    bool IsSleepFastForwardOn,
+    bool IsPauseOnWakeOn,
+    bool IsExpeditionOn,
+    BadgeSettings Badges);
 
 /// <summary>
-/// Ten times a second: pauses the game while the player idles at home or in the countdown to the disaster and resumes
-/// it on their next order, fast-forwards sleep and pauses on waking, keeps the chosen slow or fast speed held,
-/// remembers the speed to resume to, sets the day clock's pace and keeps the page's drawn clock in step.
+/// Ten times a second: pauses the game while the player idles at home, in the countdown to the disaster or on an
+/// expedition and resumes it on their next order, fast-forwards sleep and pauses on waking, keeps the chosen slow or
+/// fast speed held, remembers the speed to resume to, sets the day clock's pace, shows the pause badge and keeps the
+/// page's drawn clock in step.
 /// </summary>
 public sealed class ClockTicker : MonoBehaviour
 {
@@ -21,7 +29,7 @@ public sealed class ClockTicker : MonoBehaviour
     private const float SpeedTolerance = 0.001f;
     private const int MaxLoggedFailures = 3;
 
-    internal static ClockSettings Settings = new(1f, false, IdlePause.DefaultDelaySeconds, false, false);
+    internal static ClockSettings Settings = new(1f, false, IdlePause.DefaultDelaySeconds, false, false, false, new BadgeSettings(false, false));
     internal static Action<string> Log = _ => { };
     internal static Action<string> LogFileOnly = _ => { };
     internal static PageClockLink? Page;
@@ -72,6 +80,7 @@ public sealed class ClockTicker : MonoBehaviour
             _idle = IdlePause.Start;
             _sleep = SleepWatch.Start;
             _timeSeen = IntPtr.Zero;
+            HideBadge();
 
             return;
         }
@@ -81,12 +90,13 @@ public sealed class ClockTicker : MonoBehaviour
         if (!time.IsGameStart)
         {
             SpeedPatches.ClockFactor = 1f;
+            HideBadge();
 
             return;
         }
 
         var isPaused = time.IsPausedScale();
-        var timer = GameClock.Timer(time);
+        var timer = GameTimers.Controlled(GameClock.Timer(time), Settings.IsExpeditionOn);
 
         if (!isPaused) SpeedPatches.LastRunningLevel = time.GetSpeedLevel();
 
@@ -107,7 +117,7 @@ public sealed class ClockTicker : MonoBehaviour
         _timeSeen = time.Pointer;
         _idle = IdlePause.Start;
         _sleep = SleepWatch.Start;
-        SpeedPatches.ForgetGears();
+        SpeedPatches.ForgetWorld();
     }
 
     /// <summary>
@@ -254,13 +264,24 @@ public sealed class ClockTicker : MonoBehaviour
         GameClock.HoldSpeed(time, held);
     }
 
+    /// <summary>
+    /// The badge follows every check, so it leaves the moment time runs; the drawn clock, and putting a shown badge
+    /// back after the page reloads, go at the slower page pace.
+    /// </summary>
     private void SyncPage(GameTimeManager time, float now)
     {
-        if (now < _nextPageAt) return;
+        var isRefreshDue = now >= _nextPageAt;
+        var badge = PauseBadge.Text(Settings.Badges, time.IsPausedScale(), _idle is IdlePause.Frozen, SpeedPatches.IsPausedByKey);
+
+        Page?.SyncBadge(badge, isRefreshDue);
+
+        if (!isRefreshDue) return;
 
         _nextPageAt = now + PageSeconds;
         Page?.Sync(SpeedPatches.ClockFactor, time.BattleTimeScale, SpeedPatches.HeldSlowSpeed(time) is { } held ? SlowGear.Label(held) : "");
     }
+
+    private static void HideBadge() => Page?.SyncBadge("", isRefreshDue: false);
 
     /// <summary>
     /// One speed change reaching several time managers means worlds the game replaced are still answering its events,

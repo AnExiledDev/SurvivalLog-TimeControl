@@ -220,10 +220,17 @@ public class IdlePauseTests
     }
 
     [Fact]
-    public void Idle_freeze_leaves_exploration_trips_and_fast_forwards_at_the_games_pace()
+    public void Idle_freeze_pauses_an_expedition_so_the_exposure_meter_stops_while_the_player_idles()
+    {
+        Assert.True(IdlePause.CanFreeze(isIdleFreezeOn: true, GameTimer.Expedition, isFastForwarding: false));
+    }
+
+    [Fact]
+    public void Idle_freeze_leaves_other_timers_and_fast_forwards_at_the_games_pace()
     {
         Assert.False(IdlePause.CanFreeze(isIdleFreezeOn: true, GameTimer.Other, isFastForwarding: false));
         Assert.False(IdlePause.CanFreeze(isIdleFreezeOn: true, GameTimer.PrologueCountdown, isFastForwarding: true));
+        Assert.False(IdlePause.CanFreeze(isIdleFreezeOn: true, GameTimer.Expedition, isFastForwarding: true));
     }
 
     [Fact]
@@ -231,6 +238,7 @@ public class IdlePauseTests
     {
         Assert.False(IdlePause.CanFreeze(isIdleFreezeOn: false, GameTimer.DayClock, isFastForwarding: false));
         Assert.False(IdlePause.CanFreeze(isIdleFreezeOn: false, GameTimer.PrologueCountdown, isFastForwarding: false));
+        Assert.False(IdlePause.CanFreeze(isIdleFreezeOn: false, GameTimer.Expedition, isFastForwarding: false));
     }
 }
 
@@ -239,25 +247,46 @@ public class GameTimerTests
     [Fact]
     public void The_count_up_clock_is_the_day_clock_at_home()
     {
-        Assert.Equal(GameTimer.DayClock, GameTimers.Classify(isCountingUp: true, isCountingDown: false, isBeforeDisaster: false));
+        Assert.Equal(GameTimer.DayClock, GameTimers.Classify(isCountingUp: true, isCountingDown: false, isFrozen: false, isBeforeDisaster: false));
     }
 
     [Fact]
     public void A_countdown_before_the_disaster_is_the_prologue()
     {
-        Assert.Equal(GameTimer.PrologueCountdown, GameTimers.Classify(isCountingUp: false, isCountingDown: true, isBeforeDisaster: true));
+        Assert.Equal(GameTimer.PrologueCountdown, GameTimers.Classify(isCountingUp: false, isCountingDown: true, isFrozen: false, isBeforeDisaster: true));
     }
 
     [Fact]
-    public void A_countdown_after_the_disaster_is_an_exploration_trip_the_mod_leaves_alone()
+    public void A_countdown_after_the_disaster_is_left_at_the_games_pace()
     {
-        Assert.Equal(GameTimer.Other, GameTimers.Classify(isCountingUp: false, isCountingDown: true, isBeforeDisaster: false));
+        Assert.Equal(GameTimer.Other, GameTimers.Classify(isCountingUp: false, isCountingDown: true, isFrozen: false, isBeforeDisaster: false));
     }
 
     [Fact]
     public void Before_any_timer_starts_there_is_nothing_to_control()
     {
-        Assert.Equal(GameTimer.Other, GameTimers.Classify(isCountingUp: false, isCountingDown: false, isBeforeDisaster: true));
+        Assert.Equal(GameTimer.Other, GameTimers.Classify(isCountingUp: false, isCountingDown: false, isFrozen: false, isBeforeDisaster: true));
+    }
+
+    [Fact]
+    public void A_frozen_day_clock_is_an_expedition_whenever_it_runs()
+    {
+        Assert.Equal(GameTimer.Expedition, GameTimers.Classify(isCountingUp: false, isCountingDown: false, isFrozen: true, isBeforeDisaster: false));
+        Assert.Equal(GameTimer.Expedition, GameTimers.Classify(isCountingUp: false, isCountingDown: false, isFrozen: true, isBeforeDisaster: true));
+    }
+
+    [Fact]
+    public void Time_control_switched_off_on_expeditions_leaves_them_at_the_games_pace()
+    {
+        Assert.Equal(GameTimer.Other, GameTimers.Controlled(GameTimer.Expedition, isExpeditionControlOn: false));
+        Assert.Equal(GameTimer.Expedition, GameTimers.Controlled(GameTimer.Expedition, isExpeditionControlOn: true));
+    }
+
+    [Fact]
+    public void The_expedition_switch_never_touches_home_or_the_countdown()
+    {
+        Assert.Equal(GameTimer.DayClock, GameTimers.Controlled(GameTimer.DayClock, isExpeditionControlOn: false));
+        Assert.Equal(GameTimer.PrologueCountdown, GameTimers.Controlled(GameTimer.PrologueCountdown, isExpeditionControlOn: false));
     }
 }
 
@@ -289,6 +318,34 @@ public class SpeedKeysTests
         Assert.False(SpeedKeys.AreGameKeysOurs(isAfterDisaster: true, GameTimer.DayClock));
         Assert.False(SpeedKeys.AreGameKeysOurs(isAfterDisaster: true, GameTimer.Other));
         Assert.False(SpeedKeys.AreGameKeysOurs(isAfterDisaster: false, GameTimer.Other));
+    }
+
+    [Fact]
+    public void The_pause_key_works_on_an_expedition()
+    {
+        Assert.True(SpeedKeys.IsPauseKeyLive(isAfterDisaster: false, GameTimer.Expedition));
+    }
+
+    [Fact]
+    public void The_mod_answers_the_games_speed_keys_on_an_expedition_where_the_game_ignores_them()
+    {
+        Assert.True(SpeedKeys.AreGameKeysOurs(isAfterDisaster: true, GameTimer.Expedition));
+        Assert.True(SpeedKeys.AreGameKeysOurs(isAfterDisaster: false, GameTimer.Expedition));
+    }
+
+    [Fact]
+    public void Keys_count_in_the_exploration_mode_only_on_an_expedition()
+    {
+        Assert.True(SpeedKeys.IsModeForKeys(isNormalMode: false, GameTimer.Expedition));
+        Assert.False(SpeedKeys.IsModeForKeys(isNormalMode: false, GameTimer.DayClock));
+        Assert.False(SpeedKeys.IsModeForKeys(isNormalMode: false, GameTimer.Other));
+    }
+
+    [Fact]
+    public void Keys_count_in_the_normal_mode_wherever_the_player_is()
+    {
+        Assert.True(SpeedKeys.IsModeForKeys(isNormalMode: true, GameTimer.DayClock));
+        Assert.True(SpeedKeys.IsModeForKeys(isNormalMode: true, GameTimer.PrologueCountdown));
     }
 }
 
@@ -511,6 +568,112 @@ public class PageClockTests
 
         Assert.DoesNotContain("alert", script);
         Assert.Contains("n=b+' 0.5x1'", script);
+    }
+}
+
+public class PauseBadgeTests
+{
+    private static readonly BadgeSettings BothOn = new(IsIdleBadgeOn: true, IsPauseKeyBadgeOn: true);
+
+    [Fact]
+    public void The_idle_pause_says_it_holds_the_game()
+    {
+        Assert.Equal("Paused: idle", PauseBadge.Text(BothOn, isPaused: true, isIdleHolding: true, isPauseKeyHolding: false));
+    }
+
+    [Fact]
+    public void The_pause_key_says_it_holds_the_game()
+    {
+        Assert.Equal("Paused", PauseBadge.Text(BothOn, isPaused: true, isIdleHolding: false, isPauseKeyHolding: true));
+    }
+
+    [Fact]
+    public void The_badge_goes_the_moment_time_runs()
+    {
+        Assert.Equal("", PauseBadge.Text(BothOn, isPaused: false, isIdleHolding: true, isPauseKeyHolding: false));
+        Assert.Equal("", PauseBadge.Text(BothOn, isPaused: false, isIdleHolding: false, isPauseKeyHolding: true));
+    }
+
+    [Fact]
+    public void A_pause_the_game_or_its_own_buttons_made_gets_no_badge()
+    {
+        Assert.Equal("", PauseBadge.Text(BothOn, isPaused: true, isIdleHolding: false, isPauseKeyHolding: false));
+    }
+
+    [Fact]
+    public void The_idle_badge_switched_off_shows_nothing_for_the_idle_pause()
+    {
+        var pauseKeyOnly = new BadgeSettings(IsIdleBadgeOn: false, IsPauseKeyBadgeOn: true);
+
+        Assert.Equal("", PauseBadge.Text(pauseKeyOnly, isPaused: true, isIdleHolding: true, isPauseKeyHolding: false));
+        Assert.Equal("Paused", PauseBadge.Text(pauseKeyOnly, isPaused: true, isIdleHolding: false, isPauseKeyHolding: true));
+    }
+
+    [Fact]
+    public void The_pause_key_badge_switched_off_shows_nothing_for_the_pause_key()
+    {
+        var idleOnly = new BadgeSettings(IsIdleBadgeOn: true, IsPauseKeyBadgeOn: false);
+
+        Assert.Equal("", PauseBadge.Text(idleOnly, isPaused: true, isIdleHolding: false, isPauseKeyHolding: true));
+        Assert.Equal("Paused: idle", PauseBadge.Text(idleOnly, isPaused: true, isIdleHolding: true, isPauseKeyHolding: false));
+    }
+
+    [Fact]
+    public void A_change_goes_out_at_once_without_waiting_for_the_refresh()
+    {
+        Assert.True(PauseBadge.ShouldSend("", lastSent: "Paused: idle", isLastSentConfirmed: true, isRefreshDue: false));
+        Assert.True(PauseBadge.ShouldSend("Paused: idle", lastSent: "", isLastSentConfirmed: true, isRefreshDue: false));
+    }
+
+    [Fact]
+    public void A_shown_badge_is_put_back_on_each_refresh_in_case_the_page_reloaded()
+    {
+        Assert.True(PauseBadge.ShouldSend("Paused", lastSent: "Paused", isLastSentConfirmed: true, isRefreshDue: true));
+        Assert.False(PauseBadge.ShouldSend("Paused", lastSent: "Paused", isLastSentConfirmed: true, isRefreshDue: false));
+    }
+
+    [Fact]
+    public void A_hidden_badge_sends_nothing_once_the_page_confirmed_its_removal()
+    {
+        Assert.False(PauseBadge.ShouldSend("", lastSent: "", isLastSentConfirmed: true, isRefreshDue: true));
+    }
+
+    [Fact]
+    public void A_removal_the_page_never_confirmed_is_sent_again_on_the_next_refresh()
+    {
+        Assert.True(PauseBadge.ShouldSend("", lastSent: "", isLastSentConfirmed: false, isRefreshDue: true));
+        Assert.False(PauseBadge.ShouldSend("", lastSent: "", isLastSentConfirmed: false, isRefreshDue: false));
+    }
+
+    [Fact]
+    public void The_badge_script_names_the_games_own_chip_style_and_speed_buttons()
+    {
+        var script = PauseBadge.Script("Paused: idle");
+
+        Assert.Contains("className='idle-slow-chip'", script);
+        Assert.Contains("querySelector('.speed-controls')", script);
+        Assert.Contains("t='Paused: idle';", script);
+    }
+
+    [Fact]
+    public void An_empty_badge_script_carries_the_removal_branch()
+    {
+        Assert.Contains("t='';if(!t.length){if(b&&b.parentNode)b.parentNode.removeChild(b);return 'ok';}", PauseBadge.Script(""));
+    }
+
+    [Fact]
+    public void Badge_text_cannot_break_out_of_the_script_string()
+    {
+        Assert.Contains(@"t='x\');window.close();//';", PauseBadge.Script("x');window.close();//"));
+    }
+
+    [Fact]
+    public void Quoting_escapes_quotes_backslashes_and_anything_outside_printable_ascii()
+    {
+        Assert.Equal(@"'it\'s'", PauseBadge.Quote("it's"));
+        Assert.Equal(@"'a\\b'", PauseBadge.Quote(@"a\b"));
+        Assert.Equal(@"'a\u000ab'", PauseBadge.Quote("a\nb"));
+        Assert.Equal(@"'\u00e9'", PauseBadge.Quote(((char)0xe9).ToString()));
     }
 }
 

@@ -17,7 +17,8 @@ internal sealed record SpeedSettings(
     IReadOnlyList<float> FastMultiples,
     KeyCode PauseKey,
     KeyCode CenterCameraKey,
-    bool IsSleepFastForwardOn);
+    bool IsSleepFastForwardOn,
+    bool IsExpeditionOn);
 
 /// <summary>
 /// The Harmony hooks into the game's time manager, hotkeys and hover testing. Static because a patch has nowhere else
@@ -63,6 +64,8 @@ internal static class SpeedPatches
     private static string? _lastLoggedFast;
     private static ChangeSource _changeSource = ChangeSource.Game;
     private static bool _wasChangedByHand;
+    private static bool _isPausedByKey;
+    private static bool _isExpeditionOn;
     private static bool _areKeysSetUp;
     private static bool _hasLoggedPauseKeyIgnored;
     private static bool _hasLoggedPauseKeyTaken;
@@ -79,6 +82,12 @@ internal static class SpeedPatches
 
     public static bool OwnsFastGear => _fastMultiples.Count > 0;
 
+    /// <summary>
+    /// Whether the live world's last speed change was the player pausing through this mod's pause key, so the pause
+    /// badge can say who holds the game. Any later change, by anyone, clears it.
+    /// </summary>
+    public static bool IsPausedByKey => _isPausedByKey;
+
     /// <summary>The fast gear sleep runs at: the one with the largest multiple, or the game's own high speed when there are none.</summary>
     public static int FastestGear => FastGear.FastestGear(_fastMultiples);
 
@@ -88,6 +97,7 @@ internal static class SpeedPatches
         _fastMultiples = settings.FastMultiples;
         _pauseKey = settings.PauseKey;
         _centerCameraKey = settings.CenterCameraKey;
+        _isExpeditionOn = settings.IsExpeditionOn;
         _log = log;
 
         Patch(harmony, typeof(GameTimeManager), nameof(GameTimeManager.Update), prefix: nameof(ScaleDayClock),
@@ -121,12 +131,17 @@ internal static class SpeedPatches
 
         FindListeningActionField();
         Patch(harmony, typeof(HotKeyManager), nameof(HotKeyManager.Update), prefix: nameof(HandleSpeedKeys), isLast: true,
-            done: KeysHooked(settings.PauseKey), consequence: "the pause key and the game's speed keys before the disaster will not work");
+            done: KeysHooked(settings.PauseKey), consequence: "the pause key and the game's speed keys before the disaster and on expeditions will not work");
     }
 
-    private static string KeysHooked(KeyCode pauseKey) => pauseKey == KeyCode.None
-        ? "the game's speed keys work in the countdown to the disaster"
-        : $"{pauseKey} toggles pause, and the game's speed keys work in the countdown to the disaster";
+    private static string KeysHooked(KeyCode pauseKey)
+    {
+        var where = _isExpeditionOn ? "in the countdown to the disaster and on expeditions" : "in the countdown to the disaster";
+
+        return pauseKey == KeyCode.None
+            ? $"the game's speed keys work {where}"
+            : $"{pauseKey} toggles pause, and the game's speed keys work {where}";
+    }
 
     /// <summary>The slow speed being held, or null when the slow button is not in use or not ours.</summary>
     public static float? HeldSlowSpeed(GameTimeManager time)
@@ -158,8 +173,12 @@ internal static class SpeedPatches
         _fastGear = FastGear.Valid(speed.Gear, _fastMultiples.Count);
     }
 
-    /// <summary>A new world starts at the game's own speeds.</summary>
-    public static void ForgetGears() => _fastGear = FastGear.GamesOwn;
+    /// <summary>A new world starts at the game's own speeds, and unpaused by the pause key.</summary>
+    public static void ForgetWorld()
+    {
+        _fastGear = FastGear.GamesOwn;
+        _isPausedByKey = false;
+    }
 
     /// <summary>Whether the player or the game's own speed buttons changed the live world's speed since the last call.</summary>
     public static bool TakeSpeedChangedByHand()
@@ -284,9 +303,10 @@ internal static class SpeedPatches
     /// <summary>
     /// Every speed change from the game is counted per frame, to catch leftover worlds answering its events. Only
     /// the live world's change counts for the slow and fast buttons, and a press while paused resumes rather than
-    /// cycles, so only a running slow or fast speed counts as already slow or fast.
+    /// cycles, so only a running slow or fast speed counts as already slow or fast. Only plain fields are written here:
+    /// this runs inside the game's speed change.
     /// </summary>
-    private static void BeforeSpeedChange(GameTimeManager __instance)
+    private static void BeforeSpeedChange(GameTimeManager __instance, int speed)
     {
         try
         {
@@ -295,6 +315,8 @@ internal static class SpeedPatches
             if (!GameClock.IsLive(__instance)) return;
 
             if (_changeSource != ChangeSource.Mod) _wasChangedByHand = true;
+
+            _isPausedByKey = speed == PauseToggle.Paused && _changeSource == ChangeSource.Player;
 
             var isPaused = __instance.IsPausedScale();
 
@@ -396,9 +418,9 @@ internal static class SpeedPatches
     }
 
     /// <summary>
-    /// Runs before the game's own key handling. The game ignores its speed keys before the disaster, so in the countdown
-    /// to the disaster this answers them, along with the pause key wherever it works. A pause key press is never also
-    /// read as one of the game's speed keys, unless the game itself uses that key.
+    /// Runs before the game's own key handling. The game ignores its speed keys before the disaster and on expeditions,
+    /// so there this answers them, along with the pause key wherever it works. A pause key press is never also read as
+    /// one of the game's speed keys, unless the game itself uses that key.
     /// </summary>
     private static void HandleSpeedKeys(HotKeyManager __instance, bool __runOriginal)
     {
@@ -411,11 +433,11 @@ internal static class SpeedPatches
             if (GameClock.Find() is not { IsGameStart: true } time) return;
 
             var isAfterDisaster = __instance._worldStateType == WorldStateType.PostDisaster;
-            var timer = GameClock.Timer(time);
+            var timer = GameTimers.Controlled(GameClock.Timer(time), _isExpeditionOn);
 
             if (IsPauseKeyDown() && TogglePause(__instance, time, isAfterDisaster, timer)) return;
 
-            if (AreKeysForTheGame(__instance) && SpeedKeys.AreGameKeysOurs(isAfterDisaster, timer)) AnswerGameSpeedKeys(time);
+            if (AreKeysForTheGame(__instance, timer) && SpeedKeys.AreGameKeysOurs(isAfterDisaster, timer)) AnswerGameSpeedKeys(time);
         }
         catch (Exception ex)
         {
@@ -428,7 +450,7 @@ internal static class SpeedPatches
     /// <returns>Whether the press was taken as a pause key press.</returns>
     private static bool TogglePause(HotKeyManager keys, GameTimeManager time, bool isAfterDisaster, GameTimer timer)
     {
-        if (!AreKeysForTheGame(keys) || !SpeedKeys.IsPauseKeyLive(isAfterDisaster, timer))
+        if (!AreKeysForTheGame(keys, timer) || !SpeedKeys.IsPauseKeyLive(isAfterDisaster, timer))
         {
             LogOnce(ref _hasLoggedPauseKeyIgnored,
                 $"{_pauseKey} pressed where it does not pause (mode {keys._gameMode}, world {keys._worldStateType}, timer {timer}, " +
@@ -526,10 +548,11 @@ internal static class SpeedPatches
 
     /// <summary>
     /// The conditions the game checks before its own speed keys apart from where the player is (normal mode, no menu
-    /// holding time, input on), plus no text box being typed in and no key being rebound.
+    /// holding time, input on), plus no text box being typed in and no key being rebound. An expedition runs in the
+    /// game's exploration mode, which the mod accepts too.
     /// </summary>
-    private static bool AreKeysForTheGame(HotKeyManager keys) =>
-        keys._gameMode == GameMode.Default &&
+    private static bool AreKeysForTheGame(HotKeyManager keys, GameTimer timer) =>
+        SpeedKeys.IsModeForKeys(keys._gameMode == GameMode.Default, timer) &&
         !keys._isTimePaused &&
         !keys._isInputDisabled &&
         !IsRebindingAKey(keys) &&
