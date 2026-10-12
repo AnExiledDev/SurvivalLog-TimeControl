@@ -77,6 +77,7 @@ Game time is finicky. Events, sleep, zombie waves and expedition timers all run 
 - A click on those speed buttons can take up to a tenth of a second to change the speed.
 - The badge's new place beside the speed buttons and the see-through paused banner are new in 0.6.1 and have not been played through in the game yet. If either covers something, set `PauseOverlayOpacity` to `1` or turn the badge off, and report it.
 - When a pause starts, the paused banner can show at full strength for up to half a second before it turns see-through.
+- Lifting any pause when you finish an expedition, and ignoring pauses until the trip home is over, are new in 0.6.1 and have not been played through in the game yet. If the trip home still freezes or the game will not pause once you are back, set `TimeControlOnExpeditions` to `false` and report it.
 - In the countdown before the disaster, the speed buttons' tooltips are in English, because that screen has no text for them in your language. They hide while the planning view is open, along with the game's buttons in the bottom left corner.
 - An alert that starts while your character sleeps does not pause the game. `PauseOnWake` pauses it when they wake.
 - A line in the log reading `speed change reached N time managers in one frame (expected 1)` means leftover game worlds are answering the game's events, so one trade or one order can happen several times. Restart the game if you see it. `speed change reached 1 time manager, as it should` after your first use of the speed buttons is the healthy reading.

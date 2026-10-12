@@ -117,7 +117,7 @@ public sealed class ClockTicker : MonoBehaviour
         KeepGearSpeedHeld(time, isPaused, now);
 
         var wasChangedByHand = SpeedPatches.TakeSpeedChangedByHand();
-        var isAsleep = UpdateSleep(time, isPaused, wasChangedByHand);
+        var isAsleep = UpdateSleep(time, isPaused, wasChangedByHand, isLeavingExpedition);
 
         UpdateAlertPause(time, timer, isAsleep, isLeavingExpedition, elapsed, wasChangedByHand);
         UpdateIdlePause(time, time.IsPausedScale(), timer, elapsed, isAsleep, isLeavingExpedition);
@@ -158,12 +158,13 @@ public sealed class ClockTicker : MonoBehaviour
     /// Whether the player is busy only matters once the character is asleep or the game is paused on waking.
     /// </summary>
     /// <returns>Whether the character is asleep, which idle freeze leaves alone.</returns>
-    private bool UpdateSleep(GameTimeManager time, bool isPaused, bool wasChangedByHand)
+    private bool UpdateSleep(GameTimeManager time, bool isPaused, bool wasChangedByHand, bool isLeavingExpedition)
     {
         var isAsleep = GameClock.IsLeadingRoleAsleep();
         var settings = new SleepSettings(Settings.IsSleepFastForwardOn, Settings.IsPauseOnWakeOn, SpeedPatches.FastestGear);
         var isBusy = _sleep is not SleepWatch.Awake && time.IsLeadingRoleBusy();
-        var seen = new SleepSnapshot(isAsleep, IsFastForwarding(time), isBusy, isPaused, SpeedPatches.CurrentSpeed(time, isPaused), wasChangedByHand);
+        var running = SpeedPatches.CurrentSpeed(time, isPaused);
+        var seen = new SleepSnapshot(isAsleep, IsFastForwarding(time), isBusy, isPaused, running, wasChangedByHand, isLeavingExpedition);
         var before = _sleep;
         var step = SleepWatch.Next(before, seen, settings);
 
@@ -300,11 +301,12 @@ public sealed class ClockTicker : MonoBehaviour
     /// <summary>
     /// Runs after idle freeze, which lets go of its own pause with its own log line, so the pause met here is one made
     /// through the pause key, a speed button or an alert. Like idle freeze's, the resume is kept after it is made, so
-    /// one that fails is tried again.
+    /// one that fails is tried again. The pauses refused during the finish are taken on every check, so none is told
+    /// of in a later finish.
     /// </summary>
     private void UpdateExpeditionFinish(GameTimeManager time, bool isLeavingExpedition)
     {
-        var seen = new FinishSnapshot(isLeavingExpedition, time.IsPausedScale(), SpeedPatches.LastRunningLevel);
+        var seen = new FinishSnapshot(isLeavingExpedition, time.IsPausedScale(), SpeedPatches.LastRunningLevel, SpeedPatches.TakePauseRefused());
         var step = ExpeditionFinish.Next(_finish, seen);
 
         if (step.ResumeAt is { } level)
@@ -312,6 +314,8 @@ public sealed class ClockTicker : MonoBehaviour
             SpeedPatches.ChangeSpeed(time, level);
             LogFileOnly($"expedition: being finished while paused, resumed at speed level {level} so the trip home can run");
         }
+
+        if (step.TellsOfRefusal) LogFileOnly("expedition: pause ignored until the trip home finishes");
 
         _finish = step.State;
     }

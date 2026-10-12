@@ -21,7 +21,15 @@ public readonly record struct GameSpeed(int Level, int Gear)
 /// <param name="IsPaused">The game is paused, by anyone.</param>
 /// <param name="Running">The speed the game runs at, or last ran at when paused.</param>
 /// <param name="WasSpeedChangedByHand">The player, or the game's own speed buttons, changed the speed since the last check.</param>
-public readonly record struct SleepSnapshot(bool IsAsleep, bool IsGameFastForwarding, bool IsBusy, bool IsPaused, GameSpeed Running, bool WasSpeedChangedByHand);
+/// <param name="IsLeavingExpedition">The expedition is being finished: the game's trip home waits on game time, so a pause would hold it forever.</param>
+public readonly record struct SleepSnapshot(
+    bool IsAsleep,
+    bool IsGameFastForwarding,
+    bool IsBusy,
+    bool IsPaused,
+    GameSpeed Running,
+    bool WasSpeedChangedByHand,
+    bool IsLeavingExpedition);
 
 /// <param name="IsFastForwardOn">Sleep runs at the fastest fast gear, in place of the game's own sleep speed-up.</param>
 /// <param name="IsPauseOnWakeOn">The game pauses when the character wakes.</param>
@@ -108,7 +116,8 @@ public abstract record SleepWatch
 
     /// <summary>
     /// The game's own speed-up, when it runs, ends a moment after the character wakes and puts its speed back as it
-    /// goes, so waking counts only once that is done; pausing earlier would have the game undo the pause.
+    /// goes, so waking counts only once that is done; pausing earlier would have the game undo the pause. Waking while
+    /// an expedition is being finished never pauses, and goes on as it does without the wake pause.
     /// </summary>
     private static SleepStep Sleep(Asleep asleep, SleepSnapshot seen, SleepSettings settings)
     {
@@ -117,7 +126,7 @@ public abstract record SleepWatch
             return asleep.IsHeld && seen.WasSpeedChangedByHand ? Stay(asleep with { IsHeld = false }) : Stay(asleep);
         }
 
-        if (settings.IsPauseOnWakeOn) return new SleepStep(new WakePaused(asleep.Before, seen.IsBusy), new SleepCommand.PauseOnWake(asleep.Before));
+        if (settings.IsPauseOnWakeOn && !seen.IsLeavingExpedition) return new SleepStep(new WakePaused(asleep.Before, seen.IsBusy), new SleepCommand.PauseOnWake(asleep.Before));
 
         return new SleepStep(Start, asleep.IsHeld ? new SleepCommand.Restore(asleep.Before) : SleepCommand.Nothing);
     }
