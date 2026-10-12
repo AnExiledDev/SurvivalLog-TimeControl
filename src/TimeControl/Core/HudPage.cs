@@ -27,12 +27,15 @@ public static class HudPages
     /// </summary>
     internal static string FindFrame(HudPage page) => FindFrame(FileName(page), $"'no {FileName(page)} frame'");
 
-    /// <summary>Finds any web UI page's frame by its file name as <c>w</c>, and returns the given reply when the page is not open.</summary>
+    /// <summary>
+    /// Finds any web UI page's frame by its file name as <c>w</c>, and returns the given reply when the page is not
+    /// open. The name must follow a slash, so a page whose name only ends in it is not taken for it.
+    /// </summary>
     /// <param name="replyWhenClosed">A JavaScript expression the script returns when the page is not open.</param>
     internal static string FindFrame(string fileName, string replyWhenClosed) =>
         "var fs=document.querySelectorAll('iframe'),w=null;" +
         "for(var i=0;i<fs.length;i++){var c=fs[i].contentWindow;if(!c)continue;" +
-        $"try{{if(!/{fileName}\\.html/i.test(String(c.location)))continue;}}catch(e){{continue;}}w=c;break;}}" +
+        $"try{{if(!/\\/{fileName}\\.html/i.test(String(c.location)))continue;}}catch(e){{continue;}}w=c;break;}}" +
         $"if(!w)return {replyWhenClosed};";
 
     /// <summary>

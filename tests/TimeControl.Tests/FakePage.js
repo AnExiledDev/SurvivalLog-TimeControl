@@ -199,14 +199,8 @@ function litOn(page) {
 
 function tooltipFor(page, level) { return buttonFor(page, level).querySelector('.speed-tooltip').textContent; }
 
-// The game's SpeedUp page with its strip showing the pause, the "paused" band across the lower middle of the screen.
-function openSpeedUp() {
-    var page = openFrame('SpeedUp', null);
-
-    page.strip = page.document.body.appendChild(new FakeElement('div', 'speedup-strip is-pause'));
-
-    return page;
-}
+// The game's SpeedUp page, which draws the "paused" band across the lower middle of the screen.
+function openSpeedUp() { return openFrame('SpeedUp', null); }
 
 function badgeOn(page) { return page.document.getElementById('tc-pause-badge'); }
 
