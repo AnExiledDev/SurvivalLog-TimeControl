@@ -13,7 +13,13 @@
     <Compile Include="..\..\src\TimeControl\Core\*.cs" Link="Core\%(Filename)%(Extension)" />
   </ItemGroup>
 
+  <!-- The page scripts run in Jint against a fake of the game's web UI. -->
   <ItemGroup>
+    <EmbeddedResource Include="FakePage.js" LogicalName="TimeControl.Tests.FakePage.js" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Jint" Version="4.17.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
