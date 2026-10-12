@@ -34,6 +34,13 @@ public static class GameTimers
         return isCountingDown && isBeforeDisaster ? GameTimer.PrologueCountdown : GameTimer.Other;
     }
 
+    /// <summary>
+    /// The timers the player waits out by standing around: the day clock at home, the countdown to the disaster and an
+    /// expedition's exposure meter. The mod's own pauses only ever apply under these; any other timer keeps the game's pace.
+    /// </summary>
+    public static bool IsWaitedOut(GameTimer timer) =>
+        timer is GameTimer.DayClock or GameTimer.PrologueCountdown or GameTimer.Expedition;
+
     /// <summary>With Time Control switched off on expeditions, an expedition is left at the game's pace like any other timer.</summary>
     public static GameTimer Controlled(GameTimer timer, bool isExpeditionControlOn) =>
         timer == GameTimer.Expedition && !isExpeditionControlOn ? GameTimer.Other : timer;

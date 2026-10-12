@@ -1,5 +1,5 @@
 Name: Time Control
-Summary: A true slow speed, a super speed, a pause while you stand idle, fast sleep with a pause on waking, and a pause key that works before the disaster and on expeditions.
+Summary: A true slow speed, a super speed, a pause while you stand idle or when a wave or emergency starts, fast sleep with a pause on waking, and a pause key that works before the disaster and on expeditions.
 
 Description (BBCode):
 The game's slow button only slows once you stand idle, and there is no way to pause before the disaster or on an expedition. Time Control gives you a real slow speed, a faster speed, and a pause that waits while your character has nothing to do.
@@ -9,6 +9,7 @@ The game's slow button only slows once you stand idle, and there is no way to pa
 [*][b]True slow speed[/b]: the slow button holds 0.5x, then 0.25x on the next press.[/*]
 [*][b]Super speed[/b]: press the fast button or key 3 again at high speed to run twice as fast.[/*]
 [*][b]Idle pause[/b]: the game pauses after 3 seconds with nothing queued, and your next order resumes it.[/*]
+[*][b]Pause on alerts[/b]: the game pauses once when a zombie wave starts or an emergency fires. A pause when a trade drone comes home or your order queue runs out can be switched on too.[/*]
 [*][b]Fast sleep[/b]: sleep and naps run at super speed, and the game pauses when you wake.[/*]
 [*][b]Slower days[/b]: make the day clock slower without slowing walking or actions.[/*]
 [*][b]Pause key[/b]: Space pauses and resumes, at home, before the disaster and on expeditions.[/*]
@@ -32,6 +33,7 @@ Time Control adds no data of its own to your save and does not edit game files. 
 [*]Back up your save before trying it for the first time.[/*]
 [*]Game time is finicky. Events, sleep, zombie waves and expedition timers all run on it, so anything that happens at an odd time is worth reporting.[/*]
 [*]Expedition support and the pause badge are new in 0.4.0 and have not been played through in the game yet. Each can be turned off in the config.[/*]
+[*]Pause on alerts is new in 0.5.0 and has not been played through in the game yet. Each alert can be turned off in the config.[/*]
 [*]On an expedition the exposure alarm keeps sounding while paused. The meter itself stops.[/*]
 [*]The badge can blink out for up to half a second when the game redraws its speed buttons.[/*]
 [/list]

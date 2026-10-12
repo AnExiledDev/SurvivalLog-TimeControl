@@ -10,13 +10,14 @@ Survival Log's slow button only slows the game once you stand idle, the clock ke
 - **Super speed**: press the fast button (or key `3`) again while at the game's high speed and the game runs at twice that speed. Press it once more to go back to high speed. Pausing and resuming comes back to super speed; keys `1` and `2` and the slow button leave it.
 - **Idle pause**: once your character has stood idle with nothing queued for 3 seconds, the game pauses for real. The clock, zombies, plants, trade countdowns and the drone all stop. Your next order resumes the speed you had. Press play (or the pause key) while it is paused and time keeps running until your next order. A pause you made yourself is never undone by the mod.
 - **Fast sleep, and a pause on waking**: sleep and naps run at super speed in place of the game's own sleep speed-up. When your character wakes, however the sleep ended, the game pauses. Your next order, play or the pause key resumes the speed you had before the sleep. Pick another speed during a sleep and it is kept until you wake.
+- **Pause on alerts**: the game pauses once when a zombie wave starts or an emergency fires, so neither slips past at super speed. Pausing when a trade drone comes home, or when your character finishes the last order in their queue, can be switched on as well. Play or the pause key resumes the speed you had, and the same alert never pauses the game twice, so once you resume, time keeps running.
 - **A slower day**: `ClockRate` slows (or speeds up) only the day clock, so a day lasts longer while walking and actions keep their speed. The clock on screen follows it.
 - **A pause key**: `Space` pauses, and pressing it again resumes the speed you had. It works at home, in the countdown before the disaster and on expeditions. The game had `Space` on centering the camera on your character, so that moves to `G`.
 - **Pausing before the disaster**: the game ignores its own speed keys in the countdown before the disaster. The mod answers them there, so you can pause, slow down and speed up while you prepare. The idle pause works there too.
 - **Time control on expeditions**: the game also ignores its speed keys on an expedition. With this mod the pause key, the game's speed keys, the slow and super speeds and the idle pause all work there. The day clock stands still while you are away and the exposure meter fills on game time, so pausing stops the meter and super speed fills it faster.
 - **A pause badge**: while the idle pause holds the game, a small "Paused: idle" chip sits just above the speed buttons, in the game's own chip style. While a pause you made with the pause key holds it (or with the game's own pause key, before the disaster and on expeditions), the chip says "Paused". The game's own pause at home after the disaster gets no chip; the game lights its pause button there. It goes away the moment time runs again. Where the screen shows no speed buttons, the chip sits at the top centre.
 - **Hover highlights while paused**: objects highlight under the mouse while the game is paused or slowed, as they do at normal speed.
-- **A time log**: what the mod did (idle pauses, speed changes, sleep and wake) is written to `BepInEx\time-control.log`.
+- **A time log**: what the mod did (idle pauses, alert pauses, speed changes, sleep and wake) is written to `BepInEx\time-control.log`.
 
 Time Control adds no data of its own to your save and does not edit game files. It does change how fast game time runs, and that time is saved with your game: a day played slower or paused is still a normal day to the save. You can remove the mod at any time; the game goes back to its own speeds and keys at the next start. If centering the camera is still on `G` after you remove it, set it back in the game's key settings.
 
@@ -38,9 +39,19 @@ A key you set in the game's own key settings always wins. If the game uses your 
 **The pause badge** shows only for pauses the mod knows the reason for:
 
 - The idle pause shows "Paused: idle".
+- A pause on an alert names the alert: "Paused: wave", "Paused: emergency", "Paused: drone back" or "Paused: queue empty".
 - A pause made with `PauseToggleKey` anywhere shows "Paused".
 - A pause made with the game's own pause key shows "Paused" in the countdown before the disaster and on expeditions, where the mod answers that key.
 - The game's own pause button gets no badge, and neither does the game's pause key at home after the disaster, where the game answers it itself and lights its own pause button.
+
+**Alerts** each pause the game once, at the moment they start:
+
+- A zombie wave pauses when it starts, not again while it lasts. The next wave pauses again.
+- An emergency pauses when it fires. One that is already running does not pause again when the game shows it again.
+- A trade drone pauses when its trip ends and it is back home, whether or not its cargo could be unloaded.
+- The order queue pauses when your character finishes their last order, the same test as the idle pause, but at once and without resuming on your next order. Cancelling your last order counts too.
+
+Alerts pause only where the idle pause can: at home, in the countdown before the disaster and on expeditions, and not while your character sleeps or the game fast-forwards. An alert that starts while the game is already paused, or where alerts do not pause, is let go and does not pause the game later. Loading a save in the middle of a wave does not pause it. If two alerts start together, the game pauses once and the badge names the most pressing one: a wave, then an emergency, then a drone, then the queue.
 
 **Expeditions**: the day clock stands still while you are away and the exposure meter does the counting. The mod controls the expedition's game time, so the meter stops while paused and fills faster at super speed. `ClockRate` only changes the day clock at home, so it does nothing on an expedition. Set `TimeControlOnExpeditions` to `false` to leave expeditions at the game's own pace.
 
@@ -58,6 +69,8 @@ Game time is finicky. Events, sleep, zombie waves and expedition timers all run 
 - An order you queued before waking does not resume the game after the wake pause. Give a new order, press play or press the pause key.
 - Pressing the game's own pause button while the idle pause holds the game does not make the pause yours: your next order still resumes. Press play first, then pause, to keep it paused.
 - The idle pause works at home, in the countdown before the disaster and on expeditions. Any other timer keeps the game's pace.
+- Pause on alerts is new in 0.5.0 and has not been played through in the game yet. If an alert pauses at the wrong moment, twice or not at all, set its `PauseOn` setting to `false` and report it.
+- An alert that starts while your character sleeps does not pause the game. `PauseOnWake` pauses it when they wake.
 - A line in the log reading `speed change reached N time managers in one frame (expected 1)` means leftover game worlds are answering the game's events, so one trade or one order can happen several times. Restart the game if you see it. `speed change reached 1 time manager, as it should` after your first use of the speed buttons is the healthy reading.
 
 ## Requirements
@@ -83,9 +96,9 @@ Settings live in `BepInEx\config\com.dev.survivallog.timecontrol.cfg`, created t
 
 Tested on Survival Log 1.1.18317 with BepInEx `6.0.0-be.788`.
 
-Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.4.0 started`. It lists the clock rate and which features are on. The next lines say which game hooks are in place and what the game's own pause key is; a line starting `could not hook` names a feature that will not work.
+Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.5.0 started`. It lists the clock rate and which features are on. The next lines say which game hooks are in place and what the game's own pause key is; a line starting `could not hook` names a feature that will not work.
 
-The same lines, plus every idle pause, sleep and wake, are in `BepInEx\time-control.log`, which survives restarts and trims itself past 1 MB.
+The same lines, plus every idle pause, alert pause, sleep and wake, are in `BepInEx\time-control.log`, which survives restarts and trims itself past 1 MB.
 
 If `Space` does not pause, look in the log for a line saying it is bound to one of the game's own actions, and rebind that action in the game's key settings or pick another `PauseToggleKey`.
 

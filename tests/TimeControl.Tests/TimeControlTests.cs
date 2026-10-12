@@ -573,7 +573,7 @@ public class PageClockTests
 
 public class PauseBadgeTests
 {
-    private static readonly BadgeSettings BothOn = new(IsIdleBadgeOn: true, IsPauseKeyBadgeOn: true);
+    private static readonly BadgeSettings BothOn = new(IsIdleBadgeOn: true, IsPauseKeyBadgeOn: true, IsAlertBadgeOn: true);
 
     [Fact]
     public void The_idle_pause_says_it_holds_the_game()
@@ -603,7 +603,7 @@ public class PauseBadgeTests
     [Fact]
     public void The_idle_badge_switched_off_shows_nothing_for_the_idle_pause()
     {
-        var pauseKeyOnly = new BadgeSettings(IsIdleBadgeOn: false, IsPauseKeyBadgeOn: true);
+        var pauseKeyOnly = new BadgeSettings(IsIdleBadgeOn: false, IsPauseKeyBadgeOn: true, IsAlertBadgeOn: true);
 
         Assert.Equal("", PauseBadge.Text(pauseKeyOnly, isPaused: true, isIdleHolding: true, isPauseKeyHolding: false));
         Assert.Equal("Paused", PauseBadge.Text(pauseKeyOnly, isPaused: true, isIdleHolding: false, isPauseKeyHolding: true));
@@ -612,10 +612,34 @@ public class PauseBadgeTests
     [Fact]
     public void The_pause_key_badge_switched_off_shows_nothing_for_the_pause_key()
     {
-        var idleOnly = new BadgeSettings(IsIdleBadgeOn: true, IsPauseKeyBadgeOn: false);
+        var idleOnly = new BadgeSettings(IsIdleBadgeOn: true, IsPauseKeyBadgeOn: false, IsAlertBadgeOn: true);
 
         Assert.Equal("", PauseBadge.Text(idleOnly, isPaused: true, isIdleHolding: false, isPauseKeyHolding: true));
         Assert.Equal("Paused: idle", PauseBadge.Text(idleOnly, isPaused: true, isIdleHolding: true, isPauseKeyHolding: false));
+    }
+
+    [Fact]
+    public void An_alert_pause_names_the_alert_it_holds_the_game_for()
+    {
+        Assert.Equal("Paused: wave", PauseBadge.Text(BothOn, isPaused: true, isIdleHolding: false, isPauseKeyHolding: false, Alert.Wave));
+        Assert.Equal("Paused: emergency", PauseBadge.Text(BothOn, isPaused: true, isIdleHolding: false, isPauseKeyHolding: false, Alert.Emergency));
+        Assert.Equal("Paused: drone back", PauseBadge.Text(BothOn, isPaused: true, isIdleHolding: false, isPauseKeyHolding: false, Alert.DroneArrival));
+        Assert.Equal("Paused: queue empty", PauseBadge.Text(BothOn, isPaused: true, isIdleHolding: false, isPauseKeyHolding: false, Alert.QueueEmpty));
+    }
+
+    [Fact]
+    public void An_alert_badge_goes_the_moment_time_runs()
+    {
+        Assert.Equal("", PauseBadge.Text(BothOn, isPaused: false, isIdleHolding: false, isPauseKeyHolding: false, Alert.Wave));
+    }
+
+    [Fact]
+    public void The_alert_badge_switched_off_shows_nothing_for_an_alert_pause()
+    {
+        var noAlerts = new BadgeSettings(IsIdleBadgeOn: true, IsPauseKeyBadgeOn: true, IsAlertBadgeOn: false);
+
+        Assert.Equal("", PauseBadge.Text(noAlerts, isPaused: true, isIdleHolding: false, isPauseKeyHolding: false, Alert.Emergency));
+        Assert.Equal("Paused", PauseBadge.Text(noAlerts, isPaused: true, isIdleHolding: false, isPauseKeyHolding: true));
     }
 
     [Fact]
@@ -940,5 +964,160 @@ public class SleepWatchTests
         Assert.Equal(new GameSpeed(PauseToggle.Double, FastGear.GamesOwn), GameSpeed.Of(PauseToggle.Double, 1));
         Assert.Equal(new GameSpeed(PauseToggle.Normal, FastGear.GamesOwn), GameSpeed.Of(PauseToggle.Paused, 1));
         Assert.Equal(new GameSpeed(PauseToggle.Triple, 1), GameSpeed.Of(PauseToggle.Triple, 1));
+    }
+}
+
+public class AlertPauseTests
+{
+    private static readonly AlertSettings Defaults = new(IsWaveOn: true, IsEmergencyOn: true, IsDroneArrivalOn: false, IsQueueEmptyOn: false);
+    private static readonly AlertSettings AllOn = new(IsWaveOn: true, IsEmergencyOn: true, IsDroneArrivalOn: true, IsQueueEmptyOn: true);
+    private static readonly AlertSnapshot Quiet = new(CanPause: true, IsPaused: false, IsWaveActive: false, EmergenciesFired: 0, DronesLanded: 0, IsBusy: false);
+    private static readonly AlertSnapshot WaveUnderWay = Quiet with { IsWaveActive = true };
+    private static readonly AlertSnapshot EmergencyFired = Quiet with { EmergenciesFired = 1 };
+    private static readonly AlertSnapshot DroneLanded = Quiet with { DronesLanded = 1 };
+    private static readonly AlertSnapshot Busy = Quiet with { IsBusy = true };
+
+    private static AlertStep Run(AlertSettings settings, params AlertSnapshot[] checks)
+    {
+        var step = new AlertStep(AlertPause.Start, null);
+
+        foreach (var seen in checks) step = AlertPause.Next(step.State, seen, settings);
+
+        return step;
+    }
+
+    private static AlertSnapshot Paused(AlertSnapshot seen) => seen with { IsPaused = true };
+
+    [Fact]
+    public void A_wave_starting_pauses_the_game_and_holds_it_for_the_wave()
+    {
+        var step = Run(Defaults, Quiet, WaveUnderWay);
+
+        Assert.Equal(Alert.Wave, step.PauseFor);
+        Assert.Equal(new AlertPause.Holding(Alert.Wave, WasWaveActive: true, WasBusy: false), step.State);
+    }
+
+    [Fact]
+    public void A_wave_under_way_when_the_world_loads_does_not_pause()
+    {
+        var step = Run(Defaults, WaveUnderWay, WaveUnderWay);
+
+        Assert.Null(step.PauseFor);
+    }
+
+    [Fact]
+    public void Resuming_during_a_wave_keeps_time_running_for_the_rest_of_it()
+    {
+        var step = Run(Defaults, Quiet, WaveUnderWay, Paused(WaveUnderWay), WaveUnderWay, WaveUnderWay);
+
+        Assert.Null(step.PauseFor);
+        Assert.IsType<AlertPause.Watching>(step.State);
+    }
+
+    [Fact]
+    public void Each_new_wave_pauses_once_more()
+    {
+        var step = Run(Defaults, Quiet, WaveUnderWay, WaveUnderWay, Quiet, WaveUnderWay);
+
+        Assert.Equal(Alert.Wave, step.PauseFor);
+    }
+
+    [Fact]
+    public void An_emergency_firing_pauses_the_game()
+    {
+        var step = Run(Defaults, Quiet, EmergencyFired);
+
+        Assert.Equal(Alert.Emergency, step.PauseFor);
+    }
+
+    [Fact]
+    public void An_emergency_counted_before_the_worlds_first_check_is_not_news()
+    {
+        var step = Run(Defaults, EmergencyFired);
+
+        Assert.Null(step.PauseFor);
+    }
+
+    [Fact]
+    public void A_drone_coming_home_pauses_only_when_switched_on()
+    {
+        Assert.Null(Run(Defaults, Quiet, DroneLanded).PauseFor);
+        Assert.Equal(Alert.DroneArrival, Run(AllOn, Quiet, DroneLanded).PauseFor);
+    }
+
+    [Fact]
+    public void The_order_queue_running_out_pauses_only_when_switched_on()
+    {
+        Assert.Null(Run(Defaults, Quiet, Busy, Quiet).PauseFor);
+        Assert.Equal(Alert.QueueEmpty, Run(AllOn, Quiet, Busy, Quiet).PauseFor);
+    }
+
+    [Fact]
+    public void A_queue_that_stays_empty_pauses_only_when_it_runs_out()
+    {
+        Assert.Null(Run(AllOn, Quiet, Quiet, Quiet).PauseFor);
+        Assert.Null(Run(AllOn, Quiet, Busy, Quiet, Quiet).PauseFor);
+    }
+
+    [Fact]
+    public void A_switched_off_alert_never_pauses()
+    {
+        var waveAndEmergencyOff = Defaults with { IsWaveOn = false, IsEmergencyOn = false };
+
+        Assert.Null(Run(waveAndEmergencyOff, Quiet, WaveUnderWay).PauseFor);
+        Assert.Null(Run(waveAndEmergencyOff, Quiet, EmergencyFired).PauseFor);
+    }
+
+    [Fact]
+    public void An_alert_while_the_game_is_already_paused_is_let_go_not_saved_for_later()
+    {
+        var step = Run(Defaults, Quiet, Paused(EmergencyFired), Quiet);
+
+        Assert.Null(step.PauseFor);
+        Assert.IsType<AlertPause.Watching>(step.State);
+    }
+
+    [Fact]
+    public void A_wave_starting_where_the_mod_does_not_pause_is_let_go()
+    {
+        var asleep = WaveUnderWay with { CanPause = false };
+        var step = Run(Defaults, Quiet, asleep, WaveUnderWay);
+
+        Assert.Null(step.PauseFor);
+    }
+
+    [Fact]
+    public void Alerts_that_start_together_pause_once_for_the_most_pressing()
+    {
+        var step = Run(AllOn, Busy, WaveUnderWay with { EmergenciesFired = 1, DronesLanded = 1 });
+
+        Assert.Equal(Alert.Wave, step.PauseFor);
+    }
+
+    [Fact]
+    public void While_the_game_stays_paused_for_an_alert_it_keeps_naming_that_alert()
+    {
+        var step = Run(Defaults, Quiet, WaveUnderWay, Paused(WaveUnderWay with { EmergenciesFired = 1 }));
+
+        Assert.Null(step.PauseFor);
+        Assert.Equal(Alert.Wave, Assert.IsType<AlertPause.Holding>(step.State).Reason);
+    }
+
+    [Fact]
+    public void A_new_alert_after_the_player_resumes_pauses_again()
+    {
+        var step = Run(Defaults, Quiet, WaveUnderWay, Paused(WaveUnderWay), WaveUnderWay with { EmergenciesFired = 1 });
+
+        Assert.Equal(Alert.Emergency, step.PauseFor);
+    }
+
+    [Fact]
+    public void Alerts_pause_only_under_the_timers_the_player_waits_out_and_never_in_a_fast_forward()
+    {
+        Assert.True(AlertPause.CanPause(GameTimer.DayClock, isFastForwarding: false));
+        Assert.True(AlertPause.CanPause(GameTimer.PrologueCountdown, isFastForwarding: false));
+        Assert.True(AlertPause.CanPause(GameTimer.Expedition, isFastForwarding: false));
+        Assert.False(AlertPause.CanPause(GameTimer.Other, isFastForwarding: false));
+        Assert.False(AlertPause.CanPause(GameTimer.DayClock, isFastForwarding: true));
     }
 }

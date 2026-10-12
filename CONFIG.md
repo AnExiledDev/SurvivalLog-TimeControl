@@ -35,6 +35,17 @@ A comma-separated list, for example `2,4`. Each multiple is kept between 1.1 and
 | `FastForwardSleep` | `true` | Run sleep and naps at the fastest `FastSpeeds` speed (the game's high speed if `FastSpeeds` is empty), in place of the game's own sleep speed-up. A speed you pick during the sleep is kept until you wake. `false` leaves the game's own sleep speed-up as it is. |
 | `PauseOnWake` | `true` | Pause the game when your character wakes from a sleep or nap, however it ends. Your next order, play or the pause key resumes the speed you had before the sleep. |
 
+## Alerts
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `PauseOnWave` | `true` | Pause the game once when a zombie wave starts. |
+| `PauseOnEmergency` | `true` | Pause the game once when an emergency fires. |
+| `PauseOnDroneArrival` | `false` | Pause the game once when a trade drone comes home from a trip. |
+| `PauseOnQueueEmpty` | `false` | Pause the game once when your character finishes the last order in their queue. Unlike `IdleFreeze` it pauses at once and stays paused until you resume it. |
+
+Play or the pause key resumes the speed you had, and the same alert never pauses the game twice. Alerts pause only at home, in the countdown before the disaster and on expeditions, and not while your character sleeps. An alert that starts while the game is already paused is let go rather than saved for later.
+
 ## Keys
 
 | Setting | Default | What it does |
@@ -58,5 +69,6 @@ If the game uses the pause key for one of its own actions, the pause key stands 
 | --- | --- | --- |
 | `IdleBadge` | `true` | Show a small "Paused: idle" badge above the speed buttons while the idle pause holds the game. |
 | `PauseKeyBadge` | `true` | Show a small "Paused" badge above the speed buttons while a pause you made with a key holds the game: the pause key anywhere, or the game's own pause key in the countdown before the disaster and on expeditions. |
+| `AlertBadge` | `true` | Show a small badge naming the alert, such as "Paused: wave", above the speed buttons while a pause on an alert holds the game. |
 
 Each badge goes away the moment time runs again. Where the screen shows no speed buttons, the badge sits at the top centre instead.
