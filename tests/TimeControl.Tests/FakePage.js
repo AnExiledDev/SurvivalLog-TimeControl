@@ -1,4 +1,4 @@
-// Just enough of Survival Log's web UI for Time Control's speed button scripts to run in Jint: the root page holding
+// Just enough of Survival Log's web UI for Time Control's page scripts to run in Jint: the root page holding
 // the HUD pages in iframes, and in each frame a document with elements, the few selectors the scripts use, the
 // page's Vue state and its computed style. Test code only; nothing here ships.
 
@@ -198,3 +198,41 @@ function litOn(page) {
 }
 
 function tooltipFor(page, level) { return buttonFor(page, level).querySelector('.speed-tooltip').textContent; }
+
+// The game's SpeedUp page with its strip showing the pause, the "paused" band across the lower middle of the screen.
+function openSpeedUp() {
+    var page = openFrame('SpeedUp', null);
+
+    page.strip = page.document.body.appendChild(new FakeElement('div', 'speedup-strip is-pause'));
+
+    return page;
+}
+
+function badgeOn(page) { return page.document.getElementById('tc-pause-badge'); }
+
+function overlayStyleOn(page) { return page.document.getElementById('tc-pause-overlay-style'); }
+
+// The value an element's inline style declares for a property, or null when it declares none.
+function inlineStyle(element, property) { return declared(element.style.cssText, property); }
+
+// The value a style element's rule for the selector declares for a property, or null when it declares none.
+function sheetStyle(sheet, selector, property) {
+    var text = sheet.textContent;
+    var start = text.indexOf(selector + '{');
+
+    if (start < 0) return null;
+
+    return declared(text.slice(start + selector.length + 1, text.indexOf('}', start)), property);
+}
+
+function declared(declarations, property) {
+    var found = null;
+
+    declarations.split(';').forEach(function (declaration) {
+        var colon = declaration.indexOf(':');
+
+        if (colon > 0 && declaration.slice(0, colon).trim() === property) found = declaration.slice(colon + 1).trim();
+    });
+
+    return found;
+}
