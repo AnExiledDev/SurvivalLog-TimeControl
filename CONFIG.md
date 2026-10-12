@@ -67,11 +67,12 @@ If the game uses the pause key for one of its own actions, the pause key stands 
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| `IdleBadge` | `true` | Show a small "Paused: idle" badge above the speed buttons while the idle pause holds the game. |
-| `PauseKeyBadge` | `true` | Show a small "Paused" badge above the speed buttons while a pause you made with a key holds the game: the pause key anywhere, or the game's own pause key in the countdown before the disaster and on expeditions. In the countdown the badge needs the mod's speed buttons (see below). |
-| `AlertBadge` | `true` | Show a small badge naming the alert, such as "Paused: wave", above the speed buttons while a pause on an alert holds the game. |
+| `IdleBadge` | `true` | Show a small "Paused: idle" badge to the right of the speed buttons while the idle pause holds the game. |
+| `PauseKeyBadge` | `true` | Show a small "Paused" badge to the right of the speed buttons while a pause you made with a key holds the game: the pause key anywhere, or the game's own pause key in the countdown before the disaster and on expeditions. In the countdown the badge needs the mod's speed buttons (see below). |
+| `AlertBadge` | `true` | Show a small badge naming the alert, such as "Paused: wave", to the right of the speed buttons while a pause on an alert holds the game. |
 | `SpeedButtons` | `true` | Show speed buttons (slow, normal, fast, fastest and pause) in the countdown before the disaster and on expeditions, where the game shows none. They work like the game's own buttons at home, with this mod's slow and super speeds. `false` hides them; the keys still work. |
+| `PauseOverlayOpacity` | `0.5` | How see-through the game's own paused banner across the lower middle of the screen is, from `0` (hidden) to `1` (as the game draws it), so the phone's reply choices under it stay readable. Clicks always go through the banner to what is underneath. |
 
-Each badge goes away the moment time runs again. Where the screen shows no speed buttons, the badge sits at the top centre instead. The one exception is the countdown before the disaster: there a badge only shows above the mod's speed buttons, so with `SpeedButtons` set to `false`, or where the mod adds no buttons, no badge shows in the countdown.
+Each badge goes away the moment time runs again. A badge is see-through and clicks go straight through it. Where the screen shows no speed buttons, the badge sits at the top centre instead. The one exception is the countdown before the disaster: there a badge only shows beside the mod's speed buttons, so with `SpeedButtons` set to `false`, or where the mod adds no buttons, no badge shows in the countdown.
 
 `SpeedButtons` only adds buttons where the mod controls the speed: on expeditions only when `TimeControlOnExpeditions` is `true`. At home after the disaster the game shows its own buttons, and the mod adds none.

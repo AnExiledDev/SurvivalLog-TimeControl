@@ -8,9 +8,10 @@ public readonly record struct BadgeSettings(bool IsIdleBadgeOn, bool IsPauseKeyB
 
 /// <summary>
 /// A small chip on the game's HUD saying why the game stands still, so a stopped drone or a frozen clock never looks
-/// like a bug. It wears the game's own idle-slowdown chip style (which the game ships but never shows) and sits where
-/// that chip would, just above the speed buttons, the game's own or the mod's; where the page has no speed buttons it
-/// sits at the top centre.
+/// like a bug. It wears the game's own idle-slowdown chip style (which the game ships but never shows) and sits just
+/// right of the speed buttons, the game's own or the mod's, rather than above them where it would cover the row of
+/// suggested actions; where the page has no speed buttons it sits at the top centre. It is see-through and never
+/// takes a click, so nothing under it is lost.
 /// </summary>
 public static class PauseBadge
 {
@@ -22,6 +23,14 @@ public static class PauseBadge
 
     /// <summary>The class of the game's own idle-slowdown chip, styled by the page's own stylesheet.</summary>
     private const string NativeChipClass = "idle-slow-chip";
+
+    /// <summary>Half see-through and outside hit-testing wherever the badge sits; never marked interactive, so the click-through map skips it too.</summary>
+    private const string SeeThrough = "opacity:0.75;pointer-events:none;";
+
+    /// <summary>Beside the speed buttons, centred on them; overrides the chip class's place above them.</summary>
+    private const string BesideButtons = "top:50%;bottom:auto;left:calc(100% + 6px);right:auto;transform:translateY(-50%);" + SeeThrough;
+
+    private const string TopCentre = "position:fixed;top:12px;left:50%;right:auto;bottom:auto;transform:translateX(-50%);z-index:9999;" + SeeThrough;
 
     /// <summary>
     /// What the badge says now; empty hides it. Only a pause still holding the game gets one, and the idle pause and
@@ -67,9 +76,9 @@ public static class PauseBadge
         "if(!t.length){if(b&&b.parentNode)b.parentNode.removeChild(b);return 'ok';}" +
         $"if(!b){{b=d.createElement('div');b.id='{ElementId}';b.className='{NativeChipClass}';}}" +
         "var a=d.querySelector('.speed-controls');" +
-        "if(a){if(b.parentNode!==a)a.appendChild(b);b.style.cssText='';}" +
+        $"if(a){{if(b.parentNode!==a)a.appendChild(b);b.style.cssText='{BesideButtons}';}}" +
         "else{if(b.parentNode!==d.body)d.body.appendChild(b);" +
-        "b.style.cssText='position:fixed;top:12px;left:50%;right:auto;bottom:auto;transform:translateX(-50%);z-index:9999;';}" +
+        $"b.style.cssText='{TopCentre}';}}" +
         "if(b.textContent!==t)b.textContent=t;" +
         "return 'ok';}catch(e){return 'error: '+e;}})()";
 

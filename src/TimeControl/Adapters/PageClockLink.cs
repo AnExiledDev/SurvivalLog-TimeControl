@@ -7,8 +7,9 @@ using TimeControl.Core;
 namespace TimeControl.Adapters;
 
 /// <summary>
-/// Sends <see cref="PageClock"/> updates, the <see cref="PauseBadge"/> and the <see cref="SpeedButtons"/> into the web
-/// UI, takes back the clicks on the speed buttons, and logs each distinct problem the page reports for any of them.
+/// Sends <see cref="PageClock"/> updates, the <see cref="PauseBadge"/>, the <see cref="SpeedButtons"/> and the
+/// <see cref="PauseOverlay"/> style into the web UI, takes back the clicks on the speed buttons, and logs each distinct
+/// problem the page reports for any of them.
 /// </summary>
 internal sealed class PageClockLink
 {
@@ -17,10 +18,13 @@ internal sealed class PageClockLink
     private readonly PageReply _clockReply;
     private readonly PageReply _badgeReply;
     private readonly PageReply _buttonsReply;
+    private readonly PageReply _overlayReply;
     private readonly List<int> _speedClicks = new();
     private bool _wasNeutralLastSent = true;
     private string _lastBadgeSent = "";
     private bool _isLastBadgeConfirmed = true;
+    private string _lastOverlaySent = "";
+    private bool _isLastOverlayConfirmed = true;
     private ButtonsOnPage _buttonsOnPage = ButtonsOnPage.Start;
     private SpeedButtonsView? _drawnScriptView;
     private string _drawnScript = "";
@@ -30,6 +34,7 @@ internal sealed class PageClockLink
         _clockReply = new PageReply("page clock", log);
         _badgeReply = new PageReply("pause badge", log);
         _buttonsReply = new PageReply("speed buttons", log);
+        _overlayReply = new PageReply("pause overlay", log);
     }
 
     public void Sync(float clockFactor, float battleScale, string slowLabel)
@@ -62,6 +67,28 @@ internal sealed class PageClockLink
         _badgeReply.Take(reply);
 
         if (reply == Ok && sent == _lastBadgeSent) _isLastBadgeConfirmed = true;
+    }
+
+    /// <param name="css">The style for the game's pause strip; empty takes it off.</param>
+    /// <param name="isRefreshDue">Whether a style on the page, or an unconfirmed removal, is due to be sent again.</param>
+    /// <remarks>Sent on the badge's terms: the strip's page reloads and closes as the badge's does.</remarks>
+    public void SyncPauseOverlay(string css, bool isRefreshDue)
+    {
+        _overlayReply.Report();
+
+        if (!PauseBadge.ShouldSend(css, _lastOverlaySent, _isLastOverlayConfirmed, isRefreshDue)) return;
+
+        if (!Run(() => PauseOverlay.Script(css), reply => ConfirmOverlay(css, reply), _overlayReply)) return;
+
+        _lastOverlaySent = css;
+        _isLastOverlayConfirmed = false;
+    }
+
+    private void ConfirmOverlay(string sent, string? reply)
+    {
+        _overlayReply.Take(reply);
+
+        if (reply == Ok && sent == _lastOverlaySent) _isLastOverlayConfirmed = true;
     }
 
     /// <param name="view">What the speed buttons show; null takes them off the page and drops any clicks not yet taken.</param>

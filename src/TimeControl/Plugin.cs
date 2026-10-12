@@ -46,13 +46,15 @@ public sealed class Plugin : BasePlugin
         var isPauseOnQueueEmptyOn = Config.Bind("Alerts", "PauseOnQueueEmpty", false,
             "Pause the game once when your character finishes the last order in their queue. Play or the pause key resumes the speed you had. Unlike IdleFreeze it pauses at once and stays paused until you resume it.").Value;
         var isIdleBadgeOn = Config.Bind("Display", "IdleBadge", true,
-            "Show a small \"Paused: idle\" badge above the speed buttons while the idle pause holds the game. It goes away the moment time runs again.").Value;
+            "Show a small \"Paused: idle\" badge to the right of the speed buttons while the idle pause holds the game. It goes away the moment time runs again.").Value;
         var isPauseKeyBadgeOn = Config.Bind("Display", "PauseKeyBadge", true,
-            "Show a small \"Paused\" badge above the speed buttons while the pause key holds the game. It goes away the moment time runs again.").Value;
+            "Show a small \"Paused\" badge to the right of the speed buttons while the pause key holds the game. It goes away the moment time runs again.").Value;
         var isAlertBadgeOn = Config.Bind("Display", "AlertBadge", true,
-            "Show a small badge naming the alert, such as \"Paused: wave\", above the speed buttons while a pause on an alert holds the game. It goes away the moment time runs again.").Value;
+            "Show a small badge naming the alert, such as \"Paused: wave\", to the right of the speed buttons while a pause on an alert holds the game. It goes away the moment time runs again.").Value;
         var areSpeedButtonsOn = Config.Bind("Display", "SpeedButtons", true,
             "Show speed buttons (slow, normal, fast, fastest and pause) in the countdown before the disaster and on expeditions, where the game shows none. They work like the game's own buttons at home, with this mod's slow and fast speeds. On expeditions they follow TimeControlOnExpeditions.").Value;
+        var pauseOverlayOpacity = Config.Bind("Display", "PauseOverlayOpacity", PauseOverlay.DefaultOpacity,
+            "How see-through the game's own paused banner across the lower middle of the screen is, from 0 (hidden) to 1 (as the game draws it), so it does not cover the phone's reply choices. Clicks always go through it to what is underneath.").Value;
 
         var log = new TimeLog(Log, Path.Combine(Paths.BepInExRootPath, "time-control.log"));
         var speeds = new SpeedSettings(
@@ -72,7 +74,8 @@ public sealed class Plugin : BasePlugin
             isExpeditionOn,
             alerts,
             new BadgeSettings(isIdleBadgeOn, isPauseKeyBadgeOn, isAlertBadgeOn),
-            areSpeedButtonsOn);
+            areSpeedButtonsOn,
+            PauseOverlay.Css(pauseOverlayOpacity));
         var harmony = new Harmony(Guid);
 
         log.TrimIfLarge();
@@ -80,7 +83,8 @@ public sealed class Plugin : BasePlugin
             $"sleep fast-forward {OnOff(isSleepFastForwardOn)}, pause on waking {OnOff(isPauseOnWakeOn)}, on expeditions {OnOff(isExpeditionOn)}, " +
             $"pause on wave {OnOff(alerts.IsWaveOn)}, on emergency {OnOff(alerts.IsEmergencyOn)}, on drone arrival {OnOff(alerts.IsDroneArrivalOn)}, on queue empty {OnOff(alerts.IsQueueEmptyOn)}, " +
             $"idle badge {OnOff(isIdleBadgeOn)}, pause key badge {OnOff(isPauseKeyBadgeOn)}, alert badge {OnOff(isAlertBadgeOn)}, " +
-            $"speed buttons before the disaster and on expeditions {OnOff(areSpeedButtonsOn)}");
+            $"speed buttons before the disaster and on expeditions {OnOff(areSpeedButtonsOn)}, " +
+            $"game's paused banner opacity {PauseOverlay.ClampOpacity(pauseOverlayOpacity):0.##}");
         SpeedPatches.Apply(harmony, speeds, log.Write);
         AlertSignals.Apply(harmony, alerts, log.Write);
         ClockTicker.Settings = settings;
