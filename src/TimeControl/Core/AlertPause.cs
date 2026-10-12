@@ -24,7 +24,17 @@ public readonly record struct AlertSettings(bool IsWaveOn, bool IsEmergencyOn, b
 /// <param name="EmergenciesFired">Emergencies that started since the last check.</param>
 /// <param name="DronesLanded">Trade drone trips that came home since the last check.</param>
 /// <param name="IsBusy">The player's character has an order queued, the game's own test for "not idle".</param>
-public readonly record struct AlertSnapshot(bool CanPause, bool IsPaused, bool IsWaveActive, int EmergenciesFired, int DronesLanded, bool IsBusy);
+/// <param name="ElapsedSeconds">Real seconds since the last check.</param>
+/// <param name="WasSpeedChangedByHand">The player or the game's own buttons changed the speed since the last check, so a pause seen now may be theirs.</param>
+public readonly record struct AlertSnapshot(
+    bool CanPause,
+    bool IsPaused,
+    bool IsWaveActive,
+    int EmergenciesFired,
+    int DronesLanded,
+    bool IsBusy,
+    float ElapsedSeconds,
+    bool WasSpeedChangedByHand);
 
 /// <param name="PauseFor">The alert to pause the game for now, or null to leave its speed alone.</param>
 public readonly record struct AlertStep(AlertPause State, Alert? PauseFor);
@@ -37,38 +47,67 @@ public readonly record struct AlertStep(AlertPause State, Alert? PauseFor);
 /// </summary>
 public abstract record AlertPause
 {
-    public static readonly AlertPause Start = new Unseen();
+    /// <summary>
+    /// About a second at ten checks a second. Counted in checks rather than seconds so one long loading frame cannot
+    /// use it up before the load has put the world back together.
+    /// </summary>
+    public const int SettleChecks = 10;
+
+    /// <summary>Longer than the moment between two queued orders, when the game reads the queue as empty.</summary>
+    public const float QueueSettleSeconds = 0.3f;
+
+    public static readonly AlertPause Start = new Unseen(0);
 
     private AlertPause()
     {
     }
 
-    /// <summary>A new world: its first check is taken as how things stand, so a save loaded mid-wave does not pause.</summary>
-    public sealed record Unseen : AlertPause;
+    /// <summary>
+    /// A new world settling. A load puts its wave back and finishes drone trips that ended while the game was closed
+    /// over its first moments, so what the first <see cref="SettleChecks"/> checks see is how things stand, not news.
+    /// </summary>
+    public sealed record Unseen(int ChecksSeen) : AlertPause;
 
     /// <summary>Waiting for the next alert, remembering what the last check saw so only a change counts as one.</summary>
-    public sealed record Watching(bool WasWaveActive, bool WasBusy) : AlertPause;
+    /// <param name="QueueEmptySeconds">How long the order queue has read empty since it last read busy, 0 while busy; null when no run-out is pending.</param>
+    public sealed record Watching(bool WasWaveActive, float? QueueEmptySeconds) : AlertPause;
 
-    /// <summary>The game is paused for <paramref name="Reason"/> until anyone resumes it.</summary>
-    public sealed record Holding(Alert Reason, bool WasWaveActive, bool WasBusy) : AlertPause;
+    /// <summary>The game is paused for <paramref name="Reason"/> until anyone resumes it or pauses it again.</summary>
+    public sealed record Holding(Alert Reason, bool WasWaveActive, float? QueueEmptySeconds) : AlertPause;
 
     /// <summary>The mod's pauses apply under the timers the player waits out, and never in a fast-forward such as sleep.</summary>
     public static bool CanPause(GameTimer timer, bool isFastForwarding) => GameTimers.IsWaitedOut(timer) && !isFastForwarding;
 
+    /// <summary>
+    /// A speed change by hand while held means the pause standing now was made after this one, by the player or the
+    /// game, so it no longer holds the game for its alert.
+    /// </summary>
     public static AlertStep Next(AlertPause state, AlertSnapshot seen, AlertSettings settings) => state switch
     {
-        Unseen => Stay(Remember(seen)),
-        Holding holding when seen.IsPaused => Stay(holding with { WasWaveActive = seen.IsWaveActive, WasBusy = seen.IsBusy }),
-        Holding holding => Watch(holding.WasWaveActive, holding.WasBusy, seen, settings),
-        Watching watching => Watch(watching.WasWaveActive, watching.WasBusy, seen, settings),
+        Unseen unseen => Settle(unseen, seen),
+        Holding holding when seen.IsPaused && !seen.WasSpeedChangedByHand => Stay(Hold(holding, seen)),
+        Holding holding => Watch(holding.WasWaveActive, holding.QueueEmptySeconds, seen, settings),
+        Watching watching => Watch(watching.WasWaveActive, watching.QueueEmptySeconds, seen, settings),
         _ => throw new ArgumentOutOfRangeException(nameof(state), state, "an alert pause state Next does not handle"),
     };
+
+    /// <summary>Everything counted while the world settles is let go, and the last settling check is the baseline.</summary>
+    private static AlertStep Settle(Unseen unseen, AlertSnapshot seen)
+    {
+        var checksSeen = unseen.ChecksSeen + 1;
+
+        return Stay(checksSeen < SettleChecks ? new Unseen(checksSeen) : Remember(seen));
+    }
+
+    /// <summary>Alerts that start while held are spent, since the game is already paused.</summary>
+    private static Holding Hold(Holding holding, AlertSnapshot seen) =>
+        holding with { WasWaveActive = seen.IsWaveActive, QueueEmptySeconds = TrackQueue(holding.QueueEmptySeconds, seen).EmptySeconds };
 
     /// <summary>
     /// The first alert that started since the last check, by the order of <see cref="Alert"/>. A wave counts when it
     /// starts, not for as long as it lasts, and the queue when it runs out, not while it stays empty.
     /// </summary>
-    private static Alert? Raised(bool wasWaveActive, bool wasBusy, AlertSnapshot seen, AlertSettings settings)
+    private static Alert? Raised(bool wasWaveActive, bool hasQueueRunOut, AlertSnapshot seen, AlertSettings settings)
     {
         if (settings.IsWaveOn && seen.IsWaveActive && !wasWaveActive) return Alert.Wave;
 
@@ -76,20 +115,37 @@ public abstract record AlertPause
 
         if (settings.IsDroneArrivalOn && seen.DronesLanded > 0) return Alert.DroneArrival;
 
-        return settings.IsQueueEmptyOn && wasBusy && !seen.IsBusy ? Alert.QueueEmpty : null;
+        return settings.IsQueueEmptyOn && hasQueueRunOut ? Alert.QueueEmpty : null;
     }
 
     /// <summary>A pause someone else holds is theirs, and an alert where the mod does not pause is let go; either way it is spent.</summary>
-    private static AlertStep Watch(bool wasWaveActive, bool wasBusy, AlertSnapshot seen, AlertSettings settings)
+    private static AlertStep Watch(bool wasWaveActive, float? queueEmptySeconds, AlertSnapshot seen, AlertSettings settings)
     {
-        var raised = Raised(wasWaveActive, wasBusy, seen, settings);
+        var queue = TrackQueue(queueEmptySeconds, seen);
+        var raised = Raised(wasWaveActive, queue.HasRunOut, seen, settings);
 
-        if (raised is not { } alert || seen.IsPaused || !seen.CanPause) return Stay(Remember(seen));
+        if (raised is not { } alert || seen.IsPaused || !seen.CanPause) return Stay(new Watching(seen.IsWaveActive, queue.EmptySeconds));
 
-        return new AlertStep(new Holding(alert, seen.IsWaveActive, seen.IsBusy), alert);
+        return new AlertStep(new Holding(alert, seen.IsWaveActive, queue.EmptySeconds), alert);
     }
 
-    private static Watching Remember(AlertSnapshot seen) => new(seen.IsWaveActive, seen.IsBusy);
+    /// <summary>
+    /// The game reads the queue as empty for a moment between two queued orders, so it has run out only once it has
+    /// stayed empty for <see cref="QueueSettleSeconds"/>; an order in that time means it never ran out. Each run-out
+    /// counts once.
+    /// </summary>
+    private static (float? EmptySeconds, bool HasRunOut) TrackQueue(float? emptySeconds, AlertSnapshot seen)
+    {
+        if (seen.IsBusy) return (0f, false);
+
+        if (emptySeconds is not { } before) return (null, false);
+
+        var after = before + seen.ElapsedSeconds;
+
+        return after >= QueueSettleSeconds ? (null, true) : (after, false);
+    }
+
+    private static Watching Remember(AlertSnapshot seen) => new(seen.IsWaveActive, seen.IsBusy ? 0f : null);
 
     private static AlertStep Stay(AlertPause state) => new(state, null);
 }
