@@ -61,7 +61,7 @@ If the game uses the pause key for one of its own actions, the pause key stands 
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| `TimeControlOnExpeditions` | `true` | Let the pause key, the game's speed keys (1, 2, 3 and its pause and slow keys), the slow and fast buttons' speeds and the idle pause work on expeditions, where pausing also stops the exposure meter. `false` leaves expeditions at the game's own pace, as before 0.4.0. |
+| `TimeControlOnExpeditions` | `true` | Let the pause key, the game's speed keys (1, 2, 3 and its pause and slow keys), the slow and fast buttons' speeds and the idle pause work on expeditions, where pausing also stops the exposure meter. `false` leaves expeditions at the game's own pace, as before 0.4.0, and hides the mod's speed buttons there. |
 
 ## Display
 
@@ -70,5 +70,8 @@ If the game uses the pause key for one of its own actions, the pause key stands 
 | `IdleBadge` | `true` | Show a small "Paused: idle" badge above the speed buttons while the idle pause holds the game. |
 | `PauseKeyBadge` | `true` | Show a small "Paused" badge above the speed buttons while a pause you made with a key holds the game: the pause key anywhere, or the game's own pause key in the countdown before the disaster and on expeditions. |
 | `AlertBadge` | `true` | Show a small badge naming the alert, such as "Paused: wave", above the speed buttons while a pause on an alert holds the game. |
+| `SpeedButtons` | `true` | Show speed buttons (slow, normal, fast, fastest and pause) in the countdown before the disaster and on expeditions, where the game shows none. They work like the game's own buttons at home, with this mod's slow and super speeds. `false` hides them; the keys still work. |
 
 Each badge goes away the moment time runs again. Where the screen shows no speed buttons, the badge sits at the top centre instead.
+
+`SpeedButtons` only adds buttons where the mod controls the speed: on expeditions only when `TimeControlOnExpeditions` is `true`. At home after the disaster the game shows its own buttons, and the mod adds none.

@@ -13,7 +13,7 @@ namespace TimeControl;
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.timecontrol";
-    private const string Version = "0.5.0";
+    private const string Version = "0.6.0";
 
     public override void Load()
     {
@@ -51,6 +51,8 @@ public sealed class Plugin : BasePlugin
             "Show a small \"Paused\" badge above the speed buttons while the pause key holds the game. It goes away the moment time runs again.").Value;
         var isAlertBadgeOn = Config.Bind("Display", "AlertBadge", true,
             "Show a small badge naming the alert, such as \"Paused: wave\", above the speed buttons while a pause on an alert holds the game. It goes away the moment time runs again.").Value;
+        var areSpeedButtonsOn = Config.Bind("Display", "SpeedButtons", true,
+            "Show speed buttons (slow, normal, fast, fastest and pause) in the countdown before the disaster and on expeditions, where the game shows none. They work like the game's own buttons at home, with this mod's slow and fast speeds. On expeditions they follow TimeControlOnExpeditions.").Value;
 
         var log = new TimeLog(Log, Path.Combine(Paths.BepInExRootPath, "time-control.log"));
         var speeds = new SpeedSettings(
@@ -69,14 +71,16 @@ public sealed class Plugin : BasePlugin
             isPauseOnWakeOn,
             isExpeditionOn,
             alerts,
-            new BadgeSettings(isIdleBadgeOn, isPauseKeyBadgeOn, isAlertBadgeOn));
+            new BadgeSettings(isIdleBadgeOn, isPauseKeyBadgeOn, isAlertBadgeOn),
+            areSpeedButtonsOn);
         var harmony = new Harmony(Guid);
 
         log.TrimIfLarge();
         log.Write($"===== Time Control {Version} started: clock rate {settings.ClockRate:0.##}, idle pause {(isIdleFreezeOn ? $"after {settings.IdleFreezeDelaySeconds:0.#}s" : "off")}, " +
             $"sleep fast-forward {OnOff(isSleepFastForwardOn)}, pause on waking {OnOff(isPauseOnWakeOn)}, on expeditions {OnOff(isExpeditionOn)}, " +
             $"pause on wave {OnOff(alerts.IsWaveOn)}, on emergency {OnOff(alerts.IsEmergencyOn)}, on drone arrival {OnOff(alerts.IsDroneArrivalOn)}, on queue empty {OnOff(alerts.IsQueueEmptyOn)}, " +
-            $"idle badge {OnOff(isIdleBadgeOn)}, pause key badge {OnOff(isPauseKeyBadgeOn)}, alert badge {OnOff(isAlertBadgeOn)}");
+            $"idle badge {OnOff(isIdleBadgeOn)}, pause key badge {OnOff(isPauseKeyBadgeOn)}, alert badge {OnOff(isAlertBadgeOn)}, " +
+            $"speed buttons before the disaster and on expeditions {OnOff(areSpeedButtonsOn)}");
         SpeedPatches.Apply(harmony, speeds, log.Write);
         AlertSignals.Apply(harmony, alerts, log.Write);
         ClockTicker.Settings = settings;
