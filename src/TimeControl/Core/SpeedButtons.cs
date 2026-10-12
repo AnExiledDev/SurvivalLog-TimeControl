@@ -22,6 +22,13 @@ public static class SpeedButtons
     private const string Ok = "ok";
     private const string ClicksPrefix = "ok:";
 
+    /// <summary>The answer to <see cref="CollectScript"/> when the page has lost the buttons.</summary>
+    public const string NotOnPage = "buttons not on the page";
+
+    /// <summary>Defines take(), which empties the page's click queue and answers "ok", or "ok:" and the levels clicked.</summary>
+    private const string DefineTakeClicks =
+        $"var take=function(){{var q=w.{ClicksQueue}||[];w.{ClicksQueue}=[];return q.length?'{ClicksPrefix}'+q.join(','):'{Ok}';}};";
+
     /// <summary>
     /// The game's own look for its speed buttons, scoped to the mod's group: the countdown page has none of it, and the
     /// copy on the main page matches what that page already gives the group.
@@ -65,14 +72,6 @@ public static class SpeedButtons
     public static SpeedButtonsView View(GameTimer timer, bool isPaused, int speedLevel, string slowLabel) =>
         new(Page(timer), isPaused ? PauseToggle.Paused : speedLevel, slowLabel);
 
-    /// <summary>
-    /// Shown buttons go out on every check, since the same script hands back the clicks made since the last one. A
-    /// removal goes out at once, then again on each refresh until the page confirms it.
-    /// </summary>
-    /// <param name="isLastSentConfirmed">The page answered "ok" to the last script sent.</param>
-    public static bool ShouldSend(bool isShown, bool wasShownLastSent, bool isLastSentConfirmed, bool isRefreshDue) =>
-        isShown || wasShownLastSent || (isRefreshDue && !isLastSentConfirmed);
-
     /// <summary>Whether the page drew or removed the buttons: it answers "ok", or "ok:" and the clicks made since the last check.</summary>
     public static bool IsOk(string? reply) => reply == Ok || (reply?.StartsWith(ClicksPrefix, StringComparison.Ordinal) ?? false);
 
@@ -94,13 +93,13 @@ public static class SpeedButtons
     /// <summary>
     /// Draws the buttons on the view's page and takes them off any other, lights the active one and hands back the
     /// clicks. Where the page shows the game's own buttons after all, the mod's copy is taken away. Clicks queued by a
-    /// copy that was taken away are dropped, so a click made just before the buttons hid is never applied later.
+    /// copy that was taken away are dropped, so a click made just before the buttons hid is never applied later. The
+    /// clicks are taken last, so a draw that fails leaves them queued for the next script.
     /// </summary>
     public static string Script(SpeedButtonsView view) =>
         "(function(){try{" + HudPages.RemoveFromFrames(ElementId, keepOn: view.Page) + HudPages.FindFrame(view.Page) +
-        $"var d=w.document,g=d.getElementById('{ElementId}');if(!g)w.{ClicksQueue}=[];" +
-        $"var q=w.{ClicksQueue}||[],r=q.length?'{ClicksPrefix}'+q.join(','):'{Ok}';w.{ClicksQueue}=[];" +
-        $"if(d.querySelector('.speed-controls:not(#{ElementId})')){{if(g&&g.parentNode)g.parentNode.removeChild(g);return r;}}" +
+        $"var d=w.document,g=d.getElementById('{ElementId}');if(!g)w.{ClicksQueue}=[];" + DefineTakeClicks +
+        $"if(d.querySelector('.speed-controls:not(#{ElementId})')){{if(g&&g.parentNode)g.parentNode.removeChild(g);return take();}}" +
         $"if(!d.getElementById('{StyleId}')){{var st=d.createElement('style');st.id='{StyleId}';st.textContent='{Style}';(d.head||d.body).appendChild(st);}}" +
         $"if(!g){{g=d.createElement('div');g.id='{ElementId}';g.className='speed-controls';g.setAttribute('data-interactive','');" +
         $"var L=[{IconList()}];for(var i=0;i<L.length;i++){{var bt=d.createElement('button');bt.className='speed-btn';" +
@@ -114,7 +113,17 @@ public static class SpeedButtons
         $"var on=l==={view.ActiveLevel.ToString(CultureInfo.InvariantCulture)};if(b.classList.contains('active')!==on)b.classList.toggle('active',on);" +
         "var t=(s&&s[k[0]]?String(s[k[0]]):k[1])+(s&&s.i18n_hotkey&&s[k[2]]?' ('+s.i18n_hotkey+':'+s[k[2]]+')':'');" +
         "var tt=b.querySelector('.speed-tooltip');if(tt&&tt.textContent!==t)tt.textContent=t;}" +
-        "return r;}catch(e){return 'error: '+e;}})()";
+        "return take();}catch(e){return 'error: '+e;}})()";
+
+    /// <summary>
+    /// The small script sent between full draws: it only hands back the clicks. Buttons the page has lost (it
+    /// reloaded) answer <see cref="NotOnPage"/> so the next check draws them again, and their clicks are dropped. Where
+    /// the copy stepped aside for the game's own buttons, there is nothing to draw and the answer is "ok".
+    /// </summary>
+    public static string CollectScript(HudPage page) =>
+        "(function(){try{" + HudPages.FindFrame(page) +
+        $"var d=w.document;if(!d.getElementById('{ElementId}')){{w.{ClicksQueue}=[];return d.querySelector('.speed-controls')?'{Ok}':'{NotOnPage}';}}" +
+        DefineTakeClicks + "return take();}catch(e){return 'error: '+e;}})()";
 
     /// <summary>Takes the buttons off every page.</summary>
     public static string RemovalScript() =>

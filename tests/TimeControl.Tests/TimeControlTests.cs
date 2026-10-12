@@ -719,9 +719,6 @@ public class PauseBadgeTests
 
 public class SpeedButtonsTests
 {
-    private static readonly SpeedButtonsView Countdown = new(HudPage.Countdown, PauseToggle.Normal, "");
-    private static readonly SpeedButtonsView Expedition = new(HudPage.Home, PauseToggle.Normal, "");
-
     [Fact]
     public void Shown_in_the_countdown_to_the_disaster_where_the_game_has_none()
     {
@@ -786,31 +783,6 @@ public class SpeedButtonsTests
     }
 
     [Fact]
-    public void Shown_buttons_go_out_on_every_check_to_take_back_clicks()
-    {
-        Assert.True(SpeedButtons.ShouldSend(isShown: true, wasShownLastSent: true, isLastSentConfirmed: true, isRefreshDue: false));
-    }
-
-    [Fact]
-    public void Buttons_that_just_hid_are_taken_off_at_once()
-    {
-        Assert.True(SpeedButtons.ShouldSend(isShown: false, wasShownLastSent: true, isLastSentConfirmed: true, isRefreshDue: false));
-    }
-
-    [Fact]
-    public void Hidden_buttons_send_nothing_once_the_page_confirmed_their_removal()
-    {
-        Assert.False(SpeedButtons.ShouldSend(isShown: false, wasShownLastSent: false, isLastSentConfirmed: true, isRefreshDue: true));
-    }
-
-    [Fact]
-    public void A_removal_the_page_never_confirmed_is_sent_again_on_the_next_refresh()
-    {
-        Assert.True(SpeedButtons.ShouldSend(isShown: false, wasShownLastSent: false, isLastSentConfirmed: false, isRefreshDue: true));
-        Assert.False(SpeedButtons.ShouldSend(isShown: false, wasShownLastSent: false, isLastSentConfirmed: false, isRefreshDue: false));
-    }
-
-    [Fact]
     public void Clicks_come_back_oldest_first()
     {
         Assert.Equal(new[] { 4, 1, 0 }, SpeedButtons.Clicks("ok:4,1,0"));
@@ -834,89 +806,124 @@ public class SpeedButtonsTests
         Assert.False(SpeedButtons.IsOk("no CoreUI0 frame"));
         Assert.False(SpeedButtons.IsOk(null));
     }
+}
+
+public class ButtonsSyncTests
+{
+    private static readonly SpeedButtonsView Running = new(HudPage.Countdown, PauseToggle.Normal, "");
+    private static readonly SpeedButtonsView Paused = Running with { ActiveLevel = PauseToggle.Paused };
+    private static readonly ButtonsOnPage DrawnRunning = new ButtonsOnPage.Drawn(Running, NeedsRedraw: false);
+    private static readonly ButtonsOnPage Unconfirmed = new ButtonsOnPage.Removed(IsConfirmed: false);
 
     [Fact]
-    public void The_buttons_come_in_the_games_order_slow_normal_fast_fastest_pause()
+    public void Buttons_shown_for_the_first_time_are_drawn_in_full()
     {
-        var script = SpeedButtons.Script(Countdown);
-        var positions = new[] { "[4,'<svg", "[1,'<svg", "[2,'<svg", "[3,'<svg", "[0,'<svg" }.Select(button => script.IndexOf(button, StringComparison.Ordinal)).ToArray();
-
-        Assert.DoesNotContain(-1, positions);
-        Assert.Equal(positions.OrderBy(position => position), positions);
+        Assert.Equal(ButtonsScript.Draw, ButtonsSync.Next(Running, ButtonsOnPage.Start, isRefreshDue: false));
     }
 
     [Fact]
-    public void The_script_lights_the_views_level()
+    public void Between_refreshes_an_unchanged_view_only_collects_the_clicks()
     {
-        Assert.Contains("var on=l===0;", SpeedButtons.Script(Expedition with { ActiveLevel = PauseToggle.Paused }));
+        Assert.Equal(ButtonsScript.Collect, ButtonsSync.Next(Running, DrawnRunning, isRefreshDue: false));
     }
 
     [Fact]
-    public void Tooltips_use_the_pages_own_text_and_fall_back_to_english_with_the_slow_speed_held()
+    public void A_changed_view_is_drawn_at_once_without_waiting_for_a_refresh()
     {
-        var script = SpeedButtons.Script(Countdown with { SlowLabel = "0.5x" });
-
-        Assert.Contains("4:['i18n_speedSlow','Slow 0.5x','i18n_hotkeySpeedSlow']", script);
-        Assert.Contains("0:['i18n_speedPause','Pause','i18n_hotkeySpeedPause']", script);
+        Assert.Equal(ButtonsScript.Draw, ButtonsSync.Next(Paused, DrawnRunning, isRefreshDue: false));
+        Assert.Equal(ButtonsScript.Draw, ButtonsSync.Next(Running with { Page = HudPage.Home }, DrawnRunning, isRefreshDue: false));
     }
 
     [Fact]
-    public void A_slow_label_cannot_break_out_of_the_script_string()
+    public void Each_refresh_draws_in_full_to_follow_the_pages_layout_and_texts()
     {
-        Assert.DoesNotContain("alert", SpeedButtons.Script(Countdown with { SlowLabel = "0.5x');alert(1);//" }));
+        Assert.Equal(ButtonsScript.Draw, ButtonsSync.Next(Running, DrawnRunning, isRefreshDue: true));
     }
 
     [Fact]
-    public void The_copy_steps_aside_wherever_the_games_own_buttons_show()
+    public void Buttons_the_page_may_have_lost_are_drawn_again_on_the_next_check()
     {
-        Assert.Contains("if(d.querySelector('.speed-controls:not(#tc-speed-buttons)')){if(g&&g.parentNode)g.parentNode.removeChild(g);return r;}", SpeedButtons.Script(Expedition));
+        Assert.Equal(ButtonsScript.Draw, ButtonsSync.Next(Running, new ButtonsOnPage.Drawn(Running, NeedsRedraw: true), isRefreshDue: false));
     }
 
     [Fact]
-    public void The_buttons_go_on_the_views_page_and_leave_the_other()
+    public void Buttons_that_just_hid_are_taken_off_at_once()
     {
-        var script = SpeedButtons.Script(Countdown);
-
-        Assert.Contains("return 'no CoreUI0 frame';", script);
-        Assert.Contains(@"if(/CoreUI0\.html/i.test(String(c.location)))continue;var o=c.document.getElementById('tc-speed-buttons')", script);
-        Assert.DoesNotContain("CoreUI1", script);
+        Assert.Equal(ButtonsScript.Remove, ButtonsSync.Next(null, DrawnRunning, isRefreshDue: false));
     }
 
     [Fact]
-    public void On_the_main_hud_the_copy_sits_where_the_games_own_buttons_do()
+    public void Hidden_buttons_send_nothing_once_the_page_confirmed_their_removal()
     {
-        var script = SpeedButtons.Script(Expedition);
-
-        Assert.Contains("querySelector('.queue-flow-wrapper')", script);
-        Assert.DoesNotContain(".bottom-left", script);
+        Assert.Equal(ButtonsScript.None, ButtonsSync.Next(null, ButtonsOnPage.Start, isRefreshDue: true));
+        Assert.Equal(ButtonsScript.None, ButtonsSync.Next(null, new ButtonsOnPage.Removed(IsConfirmed: true), isRefreshDue: true));
     }
 
     [Fact]
-    public void In_the_countdown_the_copy_sits_beside_the_bottom_left_buttons_and_hides_with_them()
+    public void A_removal_the_page_never_confirmed_is_sent_again_on_the_next_refresh()
     {
-        var script = SpeedButtons.Script(Countdown);
-
-        Assert.Contains("querySelector('.bottom-left')", script);
-        Assert.Contains("(hid?'display:none;':'')", script);
+        Assert.Equal(ButtonsScript.Remove, ButtonsSync.Next(null, Unconfirmed, isRefreshDue: true));
+        Assert.Equal(ButtonsScript.None, ButtonsSync.Next(null, Unconfirmed, isRefreshDue: false));
     }
 
     [Fact]
-    public void Clicks_queued_by_a_copy_that_was_taken_away_are_dropped_before_any_are_handed_back()
+    public void A_draw_sent_records_the_view_drawn_and_a_removal_sent_waits_for_its_answer()
     {
-        var script = SpeedButtons.Script(Countdown);
-        var dropStale = script.IndexOf("if(!g)w.__tcSpeedClicks=[];", StringComparison.Ordinal);
-        var handBack = script.IndexOf("var q=w.__tcSpeedClicks||[]", StringComparison.Ordinal);
-
-        Assert.True(dropStale >= 0 && dropStale < handBack);
+        Assert.Equal(new ButtonsOnPage.Drawn(Paused, NeedsRedraw: false), ButtonsSync.AfterSending(ButtonsScript.Draw, Paused, new ButtonsOnPage.Drawn(Running, NeedsRedraw: true)));
+        Assert.Equal(Unconfirmed, ButtonsSync.AfterSending(ButtonsScript.Remove, null, DrawnRunning));
     }
 
     [Fact]
-    public void The_removal_takes_the_buttons_off_every_page()
+    public void Collecting_or_sending_nothing_leaves_what_the_page_has_as_it_was()
     {
-        var script = SpeedButtons.RemovalScript();
+        Assert.Equal(DrawnRunning, ButtonsSync.AfterSending(ButtonsScript.Collect, Running, DrawnRunning));
+        Assert.Equal(Unconfirmed, ButtonsSync.AfterSending(ButtonsScript.None, null, Unconfirmed));
+    }
 
-        Assert.Contains("getElementById('tc-speed-buttons')", script);
-        Assert.DoesNotContain("CoreUI", script);
+    [Fact]
+    public void Clicks_in_an_answer_are_applied_while_the_buttons_are_still_drawn()
+    {
+        var taken = ButtonsSync.TakeReply(DrawnRunning, wasShownWhenSent: true, "ok:4,1");
+
+        Assert.Equal(new[] { 4, 1 }, taken.Clicks);
+        Assert.Equal(DrawnRunning, taken.OnPage);
+    }
+
+    [Fact]
+    public void A_click_made_just_before_the_buttons_hid_is_never_applied()
+    {
+        var taken = ButtonsSync.TakeReply(Unconfirmed, wasShownWhenSent: true, "ok:2");
+
+        Assert.Empty(taken.Clicks);
+        Assert.Equal(Unconfirmed, taken.OnPage);
+    }
+
+    [Fact]
+    public void Any_answer_but_ok_to_a_draw_or_collect_has_the_buttons_drawn_in_full_next()
+    {
+        foreach (var reply in new string?[] { SpeedButtons.NotOnPage, "no CoreUI0 frame", "error: TypeError", null })
+        {
+            var taken = ButtonsSync.TakeReply(DrawnRunning, wasShownWhenSent: true, reply);
+
+            Assert.Empty(taken.Clicks);
+            Assert.Equal(ButtonsScript.Draw, ButtonsSync.Next(Running, taken.OnPage, isRefreshDue: false));
+        }
+    }
+
+    [Fact]
+    public void Only_ok_to_a_removal_confirms_it()
+    {
+        Assert.Equal(new ButtonsOnPage.Removed(IsConfirmed: true), ButtonsSync.TakeReply(Unconfirmed, wasShownWhenSent: false, "ok").OnPage);
+        Assert.Equal(Unconfirmed, ButtonsSync.TakeReply(Unconfirmed, wasShownWhenSent: false, "error: TypeError").OnPage);
+    }
+
+    [Fact]
+    public void An_answer_to_a_removal_arriving_after_the_buttons_came_back_changes_nothing()
+    {
+        var taken = ButtonsSync.TakeReply(DrawnRunning, wasShownWhenSent: false, "ok");
+
+        Assert.Equal(DrawnRunning, taken.OnPage);
+        Assert.Empty(taken.Clicks);
     }
 }
 

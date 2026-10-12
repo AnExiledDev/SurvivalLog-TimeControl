@@ -21,8 +21,9 @@ internal sealed class PageClockLink
     private bool _wasNeutralLastSent = true;
     private string _lastBadgeSent = "";
     private bool _isLastBadgeConfirmed = true;
-    private bool _wereButtonsShownLastSent;
-    private bool _isLastButtonsSentConfirmed = true;
+    private ButtonsOnPage _buttonsOnPage = ButtonsOnPage.Start;
+    private SpeedButtonsView? _drawnScriptView;
+    private string _drawnScript = "";
 
     public PageClockLink(Action<string> log)
     {
@@ -64,7 +65,7 @@ internal sealed class PageClockLink
     }
 
     /// <param name="view">What the speed buttons show; null takes them off the page and drops any clicks not yet taken.</param>
-    /// <param name="isRefreshDue">Whether an unconfirmed removal is due to be sent again.</param>
+    /// <param name="isRefreshDue">Whether shown buttons are due a full draw, or an unconfirmed removal a resend.</param>
     public void SyncSpeedButtons(SpeedButtonsView? view, bool isRefreshDue)
     {
         _buttonsReply.Report();
@@ -73,14 +74,31 @@ internal sealed class PageClockLink
 
         if (!isShown) _speedClicks.Clear();
 
-        if (!SpeedButtons.ShouldSend(isShown, _wereButtonsShownLastSent, _isLastButtonsSentConfirmed, isRefreshDue)) return;
+        var next = ButtonsSync.Next(view, _buttonsOnPage, isRefreshDue);
 
-        Func<string> script = view is { } shown ? () => SpeedButtons.Script(shown) : SpeedButtons.RemovalScript;
+        if (next == ButtonsScript.None) return;
 
-        if (!Run(script, reply => TakeButtonsReply(isShown, reply), _buttonsReply)) return;
+        if (!Run(() => ButtonsScriptFor(next, view), reply => TakeButtonsReply(isShown, reply), _buttonsReply)) return;
 
-        _wereButtonsShownLastSent = isShown;
-        _isLastButtonsSentConfirmed = false;
+        _buttonsOnPage = ButtonsSync.AfterSending(next, view, _buttonsOnPage);
+    }
+
+    private string ButtonsScriptFor(ButtonsScript next, SpeedButtonsView? view) => (next, view) switch
+    {
+        (ButtonsScript.Draw, { } shown) => DrawScript(shown),
+        (ButtonsScript.Collect, { } shown) => SpeedButtons.CollectScript(shown.Page),
+        _ => SpeedButtons.RemovalScript(),
+    };
+
+    /// <summary>The full script is built once per view, since it is resent unchanged on every refresh while the view holds.</summary>
+    private string DrawScript(SpeedButtonsView view)
+    {
+        if (_drawnScriptView == view) return _drawnScript;
+
+        _drawnScript = SpeedButtons.Script(view);
+        _drawnScriptView = view;
+
+        return _drawnScript;
     }
 
     /// <summary>The clicks on the speed buttons the page has handed back since the last call, oldest first.</summary>
@@ -95,20 +113,13 @@ internal sealed class PageClockLink
         return clicks;
     }
 
-    /// <summary>
-    /// Clicks are kept only while the buttons are still shown, so a reply that lands after they hid adds none. Only
-    /// the page's "ok" to a removal still last sent confirms it.
-    /// </summary>
     private void TakeButtonsReply(bool wasShownWhenSent, string? reply)
     {
-        var isOk = SpeedButtons.IsOk(reply);
+        var taken = ButtonsSync.TakeReply(_buttonsOnPage, wasShownWhenSent, reply);
 
-        _buttonsReply.Take(isOk ? Ok : reply);
-
-        if (!isOk) return;
-
-        if (wasShownWhenSent && _wereButtonsShownLastSent) _speedClicks.AddRange(SpeedButtons.Clicks(reply));
-        else if (!wasShownWhenSent && !_wereButtonsShownLastSent) _isLastButtonsSentConfirmed = true;
+        _buttonsReply.Take(SpeedButtons.IsOk(reply) ? Ok : reply);
+        _buttonsOnPage = taken.OnPage;
+        _speedClicks.AddRange(taken.Clicks);
     }
 
     /// <summary>

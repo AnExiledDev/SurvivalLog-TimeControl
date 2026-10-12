@@ -70,7 +70,7 @@ public sealed class ClockTicker : MonoBehaviour
         }
         catch (Exception ex)
         {
-            RecoverFromFailure(ex);
+            RecoverFromFailure(ex, now);
         }
     }
 
@@ -85,7 +85,7 @@ public sealed class ClockTicker : MonoBehaviour
             _sleep = SleepWatch.Start;
             _alert = AlertPause.Start;
             _timeSeen = IntPtr.Zero;
-            HidePage();
+            HidePage(now);
 
             return;
         }
@@ -96,7 +96,7 @@ public sealed class ClockTicker : MonoBehaviour
         {
             SpeedPatches.ClockFactor = 1f;
             _alert = AlertPause.Start;
-            HidePage();
+            HidePage(now);
 
             return;
         }
@@ -333,7 +333,7 @@ public sealed class ClockTicker : MonoBehaviour
     /// </summary>
     private void SyncPage(GameTimeManager time, GameTimer timer, float now)
     {
-        var isRefreshDue = now >= _nextPageAt;
+        var isRefreshDue = TakePageRefresh(now);
         var isPaused = time.IsPausedScale();
         var slowLabel = SpeedPatches.HeldSlowSpeed(time) is { } held ? SlowGear.Label(held) : "";
         SpeedButtonsView? buttons = AreSpeedButtonsShown(timer) ? SpeedButtons.View(timer, isPaused, time.GetSpeedLevel(), slowLabel) : null;
@@ -343,16 +343,26 @@ public sealed class ClockTicker : MonoBehaviour
         Page?.SyncSpeedButtons(buttons, isRefreshDue);
         Page?.SyncBadge(badge, buttons?.Page ?? HudPage.Home, isRefreshDue);
 
-        if (!isRefreshDue) return;
-
-        _nextPageAt = now + PageSeconds;
-        Page?.Sync(SpeedPatches.ClockFactor, time.BattleTimeScale, slowLabel);
+        if (isRefreshDue) Page?.Sync(SpeedPatches.ClockFactor, time.BattleTimeScale, slowLabel);
     }
 
-    private static void HidePage()
+    /// <summary>Takes the speed buttons and the badge off the page, sending a removal the page never confirmed again on each refresh.</summary>
+    private void HidePage(float now)
     {
-        Page?.SyncSpeedButtons(null, isRefreshDue: false);
-        Page?.SyncBadge("", HudPage.Home, isRefreshDue: false);
+        var isRefreshDue = TakePageRefresh(now);
+
+        Page?.SyncSpeedButtons(null, isRefreshDue);
+        Page?.SyncBadge("", HudPage.Home, isRefreshDue);
+    }
+
+    /// <summary>Whether the slower page pace is due a refresh; when it is, the next one is counted from now.</summary>
+    private bool TakePageRefresh(float now)
+    {
+        if (now < _nextPageAt) return false;
+
+        _nextPageAt = now + PageSeconds;
+
+        return true;
     }
 
     /// <summary>
@@ -377,9 +387,10 @@ public sealed class ClockTicker : MonoBehaviour
 
     /// <summary>
     /// A failed check must never leave the game paused by this mod or the clock off its pace. An alert pause is left
-    /// as it is: it holds the game until the player resumes it in any case, and only its badge goes.
+    /// as it is: it holds the game until the player resumes it in any case, and only its badge goes. The speed buttons
+    /// go too, so none stay up that no check would answer.
     /// </summary>
-    private void RecoverFromFailure(Exception ex)
+    private void RecoverFromFailure(Exception ex, float now)
     {
         SpeedPatches.ClockFactor = 1f;
 
@@ -392,7 +403,21 @@ public sealed class ClockTicker : MonoBehaviour
         _alert = AlertPause.Start;
         _failures++;
 
+        TryHidePage(now);
+
         if (_failures <= MaxLoggedFailures) Log($"clock check failed (logged {_failures} of {MaxLoggedFailures}): {ex}");
+    }
+
+    private void TryHidePage(float now)
+    {
+        try
+        {
+            HidePage(now);
+        }
+        catch (Exception)
+        {
+            // Best effort inside a failure already being logged; the next check or recovery tries again.
+        }
     }
 
     private static void TryResume(Action<GameTimeManager> resume)
