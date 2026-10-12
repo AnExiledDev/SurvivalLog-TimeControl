@@ -29,11 +29,15 @@ internal static class SpeedPatches
 {
     private const int MaxLoggedFailures = 3;
 
-    /// <summary>Who asked for a speed change: the game (its buttons, keys and menus), the player through this mod's keys, or this mod itself.</summary>
+    /// <summary>
+    /// Who asked for a speed change: the game (its buttons, keys and menus), the player through this mod's keys, the
+    /// player through this mod's copy of the speed buttons, or this mod itself.
+    /// </summary>
     private enum ChangeSource
     {
         Game,
         Player,
+        Button,
         Mod,
     }
 
@@ -66,6 +70,7 @@ internal static class SpeedPatches
     private static bool _wasChangedByHand;
     private static bool _isPausedByKey;
     private static bool _isExpeditionOn;
+    private static bool _isNormalMode;
     private static bool _areKeysSetUp;
     private static bool _hasLoggedPauseKeyIgnored;
     private static bool _hasLoggedPauseKeyTaken;
@@ -87,6 +92,12 @@ internal static class SpeedPatches
     /// badge can say who holds the game. Any later change, by anyone, clears it.
     /// </summary>
     public static bool IsPausedByKey => _isPausedByKey;
+
+    /// <summary>
+    /// Whether the game was in its normal mode on the last frame it handled keys, where it would answer its own speed
+    /// keys. False until the key hook has run, so nothing that depends on it shows before the game's mode is known.
+    /// </summary>
+    public static bool IsNormalMode => _isNormalMode;
 
     /// <summary>The fast gear sleep runs at: the one with the largest multiple, or the game's own high speed when there are none.</summary>
     public static int FastestGear => FastGear.FastestGear(_fastMultiples);
@@ -210,6 +221,12 @@ internal static class SpeedPatches
             _forcedFastGear = null;
         }
     }
+
+    /// <summary>
+    /// A click on this mod's copy of the game's speed buttons. It counts as a change by hand and never as a pause key
+    /// press, as a click on the game's own button does.
+    /// </summary>
+    public static void PressSpeedButton(GameTimeManager time, int level) => ChangeSpeedAs(time, level, ChangeSource.Button);
 
     /// <summary>A speed change the player asked for through this mod's keys.</summary>
     private static void ChangeSpeedForPlayer(GameTimeManager time, int level) => ChangeSpeedAs(time, level, ChangeSource.Player);
@@ -425,6 +442,7 @@ internal static class SpeedPatches
     private static void HandleSpeedKeys(HotKeyManager __instance, bool __runOriginal)
     {
         SetUpKeysOnce();
+        RememberGameMode(__instance);
 
         if (!__runOriginal || !Input.anyKeyDown) return;
 
@@ -442,6 +460,20 @@ internal static class SpeedPatches
         catch (Exception ex)
         {
             Fail("handling the speed keys", ex);
+        }
+    }
+
+    /// <summary>Read every frame, before any key is checked, so the speed buttons know the mode even when no key is pressed.</summary>
+    private static void RememberGameMode(HotKeyManager keys)
+    {
+        try
+        {
+            _isNormalMode = keys._gameMode == GameMode.Default;
+        }
+        catch (Exception ex)
+        {
+            _isNormalMode = false;
+            Fail("reading the game's mode", ex);
         }
     }
 

@@ -14,13 +14,14 @@ internal sealed record ClockSettings(
     bool IsPauseOnWakeOn,
     bool IsExpeditionOn,
     AlertSettings Alerts,
-    BadgeSettings Badges);
+    BadgeSettings Badges,
+    bool AreSpeedButtonsOn);
 
 /// <summary>
 /// Ten times a second: pauses the game while the player idles at home, in the countdown to the disaster or on an
 /// expedition and resumes it on their next order, fast-forwards sleep and pauses on waking, pauses once when an alert
 /// starts, keeps the chosen slow or fast speed held, remembers the speed to resume to, sets the day clock's pace, shows
-/// the pause badge and keeps the page's drawn clock in step.
+/// the pause badge, shows speed buttons where the game has none and keeps the page's drawn clock in step.
 /// </summary>
 public sealed class ClockTicker : MonoBehaviour
 {
@@ -31,7 +32,7 @@ public sealed class ClockTicker : MonoBehaviour
     private const int MaxLoggedFailures = 3;
 
     internal static ClockSettings Settings = new(1f, false, IdlePause.DefaultDelaySeconds, false, false, false,
-        new AlertSettings(false, false, false, false), new BadgeSettings(false, false, false));
+        new AlertSettings(false, false, false, false), new BadgeSettings(false, false, false), false);
     internal static Action<string> Log = _ => { };
     internal static Action<string> LogFileOnly = _ => { };
     internal static PageClockLink? Page;
@@ -84,7 +85,7 @@ public sealed class ClockTicker : MonoBehaviour
             _sleep = SleepWatch.Start;
             _alert = AlertPause.Start;
             _timeSeen = IntPtr.Zero;
-            HideBadge();
+            HidePage();
 
             return;
         }
@@ -95,13 +96,16 @@ public sealed class ClockTicker : MonoBehaviour
         {
             SpeedPatches.ClockFactor = 1f;
             _alert = AlertPause.Start;
-            HideBadge();
+            HidePage();
 
             return;
         }
 
-        var isPaused = time.IsPausedScale();
         var timer = GameTimers.Controlled(GameClock.Timer(time), Settings.IsExpeditionOn);
+
+        PressSpeedButtons(time, timer);
+
+        var isPaused = time.IsPausedScale();
 
         if (!isPaused) SpeedPatches.LastRunningLevel = time.GetSpeedLevel();
 
@@ -113,8 +117,22 @@ public sealed class ClockTicker : MonoBehaviour
         UpdateAlertPause(time, timer, isAsleep, elapsed, wasChangedByHand);
         UpdateIdlePause(time, time.IsPausedScale(), timer, elapsed, isAsleep);
         SpeedPatches.ClockFactor = ClockPace.Factor(Settings.ClockRate, isDayClock: timer == GameTimer.DayClock);
-        SyncPage(time, now);
+        SyncPage(time, timer, now);
     }
+
+    /// <summary>
+    /// Clicks on the mod's speed buttons go through first, as a click on the game's own button lands before the rest
+    /// of the check sees the speed. A click is only applied while the buttons are still meant to show.
+    /// </summary>
+    private static void PressSpeedButtons(GameTimeManager time, GameTimer timer)
+    {
+        if (Page?.TakeSpeedClicks() is not { Count: > 0 } clicks || !AreSpeedButtonsShown(timer)) return;
+
+        foreach (var level in clicks) SpeedPatches.PressSpeedButton(time, level);
+    }
+
+    private static bool AreSpeedButtonsShown(GameTimer timer) =>
+        SpeedButtons.ShouldShow(Settings.AreSpeedButtonsOn, SpeedPatches.IsNormalMode, timer);
 
     /// <summary>A load replaces the world, and a pause or a sleep this mod was watching on the old one went with it.</summary>
     private void ForgetPauseOnNewWorld(GameTimeManager time)
@@ -309,24 +327,33 @@ public sealed class ClockTicker : MonoBehaviour
     }
 
     /// <summary>
-    /// The badge follows every check, so it leaves the moment time runs; the drawn clock, and putting a shown badge
-    /// back after the page reloads, go at the slower page pace.
+    /// The badge and the speed buttons follow every check, so the badge leaves the moment time runs and a click on a
+    /// button is taken within a check; the drawn clock, and putting a shown badge back after the page reloads, go at
+    /// the slower page pace. The buttons go first so the badge finds them to sit above.
     /// </summary>
-    private void SyncPage(GameTimeManager time, float now)
+    private void SyncPage(GameTimeManager time, GameTimer timer, float now)
     {
         var isRefreshDue = now >= _nextPageAt;
+        var isPaused = time.IsPausedScale();
+        var slowLabel = SpeedPatches.HeldSlowSpeed(time) is { } held ? SlowGear.Label(held) : "";
+        SpeedButtonsView? buttons = AreSpeedButtonsShown(timer) ? SpeedButtons.View(timer, isPaused, time.GetSpeedLevel(), slowLabel) : null;
         Alert? alertHolding = _alert is AlertPause.Holding holding ? holding.Reason : null;
-        var badge = PauseBadge.Text(Settings.Badges, time.IsPausedScale(), _idle is IdlePause.Frozen, SpeedPatches.IsPausedByKey, alertHolding);
+        var badge = PauseBadge.Text(Settings.Badges, isPaused, _idle is IdlePause.Frozen, SpeedPatches.IsPausedByKey, alertHolding);
 
-        Page?.SyncBadge(badge, isRefreshDue);
+        Page?.SyncSpeedButtons(buttons, isRefreshDue);
+        Page?.SyncBadge(badge, buttons?.Page ?? HudPage.Home, isRefreshDue);
 
         if (!isRefreshDue) return;
 
         _nextPageAt = now + PageSeconds;
-        Page?.Sync(SpeedPatches.ClockFactor, time.BattleTimeScale, SpeedPatches.HeldSlowSpeed(time) is { } held ? SlowGear.Label(held) : "");
+        Page?.Sync(SpeedPatches.ClockFactor, time.BattleTimeScale, slowLabel);
     }
 
-    private static void HideBadge() => Page?.SyncBadge("", isRefreshDue: false);
+    private static void HidePage()
+    {
+        Page?.SyncSpeedButtons(null, isRefreshDue: false);
+        Page?.SyncBadge("", HudPage.Home, isRefreshDue: false);
+    }
 
     /// <summary>
     /// One speed change reaching several time managers means worlds the game replaced are still answering its events,

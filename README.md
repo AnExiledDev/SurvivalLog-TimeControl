@@ -15,6 +15,7 @@ Survival Log's slow button only slows the game once you stand idle, the clock ke
 - **A pause key**: `Space` pauses, and pressing it again resumes the speed you had. It works at home, in the countdown before the disaster and on expeditions. The game had `Space` on centering the camera on your character, so that moves to `G`.
 - **Pausing before the disaster**: the game ignores its own speed keys in the countdown before the disaster. The mod answers them there, so you can pause, slow down and speed up while you prepare. The idle pause works there too.
 - **Time control on expeditions**: the game also ignores its speed keys on an expedition. With this mod the pause key, the game's speed keys, the slow and super speeds and the idle pause all work there. The day clock stands still while you are away and the exposure meter fills on game time, so pausing stops the meter and super speed fills it faster.
+- **Speed buttons before the disaster and on expeditions**: the game shows no speed buttons in the countdown before the disaster or on an expedition. The mod adds its own there, in the game's style: slow, normal, fast, fastest and pause. They work like the game's buttons at home, with the mod's slow and super speeds. In the countdown they sit to the right of the buttons in the bottom left corner; on an expedition they sit where the game's own buttons sit at home. On expeditions they only show when `TimeControlOnExpeditions` is `true`. Set `SpeedButtons` to `false` to hide them.
 - **A pause badge**: while the idle pause holds the game, a small "Paused: idle" chip sits just above the speed buttons, in the game's own chip style. While a pause you made with the pause key holds it (or with the game's own pause key, before the disaster and on expeditions), the chip says "Paused". The game's own pause at home after the disaster gets no chip; the game lights its pause button there. It goes away the moment time runs again. Where the screen shows no speed buttons, the chip sits at the top centre.
 - **Hover highlights while paused**: objects highlight under the mouse while the game is paused or slowed, as they do at normal speed.
 - **A time log**: what the mod did (idle pauses, alert pauses, speed changes, sleep and wake) is written to `BepInEx\time-control.log`.
@@ -70,6 +71,9 @@ Game time is finicky. Events, sleep, zombie waves and expedition timers all run 
 - Pressing the game's own pause button while the idle pause holds the game does not make the pause yours: your next order still resumes. Press play first, then pause, to keep it paused.
 - The idle pause works at home, in the countdown before the disaster and on expeditions. Any other timer keeps the game's pace.
 - Pause on alerts is new in 0.5.0 and has not been played through in the game yet. If an alert pauses at the wrong moment, twice or not at all, set its `PauseOn` setting to `false` and report it.
+- The speed buttons before the disaster and on expeditions are new in 0.6.0 and have not been played through in the game yet. If they show in the wrong place, cover something or do not respond, set `SpeedButtons` to `false` and report it.
+- A click on those speed buttons can take up to a tenth of a second to change the speed.
+- In the countdown before the disaster, the speed buttons' tooltips are in English, because that screen has no text for them in your language. They hide while the planning view is open, along with the game's buttons in the bottom left corner.
 - An alert that starts while your character sleeps does not pause the game. `PauseOnWake` pauses it when they wake.
 - A line in the log reading `speed change reached N time managers in one frame (expected 1)` means leftover game worlds are answering the game's events, so one trade or one order can happen several times. Restart the game if you see it. `speed change reached 1 time manager, as it should` after your first use of the speed buttons is the healthy reading.
 
@@ -96,7 +100,7 @@ Settings live in `BepInEx\config\com.dev.survivallog.timecontrol.cfg`, created t
 
 Tested on Survival Log 1.1.18317 with BepInEx `6.0.0-be.788`.
 
-Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.5.0 started`. It lists the clock rate and which features are on. The next lines say which game hooks are in place and what the game's own pause key is; a line starting `could not hook` names a feature that will not work.
+Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.6.0 started`. It lists the clock rate and which features are on. The next lines say which game hooks are in place and what the game's own pause key is; a line starting `could not hook` names a feature that will not work.
 
 The same lines, plus every idle pause, alert pause, sleep and wake, are in `BepInEx\time-control.log`, which survives restarts and trims itself past 1 MB.
 

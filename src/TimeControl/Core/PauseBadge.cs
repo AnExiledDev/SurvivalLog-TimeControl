@@ -9,7 +9,8 @@ public readonly record struct BadgeSettings(bool IsIdleBadgeOn, bool IsPauseKeyB
 /// <summary>
 /// A small chip on the game's HUD saying why the game stands still, so a stopped drone or a frozen clock never looks
 /// like a bug. It wears the game's own idle-slowdown chip style (which the game ships but never shows) and sits where
-/// that chip would, just above the speed buttons; where the page has no speed buttons it sits at the top centre.
+/// that chip would, just above the speed buttons, the game's own or the mod's; where the page has no speed buttons it
+/// sits at the top centre.
 /// </summary>
 public static class PauseBadge
 {
@@ -59,8 +60,9 @@ public static class PauseBadge
     public static bool ShouldSend(string text, string lastSent, bool isLastSentConfirmed, bool isRefreshDue) =>
         text != lastSent || (isRefreshDue && (text.Length > 0 || !isLastSentConfirmed));
 
-    public static string Script(string text) =>
-        "(function(){try{" + PageClock.FindFrame +
+    /// <param name="page">The page the badge goes on: the one showing the speed buttons. It is taken off every other page.</param>
+    public static string Script(string text, HudPage page = HudPage.Home) =>
+        "(function(){try{" + HudPages.RemoveFromFrames(ElementId, keepOn: page) + HudPages.FindFrame(page) +
         $"var d=w.document,b=d.getElementById('{ElementId}'),t={Quote(text)};" +
         "if(!t.length){if(b&&b.parentNode)b.parentNode.removeChild(b);return 'ok';}" +
         $"if(!b){{b=d.createElement('div');b.id='{ElementId}';b.className='{NativeChipClass}';}}" +

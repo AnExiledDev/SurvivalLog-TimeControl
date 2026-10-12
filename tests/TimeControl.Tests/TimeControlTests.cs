@@ -699,6 +699,225 @@ public class PauseBadgeTests
         Assert.Equal(@"'a\u000ab'", PauseBadge.Quote("a\nb"));
         Assert.Equal(@"'\u00e9'", PauseBadge.Quote(((char)0xe9).ToString()));
     }
+
+    [Fact]
+    public void The_badge_goes_on_the_page_showing_the_speed_buttons_and_leaves_every_other()
+    {
+        var script = PauseBadge.Script("Paused", HudPage.Countdown);
+
+        Assert.Contains("return 'no CoreUI0 frame';", script);
+        Assert.Contains(@"if(/CoreUI0\.html/i.test(String(c.location)))continue;var o=c.document.getElementById('tc-pause-badge')", script);
+        Assert.DoesNotContain("CoreUI1", script);
+    }
+
+    [Fact]
+    public void Without_a_page_named_the_badge_stays_on_the_main_hud()
+    {
+        Assert.Contains("return 'no CoreUI1 frame';", PauseBadge.Script("Paused"));
+    }
+}
+
+public class SpeedButtonsTests
+{
+    private static readonly SpeedButtonsView Countdown = new(HudPage.Countdown, PauseToggle.Normal, "");
+    private static readonly SpeedButtonsView Expedition = new(HudPage.Home, PauseToggle.Normal, "");
+
+    [Fact]
+    public void Shown_in_the_countdown_to_the_disaster_where_the_game_has_none()
+    {
+        Assert.True(SpeedButtons.ShouldShow(isOn: true, isNormalMode: true, GameTimer.PrologueCountdown));
+    }
+
+    [Fact]
+    public void Shown_on_expeditions_which_the_game_runs_outside_its_normal_mode()
+    {
+        Assert.True(SpeedButtons.ShouldShow(isOn: true, isNormalMode: false, GameTimer.Expedition));
+    }
+
+    [Fact]
+    public void Never_shown_at_home_where_the_games_own_buttons_are()
+    {
+        Assert.False(SpeedButtons.ShouldShow(isOn: true, isNormalMode: true, GameTimer.DayClock));
+        Assert.False(SpeedButtons.ShouldShow(isOn: true, isNormalMode: true, GameTimer.Other));
+    }
+
+    [Fact]
+    public void Not_shown_on_an_expedition_left_at_the_games_pace()
+    {
+        var timer = GameTimers.Controlled(GameTimer.Expedition, isExpeditionControlOn: false);
+
+        Assert.False(SpeedButtons.ShouldShow(isOn: true, isNormalMode: false, timer));
+    }
+
+    [Fact]
+    public void Switched_off_shows_nothing_anywhere()
+    {
+        Assert.False(SpeedButtons.ShouldShow(isOn: false, isNormalMode: true, GameTimer.PrologueCountdown));
+        Assert.False(SpeedButtons.ShouldShow(isOn: false, isNormalMode: false, GameTimer.Expedition));
+    }
+
+    [Fact]
+    public void Not_shown_in_the_countdown_outside_the_games_normal_mode_where_its_speed_keys_do_not_work()
+    {
+        Assert.False(SpeedButtons.ShouldShow(isOn: true, isNormalMode: false, GameTimer.PrologueCountdown));
+    }
+
+    [Fact]
+    public void The_countdown_has_its_own_hud_page_and_an_expedition_uses_the_main_one()
+    {
+        Assert.Equal(HudPage.Countdown, SpeedButtons.Page(GameTimer.PrologueCountdown));
+        Assert.Equal(HudPage.Home, SpeedButtons.Page(GameTimer.Expedition));
+        Assert.Equal("CoreUI0", HudPages.FileName(HudPage.Countdown));
+        Assert.Equal("CoreUI1", HudPages.FileName(HudPage.Home));
+    }
+
+    [Fact]
+    public void The_pause_button_is_lit_while_paused_whatever_speed_resumes()
+    {
+        Assert.Equal(PauseToggle.Paused, SpeedButtons.View(GameTimer.Expedition, isPaused: true, PauseToggle.Triple, "").ActiveLevel);
+    }
+
+    [Fact]
+    public void While_running_the_button_for_the_speed_level_is_lit()
+    {
+        var view = SpeedButtons.View(GameTimer.PrologueCountdown, isPaused: false, PauseToggle.Slow, "0.5x");
+
+        Assert.Equal(new SpeedButtonsView(HudPage.Countdown, PauseToggle.Slow, "0.5x"), view);
+    }
+
+    [Fact]
+    public void Shown_buttons_go_out_on_every_check_to_take_back_clicks()
+    {
+        Assert.True(SpeedButtons.ShouldSend(isShown: true, wasShownLastSent: true, isLastSentConfirmed: true, isRefreshDue: false));
+    }
+
+    [Fact]
+    public void Buttons_that_just_hid_are_taken_off_at_once()
+    {
+        Assert.True(SpeedButtons.ShouldSend(isShown: false, wasShownLastSent: true, isLastSentConfirmed: true, isRefreshDue: false));
+    }
+
+    [Fact]
+    public void Hidden_buttons_send_nothing_once_the_page_confirmed_their_removal()
+    {
+        Assert.False(SpeedButtons.ShouldSend(isShown: false, wasShownLastSent: false, isLastSentConfirmed: true, isRefreshDue: true));
+    }
+
+    [Fact]
+    public void A_removal_the_page_never_confirmed_is_sent_again_on_the_next_refresh()
+    {
+        Assert.True(SpeedButtons.ShouldSend(isShown: false, wasShownLastSent: false, isLastSentConfirmed: false, isRefreshDue: true));
+        Assert.False(SpeedButtons.ShouldSend(isShown: false, wasShownLastSent: false, isLastSentConfirmed: false, isRefreshDue: false));
+    }
+
+    [Fact]
+    public void Clicks_come_back_oldest_first()
+    {
+        Assert.Equal(new[] { 4, 1, 0 }, SpeedButtons.Clicks("ok:4,1,0"));
+        Assert.Empty(SpeedButtons.Clicks("ok"));
+    }
+
+    [Fact]
+    public void Anything_but_the_five_buttons_levels_is_never_applied()
+    {
+        Assert.Equal(new[] { 3 }, SpeedButtons.Clicks("ok:9,-1,x,,3"));
+        Assert.Empty(SpeedButtons.Clicks("error: ReferenceError"));
+        Assert.Empty(SpeedButtons.Clicks(null));
+    }
+
+    [Fact]
+    public void Only_ok_with_or_without_clicks_counts_as_the_page_answering()
+    {
+        Assert.True(SpeedButtons.IsOk("ok"));
+        Assert.True(SpeedButtons.IsOk("ok:2"));
+        Assert.False(SpeedButtons.IsOk("okay"));
+        Assert.False(SpeedButtons.IsOk("no CoreUI0 frame"));
+        Assert.False(SpeedButtons.IsOk(null));
+    }
+
+    [Fact]
+    public void The_buttons_come_in_the_games_order_slow_normal_fast_fastest_pause()
+    {
+        var script = SpeedButtons.Script(Countdown);
+        var positions = new[] { "[4,'<svg", "[1,'<svg", "[2,'<svg", "[3,'<svg", "[0,'<svg" }.Select(button => script.IndexOf(button, StringComparison.Ordinal)).ToArray();
+
+        Assert.DoesNotContain(-1, positions);
+        Assert.Equal(positions.OrderBy(position => position), positions);
+    }
+
+    [Fact]
+    public void The_script_lights_the_views_level()
+    {
+        Assert.Contains("var on=l===0;", SpeedButtons.Script(Expedition with { ActiveLevel = PauseToggle.Paused }));
+    }
+
+    [Fact]
+    public void Tooltips_use_the_pages_own_text_and_fall_back_to_english_with_the_slow_speed_held()
+    {
+        var script = SpeedButtons.Script(Countdown with { SlowLabel = "0.5x" });
+
+        Assert.Contains("4:['i18n_speedSlow','Slow 0.5x','i18n_hotkeySpeedSlow']", script);
+        Assert.Contains("0:['i18n_speedPause','Pause','i18n_hotkeySpeedPause']", script);
+    }
+
+    [Fact]
+    public void A_slow_label_cannot_break_out_of_the_script_string()
+    {
+        Assert.DoesNotContain("alert", SpeedButtons.Script(Countdown with { SlowLabel = "0.5x');alert(1);//" }));
+    }
+
+    [Fact]
+    public void The_copy_steps_aside_wherever_the_games_own_buttons_show()
+    {
+        Assert.Contains("if(d.querySelector('.speed-controls:not(#tc-speed-buttons)')){if(g&&g.parentNode)g.parentNode.removeChild(g);return r;}", SpeedButtons.Script(Expedition));
+    }
+
+    [Fact]
+    public void The_buttons_go_on_the_views_page_and_leave_the_other()
+    {
+        var script = SpeedButtons.Script(Countdown);
+
+        Assert.Contains("return 'no CoreUI0 frame';", script);
+        Assert.Contains(@"if(/CoreUI0\.html/i.test(String(c.location)))continue;var o=c.document.getElementById('tc-speed-buttons')", script);
+        Assert.DoesNotContain("CoreUI1", script);
+    }
+
+    [Fact]
+    public void On_the_main_hud_the_copy_sits_where_the_games_own_buttons_do()
+    {
+        var script = SpeedButtons.Script(Expedition);
+
+        Assert.Contains("querySelector('.queue-flow-wrapper')", script);
+        Assert.DoesNotContain(".bottom-left", script);
+    }
+
+    [Fact]
+    public void In_the_countdown_the_copy_sits_beside_the_bottom_left_buttons_and_hides_with_them()
+    {
+        var script = SpeedButtons.Script(Countdown);
+
+        Assert.Contains("querySelector('.bottom-left')", script);
+        Assert.Contains("(hid?'display:none;':'')", script);
+    }
+
+    [Fact]
+    public void Clicks_queued_by_a_copy_that_was_taken_away_are_dropped_before_any_are_handed_back()
+    {
+        var script = SpeedButtons.Script(Countdown);
+        var dropStale = script.IndexOf("if(!g)w.__tcSpeedClicks=[];", StringComparison.Ordinal);
+        var handBack = script.IndexOf("var q=w.__tcSpeedClicks||[]", StringComparison.Ordinal);
+
+        Assert.True(dropStale >= 0 && dropStale < handBack);
+    }
+
+    [Fact]
+    public void The_removal_takes_the_buttons_off_every_page()
+    {
+        var script = SpeedButtons.RemovalScript();
+
+        Assert.Contains("getElementById('tc-speed-buttons')", script);
+        Assert.DoesNotContain("CoreUI", script);
+    }
 }
 
 public class FastGearTests

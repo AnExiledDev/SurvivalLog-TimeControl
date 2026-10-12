@@ -13,16 +13,6 @@ public readonly record struct PageClockUpdate(float? ClockScale, string SlowLabe
 public static class PageClock
 {
     /// <summary>
-    /// Finds the CoreUI1 frame from the root page, the same way WebUI Doctor's clock watch does, as <c>w</c>; shared
-    /// with the pause badge.
-    /// </summary>
-    internal const string FindFrame =
-        "var fs=document.querySelectorAll('iframe'),w=null;" +
-        "for(var i=0;i<fs.length;i++){var c=fs[i].contentWindow;if(!c)continue;" +
-        "try{if(!/CoreUI1\\.html/i.test(String(c.location)))continue;}catch(e){continue;}w=c;break;}" +
-        "if(!w)return 'no CoreUI1 frame';";
-
-    /// <summary>
     /// The update to send now, or null when the page needs nothing. While the mod changes nothing the page is left to
     /// the game; on the change back, one last update puts the clock at game speed and strips the label.
     /// </summary>
@@ -43,7 +33,7 @@ public static class PageClock
         var clock = update.ClockScale is { } scale ? scale.ToString("0.#####", CultureInfo.InvariantCulture) : "null";
         var suffix = update.SlowLabel.Length == 0 ? "" : " " + Sanitize(update.SlowLabel);
 
-        return "(function(){try{" + FindFrame +
+        return "(function(){try{" + HudPages.FindFrame(HudPage.Home) +
                "var ce=w.eval('clockEngine'),s=w.eval('state');" +
                $"var k={clock};if(k!==null&&Math.abs(ce.getTimeScale()-k)>1e-4)ce.setTimeScale(k);" +
                $"var t=String(s.i18n_speedSlow||''),b=t.replace(/ \\d+(\\.\\d+)?x$/,''),n=b+'{suffix}';if(b.length&&t!==n)s.i18n_speedSlow=n;" +
@@ -51,7 +41,7 @@ public static class PageClock
     }
 
     /// <summary>The label is spliced into a quoted script string, so only the characters a speed label uses survive.</summary>
-    private static string Sanitize(string label)
+    internal static string Sanitize(string label)
     {
         var kept = new char[label.Length];
         var count = 0;
