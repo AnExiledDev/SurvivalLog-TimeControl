@@ -112,7 +112,7 @@ If `Space` does not pause, look in the log for a line saying it is bound to one 
 
 ## Changelog
 
-- 0.6.1: Finishing an expedition no longer freezes the game when the idle pause was holding it.
+- 0.6.1: Finishing an expedition no longer freezes the game when it was paused. Any pause (idle pause, pause key, speed buttons or an alert) is lifted for the trip home, and pausing does nothing until you are back.
 
 ## Feedback and bug reports
 

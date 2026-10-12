@@ -234,9 +234,13 @@ internal static class SpeedPatches
     /// <summary>
     /// A speed change this mod makes goes straight to the live time manager, so it would always count one and say
     /// nothing about leftover worlds; only the game's own changes, which reach every manager listening, are counted.
+    /// A pause the player asks for while an expedition is being finished does nothing, as the trip home waits on game
+    /// time; the mod's own pauses refuse it themselves.
     /// </summary>
     private static void ChangeSpeedAs(GameTimeManager time, int level, ChangeSource source)
     {
+        if (source != ChangeSource.Mod && IsRefusedForTripHome(time, level)) return;
+
         _changeSource = source;
 
         try
@@ -248,6 +252,9 @@ internal static class SpeedPatches
             _changeSource = ChangeSource.Game;
         }
     }
+
+    private static bool IsRefusedForTripHome(GameTimeManager time, int level) =>
+        ExpeditionFinish.RefusesSpeed(level, GameClock.IsExpeditionEnding(GameTimers.Controlled(GameClock.Timer(time), _isExpeditionOn)));
 
     private static float FastMultiple() => _fastMultiples[Math.Clamp(_fastGear, 1, _fastMultiples.Count) - 1];
 

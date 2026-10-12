@@ -21,9 +21,9 @@ internal sealed record ClockSettings(
 /// <summary>
 /// Ten times a second: pauses the game while the player idles at home, in the countdown to the disaster or on an
 /// expedition and resumes it on their next order, fast-forwards sleep and pauses on waking, pauses once when an alert
-/// starts, keeps the chosen slow or fast speed held, remembers the speed to resume to, sets the day clock's pace, shows
-/// the pause badge, shows speed buttons where the game has none, makes the game's pause strip see-through and keeps
-/// the page's drawn clock in step.
+/// starts, lets no pause hold up the trip home from an expedition, keeps the chosen slow or fast speed held, remembers
+/// the speed to resume to, sets the day clock's pace, shows the pause badge, shows speed buttons where the game has
+/// none, makes the game's pause strip see-through and keeps the page's drawn clock in step.
 /// </summary>
 public sealed class ClockTicker : MonoBehaviour
 {
@@ -42,6 +42,7 @@ public sealed class ClockTicker : MonoBehaviour
     private IdlePause _idle = IdlePause.Start;
     private SleepWatch _sleep = SleepWatch.Start;
     private AlertPause _alert = AlertPause.Start;
+    private ExpeditionFinish _finish = ExpeditionFinish.Start;
     private IntPtr _timeSeen;
     private float _nextCheckAt;
     private float _lastCheckAt = -1f;
@@ -86,6 +87,7 @@ public sealed class ClockTicker : MonoBehaviour
             _idle = IdlePause.Start;
             _sleep = SleepWatch.Start;
             _alert = AlertPause.Start;
+            _finish = ExpeditionFinish.Start;
             _timeSeen = IntPtr.Zero;
             HidePage(now);
 
@@ -104,6 +106,7 @@ public sealed class ClockTicker : MonoBehaviour
         }
 
         var timer = GameTimers.Controlled(GameClock.Timer(time), Settings.IsExpeditionOn);
+        var isLeavingExpedition = GameClock.IsExpeditionEnding(timer);
 
         PressSpeedButtons(time, timer);
 
@@ -116,8 +119,9 @@ public sealed class ClockTicker : MonoBehaviour
         var wasChangedByHand = SpeedPatches.TakeSpeedChangedByHand();
         var isAsleep = UpdateSleep(time, isPaused, wasChangedByHand);
 
-        UpdateAlertPause(time, timer, isAsleep, elapsed, wasChangedByHand);
-        UpdateIdlePause(time, time.IsPausedScale(), timer, elapsed, isAsleep);
+        UpdateAlertPause(time, timer, isAsleep, isLeavingExpedition, elapsed, wasChangedByHand);
+        UpdateIdlePause(time, time.IsPausedScale(), timer, elapsed, isAsleep, isLeavingExpedition);
+        UpdateExpeditionFinish(time, isLeavingExpedition);
         SpeedPatches.ClockFactor = ClockPace.Factor(Settings.ClockRate, isDayClock: timer == GameTimer.DayClock);
         SyncPage(time, timer, now);
     }
@@ -145,6 +149,7 @@ public sealed class ClockTicker : MonoBehaviour
         _idle = IdlePause.Start;
         _sleep = SleepWatch.Start;
         _alert = AlertPause.Start;
+        _finish = ExpeditionFinish.Start;
         SpeedPatches.ForgetWorld();
     }
 
@@ -228,7 +233,7 @@ public sealed class ClockTicker : MonoBehaviour
     /// settled, or from while alerts cannot pause, are let go rather than saved up. Every pause but this mod's own goes
     /// through the game's speed change, which the hand-change flag sees, so a pause seen after one is not the alert's.
     /// </summary>
-    private void UpdateAlertPause(GameTimeManager time, GameTimer timer, bool isAsleep, float elapsed, bool wasChangedByHand)
+    private void UpdateAlertPause(GameTimeManager time, GameTimer timer, bool isAsleep, bool isLeavingExpedition, float elapsed, bool wasChangedByHand)
     {
         var alerts = Settings.Alerts;
         var emergenciesFired = AlertSignals.TakeEmergenciesFired();
@@ -236,7 +241,7 @@ public sealed class ClockTicker : MonoBehaviour
 
         if (!alerts.IsAnyOn) return;
 
-        var canPause = AlertPause.CanPause(timer, IsFastForwarding(time) || isAsleep);
+        var canPause = AlertPause.CanPause(timer, IsFastForwarding(time) || isAsleep, isLeavingExpedition);
         var isWaveActive = alerts.IsWaveOn && AlertSignals.IsWaveActive();
         var isBusy = alerts.IsQueueEmptyOn && time.IsLeadingRoleBusy();
         var seen = new AlertSnapshot(canPause, time.IsPausedScale(), isWaveActive, emergenciesFired, dronesLanded, isBusy, elapsed, wasChangedByHand);
@@ -262,13 +267,12 @@ public sealed class ClockTicker : MonoBehaviour
     /// <summary>
     /// A pause is kept as Frozen before it is made, so one that fails halfway is still undone by the recovery; a resume
     /// is kept after, so one that fails is tried again by it. Whether the player is busy only matters while time runs
-    /// where idle freeze applies or the game is held by this mod. The expedition's end is only asked about on one.
+    /// where idle freeze applies or the game is held by this mod.
     /// </summary>
-    private void UpdateIdlePause(GameTimeManager time, bool isPaused, GameTimer timer, float elapsed, bool isAsleep)
+    private void UpdateIdlePause(GameTimeManager time, bool isPaused, GameTimer timer, float elapsed, bool isAsleep, bool isLeavingExpedition)
     {
         var canFreeze = IdlePause.CanFreeze(Settings.IsIdleFreezeOn, timer, IsFastForwarding(time) || isAsleep);
         var isBusy = ((canFreeze && !isPaused) || _idle is not IdlePause.Watching) && time.IsLeadingRoleBusy();
-        var isLeavingExpedition = timer == GameTimer.Expedition && GameClock.IsExpeditionEnding();
         var seen = new IdleSnapshot(canFreeze, isBusy, isPaused, elapsed, SpeedPatches.LastRunningLevel, isLeavingExpedition);
         var before = _idle;
         var step = IdlePause.Next(before, seen, Settings.IdleFreezeDelaySeconds);
@@ -291,6 +295,25 @@ public sealed class ClockTicker : MonoBehaviour
                 SpeedPatches.ChangeSpeed(time, resume.Level);
                 break;
         }
+    }
+
+    /// <summary>
+    /// Runs after idle freeze, which lets go of its own pause with its own log line, so the pause met here is one made
+    /// through the pause key, a speed button or an alert. Like idle freeze's, the resume is kept after it is made, so
+    /// one that fails is tried again.
+    /// </summary>
+    private void UpdateExpeditionFinish(GameTimeManager time, bool isLeavingExpedition)
+    {
+        var seen = new FinishSnapshot(isLeavingExpedition, time.IsPausedScale(), SpeedPatches.LastRunningLevel);
+        var step = ExpeditionFinish.Next(_finish, seen);
+
+        if (step.ResumeAt is { } level)
+        {
+            SpeedPatches.ChangeSpeed(time, level);
+            LogFileOnly($"expedition: being finished while paused, resumed at speed level {level} so the trip home can run");
+        }
+
+        _finish = step.State;
     }
 
     private static void LogTransition(IdlePause from, IdleStep step, IdleSnapshot seen)
