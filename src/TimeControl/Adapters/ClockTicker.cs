@@ -262,13 +262,14 @@ public sealed class ClockTicker : MonoBehaviour
     /// <summary>
     /// A pause is kept as Frozen before it is made, so one that fails halfway is still undone by the recovery; a resume
     /// is kept after, so one that fails is tried again by it. Whether the player is busy only matters while time runs
-    /// where idle freeze applies or the game is held by this mod.
+    /// where idle freeze applies or the game is held by this mod. The expedition's end is only asked about on one.
     /// </summary>
     private void UpdateIdlePause(GameTimeManager time, bool isPaused, GameTimer timer, float elapsed, bool isAsleep)
     {
         var canFreeze = IdlePause.CanFreeze(Settings.IsIdleFreezeOn, timer, IsFastForwarding(time) || isAsleep);
         var isBusy = ((canFreeze && !isPaused) || _idle is not IdlePause.Watching) && time.IsLeadingRoleBusy();
-        var seen = new IdleSnapshot(canFreeze, isBusy, isPaused, elapsed, SpeedPatches.LastRunningLevel);
+        var isLeavingExpedition = timer == GameTimer.Expedition && GameClock.IsExpeditionEnding();
+        var seen = new IdleSnapshot(canFreeze, isBusy, isPaused, elapsed, SpeedPatches.LastRunningLevel, isLeavingExpedition);
         var before = _idle;
         var step = IdlePause.Next(before, seen, Settings.IdleFreezeDelaySeconds);
 
@@ -276,7 +277,7 @@ public sealed class ClockTicker : MonoBehaviour
 
         Carry(time, step.Command);
         _idle = step.State;
-        LogTransition(before, step);
+        LogTransition(before, step, seen);
     }
 
     private static void Carry(GameTimeManager time, IdleCommand command)
@@ -292,11 +293,13 @@ public sealed class ClockTicker : MonoBehaviour
         }
     }
 
-    private static void LogTransition(IdlePause from, IdleStep step)
+    private static void LogTransition(IdlePause from, IdleStep step, IdleSnapshot seen)
     {
         var line = (from, step.State, step.Command) switch
         {
             (_, _, IdleCommand.Pause) => "idle: paused the game",
+            (_, _, IdleCommand.Resume resume) when seen.IsLeavingExpedition =>
+                $"idle: the expedition is being finished, resumed at speed level {resume.Level} so the trip home can run",
             (_, _, IdleCommand.Resume resume) => $"idle: order given, resumed at speed level {resume.Level}",
             (IdlePause.Frozen, IdlePause.Released, _) => "idle: time was resumed while idle, it runs until the next order",
             _ => null,
