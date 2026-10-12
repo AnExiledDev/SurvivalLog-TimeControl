@@ -61,4 +61,17 @@ internal static class GameClock
 
         return AgentTools.GetAgentComponent<AgentStateComponent>(role)?.IsStateExit(AgentState.Sleep) == true;
     }
+
+    /// <summary>
+    /// Whether the expedition is being finished: the game marks its explore manager the moment the player confirms
+    /// leaving, or the exposure meter fills (ExploreManager.OnExploreEnd), and the mark goes with the world it was
+    /// made in. The trip home then waits two seconds of game time before it loads home, so it never arrives while the
+    /// game is paused. Read only once the game has created the world.
+    /// </summary>
+    public static bool IsExpeditionEnding()
+    {
+        if (!BaseSingleton<BattleLogicWorld>.IsInstanceCreated) return false;
+
+        return BaseSingleton<BattleLogicWorld>.Instance?._ExploreManager?._hasEndProcessed == true;
+    }
 }

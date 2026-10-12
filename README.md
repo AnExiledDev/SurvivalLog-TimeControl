@@ -110,6 +110,10 @@ The same lines, plus every idle pause, alert pause, sleep and wake, are in `BepI
 
 If `Space` does not pause, look in the log for a line saying it is bound to one of the game's own actions, and rebind that action in the game's key settings or pick another `PauseToggleKey`.
 
+## Changelog
+
+- 0.6.1: Finishing an expedition no longer freezes the game when the idle pause was holding it.
+
 ## Feedback and bug reports
 
 Found a bug, have an idea, or something feels off? Come say so on the Core Directive Discord: https://discord.gg/trTsyxUFqg . You can also leave a comment on the Nexus page or [open an issue](https://github.com/AnExiledDev/SurvivalLog-TimeControl/issues). When reporting a bug, attach `BepInEx\LogOutput.log` and `BepInEx\time-control.log`.

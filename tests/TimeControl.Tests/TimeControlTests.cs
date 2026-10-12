@@ -62,13 +62,16 @@ public class IdlePauseTests
     private const float Delay = 1f;
 
     private static IdleSnapshot Idle(float seconds, int runningLevel = PauseToggle.Normal) =>
-        new(CanFreeze: true, IsBusy: false, IsPaused: false, seconds, runningLevel);
+        new(CanFreeze: true, IsBusy: false, IsPaused: false, seconds, runningLevel, IsLeavingExpedition: false);
 
     private static IdleSnapshot IdleWhilePaused(float seconds) =>
-        new(CanFreeze: true, IsBusy: false, IsPaused: true, seconds, PauseToggle.Normal);
+        new(CanFreeze: true, IsBusy: false, IsPaused: true, seconds, PauseToggle.Normal, IsLeavingExpedition: false);
 
     private static IdleSnapshot OrderGiven(bool isPaused) =>
-        new(CanFreeze: true, IsBusy: true, IsPaused: isPaused, 0.1f, PauseToggle.Normal);
+        new(CanFreeze: true, IsBusy: true, IsPaused: isPaused, 0.1f, PauseToggle.Normal, IsLeavingExpedition: false);
+
+    private static IdleSnapshot FinishingTheExpedition(bool isPaused, float seconds) =>
+        new(CanFreeze: true, IsBusy: false, IsPaused: isPaused, seconds, PauseToggle.Normal, IsLeavingExpedition: true);
 
     private static IdleStep Run(IdlePause state, params IdleSnapshot[] checks)
     {
@@ -156,7 +159,7 @@ public class IdlePauseTests
     [Fact]
     public void Time_let_run_while_idle_freezes_again_after_a_trip_away_from_home()
     {
-        var awayFromHome = new IdleSnapshot(CanFreeze: false, IsBusy: false, IsPaused: false, 5f, PauseToggle.Normal);
+        var awayFromHome = new IdleSnapshot(CanFreeze: false, IsBusy: false, IsPaused: false, 5f, PauseToggle.Normal, false);
 
         var step = Run(new IdlePause.Released(), awayFromHome, Idle(0.6f), Idle(0.6f));
 
@@ -166,7 +169,7 @@ public class IdlePauseTests
     [Fact]
     public void Leaving_home_or_sleeping_while_paused_by_idling_resumes_the_game()
     {
-        var leftHome = new IdleSnapshot(CanFreeze: false, IsBusy: false, IsPaused: true, 0.1f, PauseToggle.Normal);
+        var leftHome = new IdleSnapshot(CanFreeze: false, IsBusy: false, IsPaused: true, 0.1f, PauseToggle.Normal, false);
 
         var step = Run(new IdlePause.Frozen(3), leftHome);
 
@@ -174,9 +177,30 @@ public class IdlePauseTests
     }
 
     [Fact]
+    public void Finishing_the_expedition_while_paused_by_idling_resumes_at_the_remembered_speed()
+    {
+        var step = Run(new IdlePause.Frozen(2), FinishingTheExpedition(isPaused: true, 0.1f));
+
+        Assert.Equal(new IdleCommand.Resume(2), step.Command);
+        Assert.Equal(IdlePause.Start, step.State);
+    }
+
+    [Fact]
+    public void Standing_idle_while_the_expedition_is_being_finished_never_pauses_the_game_again()
+    {
+        var step = Run(
+            new IdlePause.Frozen(2),
+            FinishingTheExpedition(isPaused: true, 0.1f),
+            FinishingTheExpedition(isPaused: false, 5f));
+
+        Assert.Equal(IdleCommand.Nothing, step.Command);
+        Assert.Equal(IdlePause.Start, step.State);
+    }
+
+    [Fact]
     public void Idle_time_where_pausing_is_not_allowed_never_counts()
     {
-        var awayFromHome = new IdleSnapshot(CanFreeze: false, IsBusy: false, IsPaused: false, 5f, PauseToggle.Normal);
+        var awayFromHome = new IdleSnapshot(CanFreeze: false, IsBusy: false, IsPaused: false, 5f, PauseToggle.Normal, false);
 
         var step = Run(IdlePause.Start, awayFromHome, Idle(0.5f));
 
