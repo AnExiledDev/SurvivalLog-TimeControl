@@ -13,29 +13,42 @@ namespace TimeControl;
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.timecontrol";
-    private const string Version = "0.2.0";
+    private const string Version = "0.3.0";
 
     public override void Load()
     {
         var slowSpeeds = Config.Bind("SlowButton", "SlowSpeeds", "0.5,0.25",
             "Speeds the slow button holds, comma separated, each between 0.05 and 0.95. Pressing slow again while slow moves to the next one. Empty leaves the game's own slow button alone.").Value;
+        var fastMultiples = Config.Bind("FastButton", "FastSpeeds", "2",
+            "Faster speeds above the game's high speed, as multiples of it, comma separated, each between 1.1 and 10. Pressing the fast button or key 3 while already at high speed moves to the next one, and after the last back to the game's high speed. The speed held never goes past 40x: the game moves its world one step per frame, and past 40x each step at 30 frames a second is longer than the game's own speeds allow. Empty leaves the game's own fast button alone.").Value;
         var clockRate = Config.Bind("Clock", "ClockRate", 1f,
             "How fast the day clock runs, from 0.05 to 4. 0.5 makes each day last twice as long; walking and actions keep their speed. 1 is the game's pace.").Value;
         var isIdleFreezeOn = Config.Bind("Clock", "IdleFreeze", true,
-            "Pause the game while your character stands idle at home with nothing queued, and resume it on your next order. Press play or the pause key while it is paused to let time run until your next order.").Value;
-        var idleDelay = Config.Bind("Clock", "IdleFreezeDelaySeconds", 1f,
-            "Real seconds of idling before the game pauses, so the short gap between two orders does not count.").Value;
+            "Pause the game while your character stands idle with nothing queued, at home and in the countdown before the disaster, and resume it on your next order. Press play or the pause key while it is paused to let time run until your next order.").Value;
+        var idleDelay = Config.Bind("Clock", "IdleFreezeDelaySeconds", IdlePause.DefaultDelaySeconds,
+            "Real seconds your character stands idle before the game pauses, so a moment between two orders does not pause it. 0 pauses as soon as nothing is queued.").Value;
+        var isSleepFastForwardOn = Config.Bind("Sleep", "FastForwardSleep", true,
+            "Run sleep and naps at the fastest FastSpeeds speed (the game's high speed if FastSpeeds is empty), in place of the game's own sleep speed-up. A speed you pick during the sleep is kept until you wake. Off leaves the game's own sleep speed-up as it is.").Value;
+        var isPauseOnWakeOn = Config.Bind("Sleep", "PauseOnWake", true,
+            "Pause the game when your character wakes from a sleep or nap, however it ends. Your next order, play or the pause key resumes the speed you had before the sleep.").Value;
         var pauseKeyText = Config.Bind("Keys", "PauseToggleKey", "Space",
-            "A key that pauses, and on the next press resumes the speed you had. Ignored if the game already uses that key. None turns it off.").Value;
+            "A key that pauses, and on the next press resumes the speed you had, at home and in the countdown before the disaster. Ignored if the game already uses that key. None turns it off.").Value;
+        var centerCameraKeyText = Config.Bind("Keys", "CenterCameraKey", "G",
+            "The game's default key for centering the camera on your character, moved off Space so Space can pause. A key you set in the game's own key settings still wins. None leaves centering the camera with no key.").Value;
 
         var log = new TimeLog(Log, Path.Combine(Paths.BepInExRootPath, "time-control.log"));
-        var pauseKey = ParseKey(pauseKeyText, log.Write);
-        var speeds = SlowGear.ParseSpeeds(slowSpeeds);
-        var settings = new ClockSettings(ClockPace.ClampRate(clockRate), isIdleFreezeOn, IdlePause.ClampDelay(idleDelay));
+        var speeds = new SpeedSettings(
+            SlowGear.ParseSpeeds(slowSpeeds),
+            FastGear.ParseMultiples(fastMultiples),
+            ParseKey("PauseToggleKey", pauseKeyText, KeyCode.None, "pause toggle off", log.Write),
+            ParseKey("CenterCameraKey", centerCameraKeyText, KeyCode.G, "using G", log.Write),
+            isSleepFastForwardOn);
+        var settings = new ClockSettings(ClockPace.ClampRate(clockRate), isIdleFreezeOn, IdlePause.ClampDelay(idleDelay), isSleepFastForwardOn, isPauseOnWakeOn);
 
         log.TrimIfLarge();
-        log.Write($"===== Time Control {Version} started: clock rate {settings.ClockRate:0.##}, idle pause {(isIdleFreezeOn ? $"after {settings.IdleFreezeDelaySeconds:0.#}s" : "off")}");
-        SpeedPatches.Apply(new Harmony(Guid), speeds, pauseKey, log.Write);
+        log.Write($"===== Time Control {Version} started: clock rate {settings.ClockRate:0.##}, idle pause {(isIdleFreezeOn ? $"after {settings.IdleFreezeDelaySeconds:0.#}s" : "off")}, " +
+            $"sleep fast-forward {(isSleepFastForwardOn ? "on" : "off")}, pause on waking {(isPauseOnWakeOn ? "on" : "off")}");
+        SpeedPatches.Apply(new Harmony(Guid), speeds, log.Write);
         ClockTicker.Settings = settings;
         ClockTicker.Log = log.Write;
         ClockTicker.LogFileOnly = log.WriteFileOnly;
@@ -43,12 +56,12 @@ public sealed class Plugin : BasePlugin
         AddComponent<ClockTicker>();
     }
 
-    private static KeyCode ParseKey(string text, Action<string> log)
+    private static KeyCode ParseKey(string setting, string text, KeyCode fallback, string fallbackMeaning, Action<string> log)
     {
         if (Enum.TryParse<KeyCode>(text.Trim(), ignoreCase: true, out var key)) return key;
 
-        log($"PauseToggleKey '{text}' is not a Unity key name, pause toggle off");
+        log($"{setting} '{text}' is not a Unity key name, {fallbackMeaning}");
 
-        return KeyCode.None;
+        return fallback;
     }
 }

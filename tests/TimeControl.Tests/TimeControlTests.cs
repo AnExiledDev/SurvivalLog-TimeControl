@@ -194,12 +194,164 @@ public class IdlePauseTests
     }
 
     [Fact]
-    public void A_broken_delay_setting_falls_back_to_something_sane()
+    public void A_broken_delay_setting_falls_back_to_the_three_second_default()
     {
-        Assert.Equal(1f, IdlePause.ClampDelay(float.NaN));
-        Assert.Equal(1f, IdlePause.ClampDelay(float.PositiveInfinity));
+        Assert.Equal(3f, IdlePause.ClampDelay(float.NaN));
+        Assert.Equal(3f, IdlePause.ClampDelay(float.PositiveInfinity));
         Assert.Equal(0f, IdlePause.ClampDelay(-3f));
         Assert.Equal(2.5f, IdlePause.ClampDelay(2.5f));
+    }
+
+    [Fact]
+    public void By_default_a_short_stand_between_orders_does_not_pause_but_three_seconds_of_idling_does()
+    {
+        var shortStand = IdlePause.Next(IdlePause.Start, Idle(2.9f), IdlePause.DefaultDelaySeconds);
+        var threeSeconds = IdlePause.Next(shortStand.State, Idle(0.2f), IdlePause.DefaultDelaySeconds);
+
+        Assert.Equal(IdleCommand.Nothing, shortStand.Command);
+        Assert.Equal(IdleCommand.PauseGame, threeSeconds.Command);
+    }
+
+    [Fact]
+    public void Idle_freeze_pauses_the_countdown_to_the_disaster_as_well_as_the_day_clock()
+    {
+        Assert.True(IdlePause.CanFreeze(isIdleFreezeOn: true, GameTimer.PrologueCountdown, isFastForwarding: false));
+        Assert.True(IdlePause.CanFreeze(isIdleFreezeOn: true, GameTimer.DayClock, isFastForwarding: false));
+    }
+
+    [Fact]
+    public void Idle_freeze_leaves_exploration_trips_and_fast_forwards_at_the_games_pace()
+    {
+        Assert.False(IdlePause.CanFreeze(isIdleFreezeOn: true, GameTimer.Other, isFastForwarding: false));
+        Assert.False(IdlePause.CanFreeze(isIdleFreezeOn: true, GameTimer.PrologueCountdown, isFastForwarding: true));
+    }
+
+    [Fact]
+    public void Idle_freeze_switched_off_never_pauses_anywhere()
+    {
+        Assert.False(IdlePause.CanFreeze(isIdleFreezeOn: false, GameTimer.DayClock, isFastForwarding: false));
+        Assert.False(IdlePause.CanFreeze(isIdleFreezeOn: false, GameTimer.PrologueCountdown, isFastForwarding: false));
+    }
+}
+
+public class GameTimerTests
+{
+    [Fact]
+    public void The_count_up_clock_is_the_day_clock_at_home()
+    {
+        Assert.Equal(GameTimer.DayClock, GameTimers.Classify(isCountingUp: true, isCountingDown: false, isBeforeDisaster: false));
+    }
+
+    [Fact]
+    public void A_countdown_before_the_disaster_is_the_prologue()
+    {
+        Assert.Equal(GameTimer.PrologueCountdown, GameTimers.Classify(isCountingUp: false, isCountingDown: true, isBeforeDisaster: true));
+    }
+
+    [Fact]
+    public void A_countdown_after_the_disaster_is_an_exploration_trip_the_mod_leaves_alone()
+    {
+        Assert.Equal(GameTimer.Other, GameTimers.Classify(isCountingUp: false, isCountingDown: true, isBeforeDisaster: false));
+    }
+
+    [Fact]
+    public void Before_any_timer_starts_there_is_nothing_to_control()
+    {
+        Assert.Equal(GameTimer.Other, GameTimers.Classify(isCountingUp: false, isCountingDown: false, isBeforeDisaster: true));
+    }
+}
+
+public class SpeedKeysTests
+{
+    [Fact]
+    public void The_pause_key_works_anywhere_after_the_disaster()
+    {
+        Assert.True(SpeedKeys.IsPauseKeyLive(isAfterDisaster: true, GameTimer.DayClock));
+        Assert.True(SpeedKeys.IsPauseKeyLive(isAfterDisaster: true, GameTimer.Other));
+    }
+
+    [Fact]
+    public void The_pause_key_works_in_the_countdown_to_the_disaster()
+    {
+        Assert.True(SpeedKeys.IsPauseKeyLive(isAfterDisaster: false, GameTimer.PrologueCountdown));
+    }
+
+    [Fact]
+    public void The_pause_key_does_nothing_before_the_countdown_starts()
+    {
+        Assert.False(SpeedKeys.IsPauseKeyLive(isAfterDisaster: false, GameTimer.Other));
+    }
+
+    [Fact]
+    public void The_mod_answers_the_games_speed_keys_only_where_the_game_does_not()
+    {
+        Assert.True(SpeedKeys.AreGameKeysOurs(isAfterDisaster: false, GameTimer.PrologueCountdown));
+        Assert.False(SpeedKeys.AreGameKeysOurs(isAfterDisaster: true, GameTimer.DayClock));
+        Assert.False(SpeedKeys.AreGameKeysOurs(isAfterDisaster: true, GameTimer.Other));
+        Assert.False(SpeedKeys.AreGameKeysOurs(isAfterDisaster: false, GameTimer.Other));
+    }
+}
+
+public class CenterCameraKeyTests
+{
+    private const int Space = 32;
+    private const int G = 103;
+    private const int P = 112;
+
+    [Fact]
+    public void Centering_the_camera_moves_off_space_so_space_can_pause()
+    {
+        Assert.Equal(G, CenterCameraKey.Move(gameDefault: Space, pauseKey: Space, wantedKey: G));
+    }
+
+    [Fact]
+    public void Asking_for_no_center_camera_key_unbinds_it()
+    {
+        Assert.Equal(CenterCameraKey.None, CenterCameraKey.Move(gameDefault: Space, pauseKey: Space, wantedKey: CenterCameraKey.None));
+    }
+
+    [Fact]
+    public void A_pause_key_the_camera_does_not_use_leaves_the_camera_key_alone()
+    {
+        Assert.Null(CenterCameraKey.Move(gameDefault: Space, pauseKey: P, wantedKey: G));
+    }
+
+    [Fact]
+    public void Turning_the_pause_key_off_leaves_the_camera_on_space()
+    {
+        Assert.Null(CenterCameraKey.Move(gameDefault: Space, pauseKey: CenterCameraKey.None, wantedKey: G));
+    }
+
+    [Fact]
+    public void Asking_for_the_pause_key_itself_leaves_the_camera_key_alone()
+    {
+        Assert.Null(CenterCameraKey.Move(gameDefault: Space, pauseKey: Space, wantedKey: Space));
+    }
+}
+
+public class HoverClockTests
+{
+    private const float Frame = 1f / 60f;
+
+    [Fact]
+    public void While_paused_hover_testing_runs_on_real_time()
+    {
+        var pausedScale = 1e-4f;
+
+        Assert.Equal(Frame, HoverClock.TopUp(Frame * pausedScale, Frame), tolerance: 1e-5f);
+    }
+
+    [Fact]
+    public void At_normal_speed_hover_testing_is_left_to_the_game()
+    {
+        Assert.Equal(0f, HoverClock.TopUp(Frame, Frame));
+    }
+
+    [Fact]
+    public void Fast_speeds_never_slow_hover_testing_down()
+    {
+        Assert.Equal(0f, HoverClock.TopUp(Frame * 2f, Frame));
+        Assert.Equal(0f, HoverClock.TopUp(Frame * 3f, Frame));
     }
 }
 
@@ -359,5 +511,271 @@ public class PageClockTests
 
         Assert.DoesNotContain("alert", script);
         Assert.Contains("n=b+' 0.5x1'", script);
+    }
+}
+
+public class FastGearTests
+{
+    private const int OneGear = 1;
+
+    [Fact]
+    public void Pressing_fast_while_fast_goes_from_high_to_super_and_back_to_high()
+    {
+        var super = FastGear.GearAfter(FastGear.GamesOwn, OneGear, PauseToggle.Triple, FastPress.FromFastSpeed);
+        var backToHigh = FastGear.GearAfter(super, OneGear, PauseToggle.Triple, FastPress.FromFastSpeed);
+
+        Assert.Equal(1, super);
+        Assert.Equal(FastGear.GamesOwn, backToHigh);
+    }
+
+    [Fact]
+    public void A_fast_press_from_another_speed_lands_on_the_games_high_speed_first()
+    {
+        Assert.Equal(FastGear.GamesOwn, FastGear.GearAfter(1, OneGear, PauseToggle.Triple, FastPress.FromOtherSpeed));
+    }
+
+    [Fact]
+    public void Pausing_at_super_speed_and_resuming_comes_back_to_super_speed()
+    {
+        var paused = FastGear.GearAfter(1, OneGear, PauseToggle.Paused, FastPress.FromFastSpeed);
+        var resumed = FastGear.GearAfter(paused, OneGear, PauseToggle.Triple, FastPress.FromPause);
+
+        Assert.Equal(1, resumed);
+    }
+
+    [Fact]
+    public void Normal_double_or_slow_speed_leaves_super_speed_behind()
+    {
+        Assert.Equal(FastGear.GamesOwn, FastGear.GearAfter(1, OneGear, PauseToggle.Normal, FastPress.FromFastSpeed));
+        Assert.Equal(FastGear.GamesOwn, FastGear.GearAfter(1, OneGear, PauseToggle.Double, FastPress.FromFastSpeed));
+        Assert.Equal(FastGear.GamesOwn, FastGear.GearAfter(1, OneGear, PauseToggle.Slow, FastPress.FromFastSpeed));
+    }
+
+    [Fact]
+    public void With_no_fast_gears_the_fast_button_stays_the_games_own()
+    {
+        Assert.Equal(FastGear.GamesOwn, FastGear.GearAfter(FastGear.GamesOwn, 0, PauseToggle.Triple, FastPress.FromFastSpeed));
+    }
+
+    [Fact]
+    public void A_remembered_gear_that_no_longer_exists_falls_back_to_the_games_high_speed()
+    {
+        Assert.Equal(FastGear.GamesOwn, FastGear.GearAfter(3, OneGear, PauseToggle.Triple, FastPress.FromPause));
+    }
+
+    [Fact]
+    public void A_paused_game_counts_as_paused_although_the_game_reads_it_as_normal_speed()
+    {
+        Assert.Equal(FastPress.FromPause, FastGear.PressFrom(isPaused: true, PauseToggle.Normal));
+        Assert.Equal(FastPress.FromFastSpeed, FastGear.PressFrom(isPaused: false, PauseToggle.Triple));
+        Assert.Equal(FastPress.FromOtherSpeed, FastGear.PressFrom(isPaused: false, PauseToggle.Double));
+    }
+
+    [Fact]
+    public void Default_config_offers_one_gear_at_twice_the_games_high_speed()
+    {
+        Assert.Equal(new[] { 2f }, FastGear.ParseMultiples("2"));
+    }
+
+    [Fact]
+    public void Gears_are_clamped_and_deduplicated_and_a_typo_drops_only_one_gear()
+    {
+        Assert.Equal(new[] { FastGear.LeastMultiple, 2f, FastGear.MostMultiple }, FastGear.ParseMultiples("1, 2, fast; 50, 2"));
+    }
+
+    [Fact]
+    public void An_empty_setting_offers_no_gears_so_the_game_keeps_its_own_fast_button()
+    {
+        Assert.Empty(FastGear.ParseMultiples(""));
+    }
+
+    [Fact]
+    public void Super_speed_is_its_multiple_of_the_games_high_speed()
+    {
+        Assert.Equal(10f, FastGear.HeldScale(gameFastSpeed: 5f, multiple: 2f));
+    }
+
+    [Fact]
+    public void Super_speed_never_passes_the_ceiling_and_never_drops_below_the_games_high_speed()
+    {
+        Assert.Equal(FastGear.FastestScale, FastGear.HeldScale(gameFastSpeed: 5f, multiple: 10f));
+        Assert.Equal(50f, FastGear.HeldScale(gameFastSpeed: 50f, multiple: 2f));
+    }
+
+    [Fact]
+    public void Nothing_is_held_while_the_games_high_speed_is_unknown()
+    {
+        Assert.Null(FastGear.HeldScale(gameFastSpeed: 0f, multiple: 2f));
+        Assert.Null(FastGear.HeldScale(gameFastSpeed: float.NaN, multiple: 2f));
+    }
+
+    [Fact]
+    public void The_fastest_gear_is_the_one_with_the_largest_multiple_and_none_means_the_games_own()
+    {
+        Assert.Equal(2, FastGear.FastestGear(new[] { 2f, 4f, 3f }));
+        Assert.Equal(FastGear.GamesOwn, FastGear.FastestGear(Array.Empty<float>()));
+    }
+}
+
+public class SleepWatchTests
+{
+    private static readonly SleepSettings Both = new(IsFastForwardOn: true, IsPauseOnWakeOn: true, FastestGear: 1);
+    private static readonly SleepSettings FastForwardOnly = Both with { IsPauseOnWakeOn = false };
+    private static readonly SleepSettings PauseOnWakeOnly = Both with { IsFastForwardOn = false };
+    private static readonly SleepSettings Neither = new(IsFastForwardOn: false, IsPauseOnWakeOn: false, FastestGear: 1);
+    private static readonly GameSpeed Double = GameSpeed.Of(PauseToggle.Double, FastGear.GamesOwn);
+    private static readonly GameSpeed Super = GameSpeed.Of(PauseToggle.Triple, 1);
+
+    private static SleepSnapshot Sleeping(GameSpeed running, bool isPaused = false, bool isChangedByHand = false) =>
+        new(IsAsleep: true, IsGameFastForwarding: false, IsBusy: true, isPaused, running, isChangedByHand);
+
+    private static SleepSnapshot Woken(bool isBusy = false, bool isPaused = false, bool isGameFastForwarding = false) =>
+        new(IsAsleep: false, isGameFastForwarding, isBusy, isPaused, Super, WasSpeedChangedByHand: false);
+
+    private static SleepStep Run(SleepWatch state, SleepSettings settings, params SleepSnapshot[] checks)
+    {
+        var step = new SleepStep(state, SleepCommand.Nothing);
+
+        foreach (var seen in checks) step = SleepWatch.Next(step.State, seen, settings);
+
+        return step;
+    }
+
+    [Fact]
+    public void Falling_asleep_fast_forwards_at_the_fastest_gear_and_remembers_the_speed_before()
+    {
+        var step = Run(SleepWatch.Start, Both, Sleeping(Double));
+
+        Assert.Equal(new SleepCommand.FastForward(1), step.Command);
+        Assert.Equal(new SleepWatch.Asleep(Double, IsHeld: true), step.State);
+    }
+
+    [Fact]
+    public void With_no_fast_gears_sleep_runs_at_the_games_high_speed()
+    {
+        var step = Run(SleepWatch.Start, Both with { FastestGear = FastGear.GamesOwn }, Sleeping(Double));
+
+        Assert.Equal(new SleepCommand.FastForward(FastGear.GamesOwn), step.Command);
+    }
+
+    [Fact]
+    public void A_sleep_that_starts_while_paused_waits_until_time_runs()
+    {
+        var whilePaused = Run(SleepWatch.Start, Both, Sleeping(Double, isPaused: true));
+        var onceRunning = Run(whilePaused.State, Both, Sleeping(Double));
+
+        Assert.Equal(SleepCommand.Nothing, whilePaused.Command);
+        Assert.Equal(SleepWatch.Start, whilePaused.State);
+        Assert.Equal(new SleepCommand.FastForward(1), onceRunning.Command);
+    }
+
+    [Fact]
+    public void Waking_pauses_the_game_and_resumes_the_speed_from_before_the_sleep_not_the_sleeps_own()
+    {
+        var step = Run(SleepWatch.Start, Both, Sleeping(Double), Sleeping(Super), Woken());
+
+        Assert.Equal(new SleepCommand.PauseOnWake(Double), step.Command);
+        Assert.Equal(new SleepWatch.WakePaused(Double, WasBusy: false), step.State);
+    }
+
+    [Fact]
+    public void Sleeping_from_super_speed_wakes_to_resume_super_speed()
+    {
+        var step = Run(SleepWatch.Start, Both, Sleeping(Super), Woken());
+
+        Assert.Equal(new SleepCommand.PauseOnWake(Super), step.Command);
+    }
+
+    [Fact]
+    public void The_wake_pause_waits_until_the_games_own_speed_up_has_finished_ending()
+    {
+        var step = Run(SleepWatch.Start, PauseOnWakeOnly, Sleeping(Double), Woken(isGameFastForwarding: true));
+
+        Assert.Equal(SleepCommand.Nothing, step.Command);
+        Assert.IsType<SleepWatch.Asleep>(step.State);
+    }
+
+    [Fact]
+    public void The_wake_pause_happens_however_the_sleep_ended_even_after_a_speed_picked_by_hand()
+    {
+        var step = Run(SleepWatch.Start, Both, Sleeping(Double), Sleeping(Super, isChangedByHand: true), Woken());
+
+        Assert.Equal(new SleepCommand.PauseOnWake(Double), step.Command);
+    }
+
+    [Fact]
+    public void Without_the_wake_pause_the_speed_from_before_the_sleep_comes_back_on_waking()
+    {
+        var step = Run(SleepWatch.Start, FastForwardOnly, Sleeping(Double), Woken());
+
+        Assert.Equal(new SleepCommand.Restore(Double), step.Command);
+        Assert.Equal(SleepWatch.Start, step.State);
+    }
+
+    [Fact]
+    public void A_speed_picked_by_hand_during_the_sleep_is_kept_after_waking()
+    {
+        var step = Run(SleepWatch.Start, FastForwardOnly, Sleeping(Double), Sleeping(Super, isChangedByHand: true), Woken());
+
+        Assert.Equal(SleepCommand.Nothing, step.Command);
+        Assert.Equal(SleepWatch.Start, step.State);
+    }
+
+    [Fact]
+    public void An_order_given_after_waking_resumes_the_speed_from_before_the_sleep()
+    {
+        var step = Run(new SleepWatch.WakePaused(Double, WasBusy: false), Both, Woken(isBusy: true, isPaused: true));
+
+        Assert.Equal(new SleepCommand.Resume(Double), step.Command);
+        Assert.Equal(SleepWatch.Start, step.State);
+    }
+
+    [Fact]
+    public void An_order_already_queued_on_waking_does_not_skip_the_wake_pause()
+    {
+        var onWaking = Run(SleepWatch.Start, Both, Sleeping(Double), Woken(isBusy: true));
+        var stillQueued = Run(onWaking.State, Both, Woken(isBusy: true, isPaused: true));
+        var newOrder = Run(stillQueued.State, Both, Woken(isPaused: true), Woken(isBusy: true, isPaused: true));
+
+        Assert.Equal(new SleepCommand.PauseOnWake(Double), onWaking.Command);
+        Assert.Equal(SleepCommand.Nothing, stillQueued.Command);
+        Assert.IsType<SleepWatch.WakePaused>(stillQueued.State);
+        Assert.Equal(new SleepCommand.Resume(Double), newOrder.Command);
+    }
+
+    [Fact]
+    public void Pressing_play_after_waking_lets_time_run_until_the_next_order()
+    {
+        var step = Run(new SleepWatch.WakePaused(Double, WasBusy: false), Both, Woken());
+
+        Assert.Equal(SleepCommand.LetTimeRun, step.Command);
+        Assert.Equal(SleepWatch.Start, step.State);
+    }
+
+    [Fact]
+    public void With_only_the_wake_pause_on_sleep_keeps_the_games_speed_and_still_pauses_on_waking()
+    {
+        var asleep = Run(SleepWatch.Start, PauseOnWakeOnly, Sleeping(Double));
+        var woken = Run(asleep.State, PauseOnWakeOnly, Woken());
+
+        Assert.Equal(SleepCommand.Nothing, asleep.Command);
+        Assert.Equal(new SleepCommand.PauseOnWake(Double), woken.Command);
+    }
+
+    [Fact]
+    public void With_both_settings_off_sleep_is_left_entirely_to_the_game()
+    {
+        var step = Run(SleepWatch.Start, Neither, Sleeping(Double), Woken());
+
+        Assert.Equal(SleepCommand.Nothing, step.Command);
+        Assert.Equal(SleepWatch.Start, step.State);
+    }
+
+    [Fact]
+    public void A_fast_gear_only_counts_at_the_high_speed_level()
+    {
+        Assert.Equal(new GameSpeed(PauseToggle.Double, FastGear.GamesOwn), GameSpeed.Of(PauseToggle.Double, 1));
+        Assert.Equal(new GameSpeed(PauseToggle.Normal, FastGear.GamesOwn), GameSpeed.Of(PauseToggle.Paused, 1));
+        Assert.Equal(new GameSpeed(PauseToggle.Triple, 1), GameSpeed.Of(PauseToggle.Triple, 1));
     }
 }

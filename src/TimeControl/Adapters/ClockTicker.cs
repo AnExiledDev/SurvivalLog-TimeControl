@@ -6,12 +6,12 @@ using UnityEngine;
 namespace TimeControl.Adapters;
 
 /// <summary>The settings the ticker reads; fixed for the session.</summary>
-internal sealed record ClockSettings(float ClockRate, bool IsIdleFreezeOn, float IdleFreezeDelaySeconds);
+internal sealed record ClockSettings(float ClockRate, bool IsIdleFreezeOn, float IdleFreezeDelaySeconds, bool IsSleepFastForwardOn, bool IsPauseOnWakeOn);
 
 /// <summary>
-/// Ten times a second: pauses the game while the player idles at home and resumes it on their next order, keeps the
-/// chosen slow speed held, remembers the speed to resume to, sets the day clock's pace and keeps the page's drawn
-/// clock in step.
+/// Ten times a second: pauses the game while the player idles at home or in the countdown to the disaster and resumes
+/// it on their next order, fast-forwards sleep and pauses on waking, keeps the chosen slow or fast speed held,
+/// remembers the speed to resume to, sets the day clock's pace and keeps the page's drawn clock in step.
 /// </summary>
 public sealed class ClockTicker : MonoBehaviour
 {
@@ -21,12 +21,13 @@ public sealed class ClockTicker : MonoBehaviour
     private const float SpeedTolerance = 0.001f;
     private const int MaxLoggedFailures = 3;
 
-    internal static ClockSettings Settings = new(1f, false, 1f);
+    internal static ClockSettings Settings = new(1f, false, IdlePause.DefaultDelaySeconds, false, false);
     internal static Action<string> Log = _ => { };
     internal static Action<string> LogFileOnly = _ => { };
     internal static PageClockLink? Page;
 
     private IdlePause _idle = IdlePause.Start;
+    private SleepWatch _sleep = SleepWatch.Start;
     private IntPtr _timeSeen;
     private float _nextCheckAt;
     private float _lastCheckAt = -1f;
@@ -69,6 +70,7 @@ public sealed class ClockTicker : MonoBehaviour
         {
             SpeedPatches.ClockFactor = 1f;
             _idle = IdlePause.Start;
+            _sleep = SleepWatch.Start;
             _timeSeen = IntPtr.Zero;
 
             return;
@@ -84,33 +86,113 @@ public sealed class ClockTicker : MonoBehaviour
         }
 
         var isPaused = time.IsPausedScale();
-        var isDayClock = GameClock.IsDayClock(time);
+        var timer = GameClock.Timer(time);
 
         if (!isPaused) SpeedPatches.LastRunningLevel = time.GetSpeedLevel();
 
-        KeepSlowSpeedHeld(time, isPaused, now);
-        UpdateIdlePause(time, isPaused, isDayClock, elapsed);
-        SpeedPatches.ClockFactor = ClockPace.Factor(Settings.ClockRate, isDayClock);
+        KeepGearSpeedHeld(time, isPaused, now);
+
+        var isAsleep = UpdateSleep(time, isPaused);
+
+        UpdateIdlePause(time, time.IsPausedScale(), timer, elapsed, isAsleep);
+        SpeedPatches.ClockFactor = ClockPace.Factor(Settings.ClockRate, isDayClock: timer == GameTimer.DayClock);
         SyncPage(time, now);
     }
 
-    /// <summary>A load replaces the world, and a pause this mod made on the old one went with it.</summary>
+    /// <summary>A load replaces the world, and a pause or a sleep this mod was watching on the old one went with it.</summary>
     private void ForgetPauseOnNewWorld(GameTimeManager time)
     {
         if (time.Pointer == _timeSeen) return;
 
         _timeSeen = time.Pointer;
         _idle = IdlePause.Start;
+        _sleep = SleepWatch.Start;
+        SpeedPatches.ForgetGears();
     }
+
+    /// <summary>
+    /// Like the idle pause, the wake pause is kept before it is made, so the recovery undoes one that fails halfway.
+    /// Whether the player is busy only matters once the character is asleep or the game is paused on waking.
+    /// </summary>
+    /// <returns>Whether the character is asleep, which idle freeze leaves alone.</returns>
+    private bool UpdateSleep(GameTimeManager time, bool isPaused)
+    {
+        var wasChangedByHand = SpeedPatches.TakeSpeedChangedByHand();
+        var isAsleep = GameClock.IsLeadingRoleAsleep();
+        var settings = new SleepSettings(Settings.IsSleepFastForwardOn, Settings.IsPauseOnWakeOn, SpeedPatches.FastestGear);
+        var isBusy = _sleep is not SleepWatch.Awake && time.IsLeadingRoleBusy();
+        var seen = new SleepSnapshot(isAsleep, IsFastForwarding(time), isBusy, isPaused, SpeedPatches.CurrentSpeed(time, isPaused), wasChangedByHand);
+        var before = _sleep;
+        var step = SleepWatch.Next(before, seen, settings);
+
+        if (step.Command is SleepCommand.PauseOnWake) _sleep = step.State;
+
+        CarrySleep(time, step.Command);
+        _sleep = step.State;
+        LogSleep(time, before, step);
+
+        return isAsleep;
+    }
+
+    private void CarrySleep(GameTimeManager time, SleepCommand command)
+    {
+        switch (command)
+        {
+            case SleepCommand.FastForward fastForward:
+                SpeedPatches.ChangeSpeed(time, new GameSpeed(PauseToggle.Triple, fastForward.Gear));
+                break;
+            case SleepCommand.PauseOnWake wake:
+                if (!time.IsPausedScale()) SpeedPatches.ChangeSpeed(time, PauseToggle.Paused);
+
+                SpeedPatches.SetResumeSpeed(wake.ResumeAt);
+                break;
+            case SleepCommand.Resume resume when time.IsPausedScale():
+                SpeedPatches.ChangeSpeed(time, resume.At);
+                break;
+            case SleepCommand.Restore restore when time.IsPausedScale():
+                SpeedPatches.SetResumeSpeed(restore.To);
+                break;
+            case SleepCommand.Restore restore:
+                SpeedPatches.ChangeSpeed(time, restore.To);
+                break;
+            case SleepCommand.LetRun:
+                _idle = new IdlePause.Released();
+                break;
+        }
+    }
+
+    private static void LogSleep(GameTimeManager time, SleepWatch from, SleepStep step)
+    {
+        var line = (from, step.State, step.Command) switch
+        {
+            (_, SleepWatch.Asleep asleep, SleepCommand.FastForward) =>
+                $"sleep: started, fast-forwarding at {time.BattleTimeScale:0.##}x in place of the game's own sleep speed-up of {time.ChapterSpeedUp2}x; {Describe(asleep.Before)} before",
+            (SleepWatch.Awake, SleepWatch.Asleep asleep, _) =>
+                $"sleep: started, at the game's own sleep speed (its speed-up runs at {time.ChapterSpeedUp2}x); {Describe(asleep.Before)} before",
+            (SleepWatch.Asleep { IsHeld: true }, SleepWatch.Asleep { IsHeld: false }, _) => "sleep: speed changed by hand, kept until waking",
+            (_, _, SleepCommand.PauseOnWake wake) => $"sleep: woke, paused the game; the next order, play or the pause key resumes {Describe(wake.ResumeAt)}",
+            (_, _, SleepCommand.Resume resume) => $"sleep: order given after waking, resumed {Describe(resume.At)}",
+            (_, _, SleepCommand.Restore restore) => $"sleep: woke, put back {Describe(restore.To)}",
+            (_, _, SleepCommand.LetRun) => "sleep: time was resumed after waking, it runs until the next order",
+            (SleepWatch.Asleep, SleepWatch.Awake, _) => "sleep: woke, the speed chosen by hand is kept",
+            _ => null,
+        };
+
+        if (line != null) LogFileOnly(line);
+    }
+
+    private static string Describe(GameSpeed speed) => speed.Gear > FastGear.GamesOwn
+        ? $"speed level {speed.Level} on fast gear {speed.Gear}"
+        : $"speed level {speed.Level}";
 
     /// <summary>
     /// A pause is kept as Frozen before it is made, so one that fails halfway is still undone by the recovery; a resume
     /// is kept after, so one that fails is tried again by it. Whether the player is busy only matters while time runs
-    /// at home or the game is held by this mod.
+    /// where idle freeze applies or the game is held by this mod.
     /// </summary>
-    private void UpdateIdlePause(GameTimeManager time, bool isPaused, bool isDayClock, float elapsed)
+    private void UpdateIdlePause(GameTimeManager time, bool isPaused, GameTimer timer, float elapsed, bool isAsleep)
     {
-        var canFreeze = Settings.IsIdleFreezeOn && isDayClock && !IsFastForwarding(time);
+        var canFreeze = IdlePause.CanFreeze(Settings.IsIdleFreezeOn, timer, IsFastForwarding(time) || isAsleep);
         var isBusy = ((canFreeze && !isPaused) || _idle is not IdlePause.Watching) && time.IsLeadingRoleBusy();
         var seen = new IdleSnapshot(canFreeze, isBusy, isPaused, elapsed, SpeedPatches.LastRunningLevel);
         var before = _idle;
@@ -150,19 +232,23 @@ public sealed class ClockTicker : MonoBehaviour
     }
 
     /// <summary>
-    /// Saves, menus and the game's other speed changes can put the scale back without going through the slow button,
-    /// so a held slow speed is checked and restored here; a fast-forward such as sleeping is left alone.
+    /// Saves, menus and the game's other speed changes can put the scale back without going through the slow or fast
+    /// button, so a held slow or fast speed is checked and restored here; the game's own fast-forwards are left alone.
     /// </summary>
-    private void KeepSlowSpeedHeld(GameTimeManager time, bool isPaused, float now)
+    private void KeepGearSpeedHeld(GameTimeManager time, bool isPaused, float now)
     {
-        if (isPaused || IsFastForwarding(time) || SpeedPatches.HeldSlowSpeed(time) is not { } held) return;
+        if (isPaused || IsFastForwarding(time)) return;
+
+        var slow = SpeedPatches.HeldSlowSpeed(time);
+
+        if ((slow ?? SpeedPatches.HeldFastSpeed(time)) is not { } held) return;
 
         if (Math.Abs(time.BattleTimeScale - held) <= SpeedTolerance) return;
 
         if (now >= _nextHealLogAt)
         {
             _nextHealLogAt = now + RepeatLogSeconds;
-            Log($"slow button: game speed was {time.BattleTimeScale:0.###}x, putting {SlowGear.Label(held)} back (logged at most once a minute)");
+            Log($"{(slow != null ? "slow" : "fast")} button: game speed was {time.BattleTimeScale:0.###}x, putting {SlowGear.Label(held)} back (logged at most once a minute)");
         }
 
         GameClock.HoldSpeed(time, held);
@@ -201,19 +287,22 @@ public sealed class ClockTicker : MonoBehaviour
     {
         SpeedPatches.ClockFactor = 1f;
 
-        if (_idle is IdlePause.Frozen frozen) TryResume(frozen.ResumeLevel);
+        if (_idle is IdlePause.Frozen frozen) TryResume(time => SpeedPatches.ChangeSpeed(time, frozen.ResumeLevel));
+
+        if (_sleep is SleepWatch.WakePaused wake) TryResume(time => SpeedPatches.ChangeSpeed(time, wake.ResumeAt));
 
         _idle = IdlePause.Start;
+        _sleep = SleepWatch.Start;
         _failures++;
 
         if (_failures <= MaxLoggedFailures) Log($"clock check failed (logged {_failures} of {MaxLoggedFailures}): {ex}");
     }
 
-    private static void TryResume(int level)
+    private static void TryResume(Action<GameTimeManager> resume)
     {
         try
         {
-            if (GameClock.Find() is { } time && time.IsPausedScale()) SpeedPatches.ChangeSpeed(time, level);
+            if (GameClock.Find() is { } time && time.IsPausedScale()) resume(time);
         }
         catch (Exception)
         {

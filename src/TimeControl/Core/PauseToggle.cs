@@ -5,6 +5,8 @@ public static class PauseToggle
 {
     public const int Paused = 0;
     public const int Normal = 1;
+    public const int Double = 2;
+    public const int Triple = 3;
     public const int Slow = 4;
 
     public static int Target(bool isPaused, int lastRunningLevel) => isPaused ? RunningLevel(lastRunningLevel) : Paused;
