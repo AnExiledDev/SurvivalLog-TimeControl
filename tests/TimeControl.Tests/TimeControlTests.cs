@@ -1015,6 +1015,17 @@ public class AlertPauseTests
     }
 
     [Fact]
+    public void A_wave_starting_while_already_paused_is_let_go_not_saved_for_later()
+    {
+        var whilePaused = Run(Defaults, Quiet, Paused(WaveUnderWay));
+        var afterResume = Run(Defaults, Quiet, Paused(WaveUnderWay), WaveUnderWay);
+
+        Assert.Null(whilePaused.PauseFor);
+        Assert.IsType<AlertPause.Watching>(whilePaused.State);
+        Assert.Null(afterResume.PauseFor);
+    }
+
+    [Fact]
     public void Each_new_wave_pauses_once_more()
     {
         var step = Run(Defaults, Quiet, WaveUnderWay, WaveUnderWay, Quiet, WaveUnderWay);
