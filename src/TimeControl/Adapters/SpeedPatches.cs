@@ -69,6 +69,7 @@ internal static class SpeedPatches
     private static ChangeSource _changeSource = ChangeSource.Game;
     private static bool _wasChangedByHand;
     private static bool _isPausedByKey;
+    private static bool _wasPauseRefused;
     private static bool _isExpeditionOn;
     private static bool _isNormalMode;
     private static bool _areKeysSetUp;
@@ -189,6 +190,7 @@ internal static class SpeedPatches
     {
         _fastGear = FastGear.GamesOwn;
         _isPausedByKey = false;
+        _wasPauseRefused = false;
     }
 
     /// <summary>Whether the player or the game's own speed buttons changed the live world's speed since the last call.</summary>
@@ -199,6 +201,16 @@ internal static class SpeedPatches
         _wasChangedByHand = false;
 
         return wasChanged;
+    }
+
+    /// <summary>Whether a pause was refused since the last call, as an expedition was being finished.</summary>
+    public static bool TakePauseRefused()
+    {
+        var wasRefused = _wasPauseRefused;
+
+        _wasPauseRefused = false;
+
+        return wasRefused;
     }
 
     /// <summary>The most time managers one frame's speed change reached since the last call; 0 when none changed speed.</summary>
@@ -234,12 +246,17 @@ internal static class SpeedPatches
     /// <summary>
     /// A speed change this mod makes goes straight to the live time manager, so it would always count one and say
     /// nothing about leftover worlds; only the game's own changes, which reach every manager listening, are counted.
-    /// A pause the player asks for while an expedition is being finished does nothing, as the trip home waits on game
-    /// time; the mod's own pauses refuse it themselves.
+    /// No pause goes through while an expedition is being finished, whoever asks for it, the player or this mod, as
+    /// the trip home waits on game time; the refusal is kept for the ticker to tell of.
     /// </summary>
     private static void ChangeSpeedAs(GameTimeManager time, int level, ChangeSource source)
     {
-        if (source != ChangeSource.Mod && IsRefusedForTripHome(time, level)) return;
+        if (IsRefusedForTripHome(time, level))
+        {
+            _wasPauseRefused = true;
+
+            return;
+        }
 
         _changeSource = source;
 

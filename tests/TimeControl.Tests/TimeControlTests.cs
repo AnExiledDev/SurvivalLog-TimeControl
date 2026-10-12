@@ -268,9 +268,10 @@ public class IdlePauseTests
 
 public class ExpeditionFinishTests
 {
-    private static FinishSnapshot Finishing(bool isPaused) => new(IsFinishing: true, isPaused, RunningLevel: PauseToggle.Double);
+    private static FinishSnapshot Finishing(bool isPaused, bool wasPauseRefused = false) =>
+        new(IsFinishing: true, isPaused, RunningLevel: PauseToggle.Double, wasPauseRefused);
 
-    private static FinishSnapshot UnderWay(bool isPaused) => new(IsFinishing: false, isPaused, RunningLevel: PauseToggle.Double);
+    private static FinishSnapshot UnderWay(bool isPaused) => new(IsFinishing: false, isPaused, RunningLevel: PauseToggle.Double, WasPauseRefused: false);
 
     [Fact]
     public void A_pause_standing_when_the_player_finishes_the_expedition_is_resumed_at_the_last_running_speed()
@@ -306,12 +307,53 @@ public class ExpeditionFinishTests
     }
 
     [Fact]
+    public void Once_home_the_next_finish_resumes_a_standing_pause_again()
+    {
+        var resumed = ExpeditionFinish.Next(ExpeditionFinish.Start, Finishing(isPaused: true));
+        var home = ExpeditionFinish.Next(resumed.State, UnderWay(isPaused: false));
+        var nextFinish = ExpeditionFinish.Next(home.State, Finishing(isPaused: true));
+
+        Assert.Equal(ExpeditionFinish.Start, home.State);
+        Assert.Equal(PauseToggle.Double, nextFinish.ResumeAt);
+    }
+
+    [Fact]
     public void The_pause_key_or_pause_button_pressed_while_the_expedition_is_being_finished_does_nothing()
     {
         var pauseKeyWhileRunning = PauseToggle.Target(isPaused: false, PauseToggle.Double);
 
         Assert.True(ExpeditionFinish.RefusesSpeed(pauseKeyWhileRunning, isFinishing: true));
-        Assert.True(ExpeditionFinish.RefusesSpeed(PauseToggle.Paused, isFinishing: true));
+    }
+
+    [Fact]
+    public void The_running_speed_buttons_still_work_while_the_expedition_is_being_finished()
+    {
+        var runningLevels = new[] { PauseToggle.Normal, PauseToggle.Double, PauseToggle.Triple, PauseToggle.Slow };
+
+        Assert.All(runningLevels, level => Assert.False(ExpeditionFinish.RefusesSpeed(level, isFinishing: true)));
+    }
+
+    [Fact]
+    public void A_refused_pause_is_told_of_once_per_finish()
+    {
+        var firstRefusal = ExpeditionFinish.Next(ExpeditionFinish.Start, Finishing(isPaused: false, wasPauseRefused: true));
+        var secondRefusal = ExpeditionFinish.Next(firstRefusal.State, Finishing(isPaused: false, wasPauseRefused: true));
+        var home = ExpeditionFinish.Next(secondRefusal.State, UnderWay(isPaused: false));
+        var nextFinishRefusal = ExpeditionFinish.Next(home.State, Finishing(isPaused: false, wasPauseRefused: true));
+
+        Assert.True(firstRefusal.TellsOfRefusal);
+        Assert.False(secondRefusal.TellsOfRefusal);
+        Assert.True(nextFinishRefusal.TellsOfRefusal);
+    }
+
+    [Fact]
+    public void A_finish_with_no_pause_refused_tells_of_nothing()
+    {
+        var first = ExpeditionFinish.Next(ExpeditionFinish.Start, Finishing(isPaused: true));
+        var next = ExpeditionFinish.Next(first.State, Finishing(isPaused: false));
+
+        Assert.False(first.TellsOfRefusal);
+        Assert.False(next.TellsOfRefusal);
     }
 
     [Fact]
@@ -1122,10 +1164,10 @@ public class SleepWatchTests
     private static readonly GameSpeed Super = GameSpeed.Of(PauseToggle.Triple, 1);
 
     private static SleepSnapshot Sleeping(GameSpeed running, bool isPaused = false, bool isChangedByHand = false) =>
-        new(IsAsleep: true, IsGameFastForwarding: false, IsBusy: true, isPaused, running, isChangedByHand);
+        new(IsAsleep: true, IsGameFastForwarding: false, IsBusy: true, isPaused, running, isChangedByHand, IsLeavingExpedition: false);
 
-    private static SleepSnapshot Woken(bool isBusy = false, bool isPaused = false, bool isGameFastForwarding = false) =>
-        new(IsAsleep: false, isGameFastForwarding, isBusy, isPaused, Super, WasSpeedChangedByHand: false);
+    private static SleepSnapshot Woken(bool isBusy = false, bool isPaused = false, bool isGameFastForwarding = false, bool isLeavingExpedition = false) =>
+        new(IsAsleep: false, isGameFastForwarding, isBusy, isPaused, Super, WasSpeedChangedByHand: false, isLeavingExpedition);
 
     private static SleepStep Run(SleepWatch state, SleepSettings settings, params SleepSnapshot[] checks)
     {
@@ -1196,6 +1238,15 @@ public class SleepWatchTests
         var step = Run(SleepWatch.Start, Both, Sleeping(Double), Sleeping(Super, isChangedByHand: true), Woken());
 
         Assert.Equal(new SleepCommand.PauseOnWake(Double), step.Command);
+    }
+
+    [Fact]
+    public void Waking_while_the_expedition_is_being_finished_does_not_pause_the_trip_home()
+    {
+        var step = Run(SleepWatch.Start, Both, Sleeping(Double), Woken(isLeavingExpedition: true));
+
+        Assert.Equal(new SleepCommand.Restore(Double), step.Command);
+        Assert.Equal(SleepWatch.Start, step.State);
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using System;
 using GameCore.HotUpdate;
 using GameCore.HotUpdate.Battle.Logic;
 using TimeControl.Core;
@@ -8,6 +9,10 @@ namespace TimeControl.Adapters;
 /// <summary>The game's time manager, and the three writes that make a game speed stick everywhere it is read.</summary>
 internal static class GameClock
 {
+    internal static Action<string> Log = _ => { };
+
+    private static bool _hasLoggedEndUnreadable;
+
     /// <summary>
     /// The live world's time manager, or null before the game has made one. Reading the singleton's Instance would
     /// build a world when none exists yet, before the game's configs load, and a world built that way registers the
@@ -66,12 +71,24 @@ internal static class GameClock
     /// Whether the expedition is being finished: the game marks its explore manager the moment the player confirms
     /// leaving, or the exposure meter fills (ExploreManager.OnExploreEnd), and the mark goes with the world it was
     /// made in. The trip home then waits two seconds of game time before it loads home, so it never arrives while the
-    /// game is paused. Only asked under an expedition's timer, and read only once the game has created the world.
+    /// game is paused. Only asked under an expedition's timer, and read only once the game has created the world. A
+    /// read that fails counts as not finishing, so it cannot stop the rest of a check, and is logged once.
     /// </summary>
     public static bool IsExpeditionEnding(GameTimer timer)
     {
         if (timer != GameTimer.Expedition || !BaseSingleton<BattleLogicWorld>.IsInstanceCreated) return false;
 
-        return BaseSingleton<BattleLogicWorld>.Instance?._ExploreManager?._hasEndProcessed == true;
+        try
+        {
+            return BaseSingleton<BattleLogicWorld>.Instance?._ExploreManager?._hasEndProcessed == true;
+        }
+        catch (Exception ex)
+        {
+            if (!_hasLoggedEndUnreadable) Log($"could not read whether the expedition is being finished, so pauses are not lifted for the trip home: {ex.Message}");
+
+            _hasLoggedEndUnreadable = true;
+
+            return false;
+        }
     }
 }

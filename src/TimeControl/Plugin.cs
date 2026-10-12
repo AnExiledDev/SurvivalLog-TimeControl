@@ -89,6 +89,7 @@ public sealed class Plugin : BasePlugin
         AlertSignals.Apply(harmony, alerts, log.Write);
         ClockTicker.Settings = settings;
         ClockTicker.Log = log.Write;
+        GameClock.Log = log.Write;
         ClockTicker.LogFileOnly = log.WriteFileOnly;
         ClockTicker.Page = new PageClockLink(log.Write);
         AddComponent<ClockTicker>();
