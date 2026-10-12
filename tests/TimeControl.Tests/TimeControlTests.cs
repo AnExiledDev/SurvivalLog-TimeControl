@@ -971,19 +971,39 @@ public class AlertPauseTests
 {
     private static readonly AlertSettings Defaults = new(IsWaveOn: true, IsEmergencyOn: true, IsDroneArrivalOn: false, IsQueueEmptyOn: false);
     private static readonly AlertSettings AllOn = new(IsWaveOn: true, IsEmergencyOn: true, IsDroneArrivalOn: true, IsQueueEmptyOn: true);
-    private static readonly AlertSnapshot Quiet = new(CanPause: true, IsPaused: false, IsWaveActive: false, EmergenciesFired: 0, DronesLanded: 0, IsBusy: false);
+    private static readonly AlertSnapshot Quiet = new(CanPause: true, IsPaused: false, IsWaveActive: false, EmergenciesFired: 0, DronesLanded: 0, IsBusy: false,
+        ElapsedSeconds: 0.1f, WasSpeedChangedByHand: false);
     private static readonly AlertSnapshot WaveUnderWay = Quiet with { IsWaveActive = true };
     private static readonly AlertSnapshot EmergencyFired = Quiet with { EmergenciesFired = 1 };
     private static readonly AlertSnapshot DroneLanded = Quiet with { DronesLanded = 1 };
     private static readonly AlertSnapshot Busy = Quiet with { IsBusy = true };
 
-    private static AlertStep Run(AlertSettings settings, params AlertSnapshot[] checks)
+    // Shorter than the queue's settle time, but two in a row are longer.
+    private static readonly AlertSnapshot BetweenOrders = Quiet with { ElapsedSeconds = 0.2f };
+    private static readonly AlertSnapshot StillEmpty = Quiet with { ElapsedSeconds = AlertPause.QueueSettleSeconds };
+
+    /// <summary>The last step of the checks on a world that settled seeing the first of them.</summary>
+    private static AlertStep Run(AlertSettings settings, params AlertSnapshot[] checks) =>
+        Steps(settings, Enumerable.Repeat(checks[0], AlertPause.SettleChecks - 1).Concat(checks)).Last();
+
+    /// <summary>The alerts paused for, from a world's very first check on.</summary>
+    private static Alert[] PausesFromLoad(AlertSettings settings, IEnumerable<AlertSnapshot> checks) =>
+        Steps(settings, checks).Select(step => step.PauseFor).OfType<Alert>().ToArray();
+
+    private static List<AlertStep> Steps(AlertSettings settings, IEnumerable<AlertSnapshot> checks)
     {
-        var step = new AlertStep(AlertPause.Start, null);
+        var state = AlertPause.Start;
+        var steps = new List<AlertStep>();
 
-        foreach (var seen in checks) step = AlertPause.Next(step.State, seen, settings);
+        foreach (var seen in checks)
+        {
+            var step = AlertPause.Next(state, seen, settings);
 
-        return step;
+            steps.Add(step);
+            state = step.State;
+        }
+
+        return steps;
     }
 
     private static AlertSnapshot Paused(AlertSnapshot seen) => seen with { IsPaused = true };
@@ -994,7 +1014,7 @@ public class AlertPauseTests
         var step = Run(Defaults, Quiet, WaveUnderWay);
 
         Assert.Equal(Alert.Wave, step.PauseFor);
-        Assert.Equal(new AlertPause.Holding(Alert.Wave, WasWaveActive: true, WasBusy: false), step.State);
+        Assert.Equal(new AlertPause.Holding(Alert.Wave, WasWaveActive: true, QueueEmptySeconds: null), step.State);
     }
 
     [Fact]
@@ -1003,6 +1023,23 @@ public class AlertPauseTests
         var step = Run(Defaults, WaveUnderWay, WaveUnderWay);
 
         Assert.Null(step.PauseFor);
+    }
+
+    [Fact]
+    public void A_wave_the_load_puts_back_after_the_worlds_first_check_does_not_pause()
+    {
+        var load = new[] { Quiet }.Concat(Enumerable.Repeat(WaveUnderWay, AlertPause.SettleChecks + 2));
+
+        Assert.Empty(PausesFromLoad(Defaults, load));
+    }
+
+    [Fact]
+    public void Drone_landings_and_emergencies_while_a_load_settles_are_not_news()
+    {
+        var settling = new[] { Quiet, DroneLanded with { EmergenciesFired = 1 } }.Concat(Enumerable.Repeat(Quiet, AlertPause.SettleChecks - 2)).ToArray();
+
+        Assert.Empty(PausesFromLoad(AllOn, settling));
+        Assert.Equal(new[] { Alert.DroneArrival }, PausesFromLoad(AllOn, settling.Append(DroneLanded)));
     }
 
     [Fact]
@@ -1059,15 +1096,28 @@ public class AlertPauseTests
     [Fact]
     public void The_order_queue_running_out_pauses_only_when_switched_on()
     {
-        Assert.Null(Run(Defaults, Quiet, Busy, Quiet).PauseFor);
-        Assert.Equal(Alert.QueueEmpty, Run(AllOn, Quiet, Busy, Quiet).PauseFor);
+        Assert.Null(Run(Defaults, Quiet, Busy, StillEmpty).PauseFor);
+        Assert.Equal(Alert.QueueEmpty, Run(AllOn, Quiet, Busy, StillEmpty).PauseFor);
+        Assert.Equal(Alert.QueueEmpty, Run(AllOn, Quiet, Busy, BetweenOrders, BetweenOrders).PauseFor);
     }
 
     [Fact]
     public void A_queue_that_stays_empty_pauses_only_when_it_runs_out()
     {
         Assert.Null(Run(AllOn, Quiet, Quiet, Quiet).PauseFor);
-        Assert.Null(Run(AllOn, Quiet, Busy, Quiet, Quiet).PauseFor);
+        Assert.Null(Run(AllOn, Quiet, Busy, StillEmpty, StillEmpty).PauseFor);
+    }
+
+    [Fact]
+    public void The_queue_reading_empty_between_two_orders_does_not_pause()
+    {
+        Assert.Null(Run(AllOn, Quiet, Busy, BetweenOrders).PauseFor);
+    }
+
+    [Fact]
+    public void An_order_inside_the_settle_time_means_the_queue_never_ran_out()
+    {
+        Assert.Null(Run(AllOn, Quiet, Busy, BetweenOrders, Busy, BetweenOrders).PauseFor);
     }
 
     [Fact]
@@ -1112,6 +1162,16 @@ public class AlertPauseTests
 
         Assert.Null(step.PauseFor);
         Assert.Equal(Alert.Wave, Assert.IsType<AlertPause.Holding>(step.State).Reason);
+    }
+
+    [Fact]
+    public void A_pause_made_by_hand_after_the_alert_pause_is_not_named_for_the_alert()
+    {
+        var resumedAndPausedAgain = Paused(WaveUnderWay) with { WasSpeedChangedByHand = true };
+        var step = Run(Defaults, Quiet, WaveUnderWay, resumedAndPausedAgain);
+
+        Assert.Null(step.PauseFor);
+        Assert.IsType<AlertPause.Watching>(step.State);
     }
 
     [Fact]

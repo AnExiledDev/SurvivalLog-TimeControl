@@ -107,9 +107,10 @@ public sealed class ClockTicker : MonoBehaviour
 
         KeepGearSpeedHeld(time, isPaused, now);
 
-        var isAsleep = UpdateSleep(time, isPaused);
+        var wasChangedByHand = SpeedPatches.TakeSpeedChangedByHand();
+        var isAsleep = UpdateSleep(time, isPaused, wasChangedByHand);
 
-        UpdateAlertPause(time, timer, isAsleep);
+        UpdateAlertPause(time, timer, isAsleep, elapsed, wasChangedByHand);
         UpdateIdlePause(time, time.IsPausedScale(), timer, elapsed, isAsleep);
         SpeedPatches.ClockFactor = ClockPace.Factor(Settings.ClockRate, isDayClock: timer == GameTimer.DayClock);
         SyncPage(time, now);
@@ -132,9 +133,8 @@ public sealed class ClockTicker : MonoBehaviour
     /// Whether the player is busy only matters once the character is asleep or the game is paused on waking.
     /// </summary>
     /// <returns>Whether the character is asleep, which idle freeze leaves alone.</returns>
-    private bool UpdateSleep(GameTimeManager time, bool isPaused)
+    private bool UpdateSleep(GameTimeManager time, bool isPaused, bool wasChangedByHand)
     {
-        var wasChangedByHand = SpeedPatches.TakeSpeedChangedByHand();
         var isAsleep = GameClock.IsLeadingRoleAsleep();
         var settings = new SleepSettings(Settings.IsSleepFastForwardOn, Settings.IsPauseOnWakeOn, SpeedPatches.FastestGear);
         var isBusy = _sleep is not SleepWatch.Awake && time.IsLeadingRoleBusy();
@@ -204,10 +204,11 @@ public sealed class ClockTicker : MonoBehaviour
 
     /// <summary>
     /// Runs before idle freeze, so an alert starting as the player falls idle is the pause that holds the game rather
-    /// than one their next order would resume. The counts are taken on every check, so ones from before a world's first
-    /// check, or from while alerts cannot pause, are let go rather than saved up.
+    /// than one their next order would resume. The counts are taken on every check, so ones from before a world has
+    /// settled, or from while alerts cannot pause, are let go rather than saved up. Every pause but this mod's own goes
+    /// through the game's speed change, which the hand-change flag sees, so a pause seen after one is not the alert's.
     /// </summary>
-    private void UpdateAlertPause(GameTimeManager time, GameTimer timer, bool isAsleep)
+    private void UpdateAlertPause(GameTimeManager time, GameTimer timer, bool isAsleep, float elapsed, bool wasChangedByHand)
     {
         var alerts = Settings.Alerts;
         var emergenciesFired = AlertSignals.TakeEmergenciesFired();
@@ -218,7 +219,7 @@ public sealed class ClockTicker : MonoBehaviour
         var canPause = AlertPause.CanPause(timer, IsFastForwarding(time) || isAsleep);
         var isWaveActive = alerts.IsWaveOn && AlertSignals.IsWaveActive();
         var isBusy = alerts.IsQueueEmptyOn && time.IsLeadingRoleBusy();
-        var seen = new AlertSnapshot(canPause, time.IsPausedScale(), isWaveActive, emergenciesFired, dronesLanded, isBusy);
+        var seen = new AlertSnapshot(canPause, time.IsPausedScale(), isWaveActive, emergenciesFired, dronesLanded, isBusy, elapsed, wasChangedByHand);
         var step = AlertPause.Next(_alert, seen, alerts);
 
         _alert = step.State;

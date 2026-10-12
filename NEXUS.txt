@@ -9,7 +9,7 @@ The game's slow button only slows once you stand idle, and there is no way to pa
 [*][b]True slow speed[/b]: the slow button holds 0.5x, then 0.25x on the next press.[/*]
 [*][b]Super speed[/b]: press the fast button or key 3 again at high speed to run twice as fast.[/*]
 [*][b]Idle pause[/b]: the game pauses after 3 seconds with nothing queued, and your next order resumes it.[/*]
-[*][b]Pause on alerts[/b]: the game pauses once when a zombie wave starts or an emergency fires. A pause when a trade drone comes home or your order queue runs out can be switched on too.[/*]
+[*][b]Pause on alerts[/b]: the game pauses once when a zombie wave starts or an emergency fires. A pause when a trade drone comes home or your order queue runs out can be switched on too. On expeditions alerts only pause when TimeControlOnExpeditions is true.[/*]
 [*][b]Fast sleep[/b]: sleep and naps run at super speed, and the game pauses when you wake.[/*]
 [*][b]Slower days[/b]: make the day clock slower without slowing walking or actions.[/*]
 [*][b]Pause key[/b]: Space pauses and resumes, at home, before the disaster and on expeditions.[/*]

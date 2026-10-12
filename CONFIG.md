@@ -44,7 +44,7 @@ A comma-separated list, for example `2,4`. Each multiple is kept between 1.1 and
 | `PauseOnDroneArrival` | `false` | Pause the game once when a trade drone comes home from a trip. |
 | `PauseOnQueueEmpty` | `false` | Pause the game once when your character finishes the last order in their queue. Unlike `IdleFreeze` it pauses at once and stays paused until you resume it. |
 
-Play or the pause key resumes the speed you had, and the same alert never pauses the game twice. Alerts pause only at home, in the countdown before the disaster and on expeditions, and not while your character sleeps. An alert that starts while the game is already paused is let go rather than saved for later.
+Play or the pause key resumes the speed you had, and the same alert never pauses the game twice. Alerts pause only at home, in the countdown before the disaster and on expeditions, and not while your character sleeps. On expeditions alerts only pause when `TimeControlOnExpeditions` is `true`. An alert that starts while the game is already paused is let go rather than saved for later.
 
 ## Keys
 
