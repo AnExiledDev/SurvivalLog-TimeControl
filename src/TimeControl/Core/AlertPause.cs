@@ -75,8 +75,12 @@ public abstract record AlertPause
     /// <summary>The game is paused for <paramref name="Reason"/> until anyone resumes it or pauses it again.</summary>
     public sealed record Holding(Alert Reason, bool WasWaveActive, float? QueueEmptySeconds) : AlertPause;
 
-    /// <summary>The mod's pauses apply under the timers the player waits out, and never in a fast-forward such as sleep.</summary>
-    public static bool CanPause(GameTimer timer, bool isFastForwarding) => GameTimers.IsWaitedOut(timer) && !isFastForwarding;
+    /// <summary>
+    /// The mod's pauses apply under the timers the player waits out, never in a fast-forward such as sleep, and never
+    /// while an expedition is being finished, as the trip home waits on game time.
+    /// </summary>
+    public static bool CanPause(GameTimer timer, bool isFastForwarding, bool isLeavingExpedition) =>
+        GameTimers.IsWaitedOut(timer) && !isFastForwarding && !isLeavingExpedition;
 
     /// <summary>
     /// A speed change by hand while held means the pause standing now was made after this one, by the player or the

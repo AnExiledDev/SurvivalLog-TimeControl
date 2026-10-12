@@ -266,6 +266,64 @@ public class IdlePauseTests
     }
 }
 
+public class ExpeditionFinishTests
+{
+    private static FinishSnapshot Finishing(bool isPaused) => new(IsFinishing: true, isPaused, RunningLevel: PauseToggle.Double);
+
+    private static FinishSnapshot UnderWay(bool isPaused) => new(IsFinishing: false, isPaused, RunningLevel: PauseToggle.Double);
+
+    [Fact]
+    public void A_pause_standing_when_the_player_finishes_the_expedition_is_resumed_at_the_last_running_speed()
+    {
+        var step = ExpeditionFinish.Next(ExpeditionFinish.Start, Finishing(isPaused: true));
+
+        Assert.Equal(PauseToggle.Double, step.ResumeAt);
+    }
+
+    [Fact]
+    public void The_trip_home_is_resumed_once_per_finish_not_on_every_check()
+    {
+        var resumed = ExpeditionFinish.Next(ExpeditionFinish.Start, Finishing(isPaused: true));
+        var nextCheck = ExpeditionFinish.Next(resumed.State, Finishing(isPaused: true));
+
+        Assert.Null(nextCheck.ResumeAt);
+    }
+
+    [Fact]
+    public void A_finish_that_starts_while_time_runs_leaves_the_speed_alone()
+    {
+        var step = ExpeditionFinish.Next(ExpeditionFinish.Start, Finishing(isPaused: false));
+
+        Assert.Null(step.ResumeAt);
+    }
+
+    [Fact]
+    public void A_pause_on_an_expedition_that_is_not_being_finished_is_kept()
+    {
+        var step = ExpeditionFinish.Next(ExpeditionFinish.Start, UnderWay(isPaused: true));
+
+        Assert.Null(step.ResumeAt);
+    }
+
+    [Fact]
+    public void The_pause_key_or_pause_button_pressed_while_the_expedition_is_being_finished_does_nothing()
+    {
+        var pauseKeyWhileRunning = PauseToggle.Target(isPaused: false, PauseToggle.Double);
+
+        Assert.True(ExpeditionFinish.RefusesSpeed(pauseKeyWhileRunning, isFinishing: true));
+        Assert.True(ExpeditionFinish.RefusesSpeed(PauseToggle.Paused, isFinishing: true));
+    }
+
+    [Fact]
+    public void Pausing_on_an_expedition_still_works_until_it_is_being_finished_and_resuming_always_does()
+    {
+        var pauseKeyWhilePaused = PauseToggle.Target(isPaused: true, PauseToggle.Double);
+
+        Assert.False(ExpeditionFinish.RefusesSpeed(PauseToggle.Paused, isFinishing: false));
+        Assert.False(ExpeditionFinish.RefusesSpeed(pauseKeyWhilePaused, isFinishing: true));
+    }
+}
+
 public class GameTimerTests
 {
     [Fact]
@@ -1435,10 +1493,19 @@ public class AlertPauseTests
     [Fact]
     public void Alerts_pause_only_under_the_timers_the_player_waits_out_and_never_in_a_fast_forward()
     {
-        Assert.True(AlertPause.CanPause(GameTimer.DayClock, isFastForwarding: false));
-        Assert.True(AlertPause.CanPause(GameTimer.PrologueCountdown, isFastForwarding: false));
-        Assert.True(AlertPause.CanPause(GameTimer.Expedition, isFastForwarding: false));
-        Assert.False(AlertPause.CanPause(GameTimer.Other, isFastForwarding: false));
-        Assert.False(AlertPause.CanPause(GameTimer.DayClock, isFastForwarding: true));
+        Assert.True(AlertPause.CanPause(GameTimer.DayClock, isFastForwarding: false, isLeavingExpedition: false));
+        Assert.True(AlertPause.CanPause(GameTimer.PrologueCountdown, isFastForwarding: false, isLeavingExpedition: false));
+        Assert.True(AlertPause.CanPause(GameTimer.Expedition, isFastForwarding: false, isLeavingExpedition: false));
+        Assert.False(AlertPause.CanPause(GameTimer.Other, isFastForwarding: false, isLeavingExpedition: false));
+        Assert.False(AlertPause.CanPause(GameTimer.DayClock, isFastForwarding: true, isLeavingExpedition: false));
+    }
+
+    [Fact]
+    public void An_alert_while_the_expedition_is_being_finished_does_not_pause_the_trip_home()
+    {
+        var canPause = AlertPause.CanPause(GameTimer.Expedition, isFastForwarding: false, isLeavingExpedition: true);
+        var step = Run(AllOn, Quiet, WaveUnderWay with { CanPause = canPause, EmergenciesFired = 1, DronesLanded = 1 });
+
+        Assert.Null(step.PauseFor);
     }
 }
