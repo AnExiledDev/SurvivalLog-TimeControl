@@ -25,10 +25,10 @@ Time Control adds no data of its own to your save and does not edit game files. 
 
 | Key | What it does |
 | --- | --- |
-| `Space` | Pause. Press again to resume the speed you had. Works at home, in the countdown before the disaster and on expeditions. Change it with `PauseToggleKey`. |
-| `G` | Center the camera on your character (the game's default for this was `Space`). Change it with `CenterCameraKey`. |
+| `Space` | Pause. Press again to resume the speed you had. Works at home, in the countdown before the disaster and on expeditions. The game uses `Space` for camera follow, so that moves to `G`. Change it with `PauseToggleKey`. |
+| `G` | Camera follow: centers the camera on your character. The game has this on `Space`, so the mod moves it to `G`, which the game does not use. Change it with `CenterCameraKey`. |
 | `1`, `2`, `3` | The game's own speed keys. Press `3` again at the game's high speed for super speed. In the countdown before the disaster and on expeditions the mod answers them, since the game does not. |
-| The game's pause and slow keys | The game's own keys, whatever they are bound to. The mod answers them in the countdown before the disaster and on expeditions. |
+| `4`, `` ` `` | The game's own pause and slow keys (or whatever you bound them to in the game's key settings). The mod answers them in the countdown before the disaster and on expeditions. |
 
 A key you set in the game's own key settings always wins. If the game uses your pause key for one of its own actions, the pause key stands aside and the log says so. The pause key does nothing while you type in a text box or rebind a key.
 
@@ -105,7 +105,7 @@ Settings live in `BepInEx\config\com.dev.survivallog.timecontrol.cfg`, created t
 
 Tested on Survival Log 1.1.18317 with BepInEx `6.0.0-be.788`.
 
-Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.6.1 started`. It lists the clock rate and which features are on. The next lines say which game hooks are in place and what the game's own pause key is; a line starting `could not hook` names a feature that will not work.
+Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.6.2 started`. It lists the clock rate and which features are on. The next lines say which game hooks are in place and what the game's own pause key is; a line starting `could not hook` names a feature that will not work.
 
 The same lines, plus every idle pause, alert pause, sleep and wake, are in `BepInEx\time-control.log`, which survives restarts and trims itself past 1 MB.
 
@@ -113,6 +113,7 @@ If `Space` does not pause, look in the log for a line saying it is bound to one 
 
 ## Changelog
 
+- 0.6.2: Plainer descriptions for every setting in the config file, each with a Simplified Chinese translation. Nothing else changed.
 - 0.6.1: Finishing an expedition no longer freezes the game when it was paused. Any pause (idle pause, pause key, speed buttons or an alert) is lifted for the trip home, and pausing does nothing until you are back.
 
 ## Feedback and bug reports
