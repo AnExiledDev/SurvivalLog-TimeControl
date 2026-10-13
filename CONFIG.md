@@ -6,7 +6,7 @@ Settings live in `BepInEx\config\com.dev.survivallog.timecontrol.cfg`, created t
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| `SlowSpeeds` | `0.5,0.25` | Speeds for the Slow button and the `` ` `` key. Pressing slow again while slow moves to the next speed, and after the last back to the first. |
+| `SlowSpeeds` | `0.5,0.25` | Speeds for the Slow button and the `` ` `` (`~`) key. Pressing slow again while slow moves to the next speed, and after the last back to the first. |
 
 A comma-separated list. Each speed is kept between 0.05 and 0.95; a number outside that range is moved to the nearest end, and an entry that is not a number is skipped. Leave it empty to keep the game's own slow button.
 
@@ -16,7 +16,7 @@ A comma-separated list. Each speed is kept between 0.05 and 0.95; a number outsi
 | --- | --- | --- |
 | `FastSpeeds` | `2` | Extra speeds above the game's Fastest speed, as multiples of it. Pressing the Fastest button or the `3` key while already at Fastest moves to the next one, and after the last back to Fastest. |
 
-A comma-separated list, for example `2,4`. Each multiple is kept between 1.1 and 10; an entry that is not a number is skipped. The game never runs faster than 40x, whatever the multiple: it moves the world one step per frame, and past 40x each step at 30 frames a second would be longer than the game allows. Leave it empty to keep the game's own Fastest button.
+A comma-separated list, for example `2,4`. Each multiple is kept between 1.1 and 10; an entry that is not a number is skipped. Speeds are capped at 40x: the game moves the world one step per frame, and past 40x each step at 30 frames a second would be longer than the game allows. Leave it empty to keep the game's own Fastest button.
 
 ## Clock
 
@@ -51,19 +51,19 @@ Pick a speed or press the pause key to carry on. The same alert never pauses the
 | Setting | Default | What it does |
 | --- | --- | --- |
 | `PauseToggleKey` | `Space` | The key that pauses the game and, on the next press, brings back the speed you had. Works at home, before the disaster and on expeditions. The game uses `Space` for camera follow (centering the camera on your character), so while this is `Space` the mod moves camera follow to `CenterCameraKey`. `None` turns it off. |
-| `CenterCameraKey` | `G` | The key for camera follow (centering the camera on your character) when `PauseToggleKey` is `Space`, which is the game's own key for camera follow. The game does not use `G` for anything else. `None` leaves camera follow with no key. |
+| `CenterCameraKey` | `G` | The key for camera follow (centering the camera on your character) when `PauseToggleKey` is `Space`, which is the game's own key for camera follow. By default the game does not use `G` for anything else. `None` leaves camera follow with no key. |
 
 Both take a Unity key name, such as `Space`, `P`, `F5`, `Pause` or `Keypad0`. Upper and lower case do not matter. A name that is not a Unity key turns the pause key off, or puts camera follow on `G`, and the log says so.
 
 If the game uses the pause key for one of its own actions, the pause key does nothing; rebind that action in the game's key settings or pick another key. A key you set for camera follow in the game's own key settings always wins over `CenterCameraKey`.
 
-The game's own speed keys are `1` (normal), `2` (fast), `3` (fastest), `4` (pause) and `` ` `` (slow) by default. They keep working alongside the pause key.
+The game's own speed keys are `1` (normal), `2` (fast), `3` (fastest), `4` (pause) and `` ` `` (`~`, slow) by default. They keep working alongside the pause key.
 
 ## Expedition
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| `TimeControlOnExpeditions` | `true` | Let the pause key, the game's speed keys (`1`, `2`, `3`, `4` for pause and `` ` `` for slow, by default), the `SlowSpeeds` and `FastSpeeds` speeds, the idle pause and the alert pauses work on expeditions. Pausing there also stops the exposure meter. `false` leaves expeditions at the game's own pace and hides the mod's speed buttons there. |
+| `TimeControlOnExpeditions` | `true` | Let the pause key, the game's speed keys (`1`, `2`, `3`, `4` for pause and `` ` `` (`~`) for slow, by default), the `SlowSpeeds` and `FastSpeeds` speeds, the idle pause and the alert pauses work on expeditions. Pausing there also stops the exposure meter. `false` leaves expeditions at the game's own pace and hides the mod's speed buttons there. |
 
 ## Display
 

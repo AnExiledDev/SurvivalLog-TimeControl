@@ -7,7 +7,7 @@ Survival Log's slow button only slows the game once you stand idle, the clock ke
 ## Features
 
 - **A slow button that really slows**: the game's slow button runs at full speed until you stand idle, then drops to 0.3x. With this mod it holds a true slow speed from the moment you press it: 0.5x on the first press, 0.25x on the next, then back to 0.5x. The button's tooltip shows the speed in use.
-- **Super speed**: press the fast button (or key `3`) again while at the game's high speed and the game runs at twice that speed. Press it once more to go back to high speed. Pausing and resuming comes back to super speed; keys `1` and `2` and the slow button leave it.
+- **Super speed**: press the Fastest button (or key `3`) again while at Fastest and the game runs at twice that speed. Press it once more to go back to Fastest. Pausing and resuming comes back to super speed; keys `1` and `2` and the slow button leave it.
 - **Idle pause**: once your character has stood idle with nothing queued for 3 seconds, the game pauses for real. The clock, zombies, plants, trade countdowns and the drone all stop. Your next order resumes the speed you had. Press play (or the pause key) while it is paused and time keeps running until your next order. A pause you made yourself is never undone by the mod.
 - **Fast sleep, and a pause on waking**: sleep and naps run at super speed in place of the game's own sleep speed-up. When your character wakes, however the sleep ended, the game pauses. Your next order, play or the pause key resumes the speed you had before the sleep. Pick another speed during a sleep and it is kept until you wake.
 - **Pause on alerts**: the game pauses once when a zombie wave starts or an emergency fires, so neither slips past at super speed. Pausing when a trade drone comes home, or when your character finishes the last order in their queue, can be switched on as well. Play or the pause key resumes the speed you had, and the same alert never pauses the game twice, so once you resume, time keeps running.
@@ -26,9 +26,9 @@ Time Control adds no data of its own to your save and does not edit game files. 
 | Key | What it does |
 | --- | --- |
 | `Space` | Pause. Press again to resume the speed you had. Works at home, in the countdown before the disaster and on expeditions. The game uses `Space` for camera follow, so that moves to `G`. Change it with `PauseToggleKey`. |
-| `G` | Camera follow: centers the camera on your character. The game has this on `Space`, so the mod moves it to `G`, which the game does not use. Change it with `CenterCameraKey`. |
-| `1`, `2`, `3` | The game's own speed keys. Press `3` again at the game's high speed for super speed. In the countdown before the disaster and on expeditions the mod answers them, since the game does not. |
-| `4`, `` ` `` | The game's own pause and slow keys (or whatever you bound them to in the game's key settings). The mod answers them in the countdown before the disaster and on expeditions. |
+| `G` | Camera follow: centers the camera on your character. The game has this on `Space`, so the mod moves it to `G`, which the game does not use by default. Change it with `CenterCameraKey`. |
+| `1`, `2`, `3` | The game's own speed keys. Press `3` again at Fastest for super speed. In the countdown before the disaster and on expeditions the mod answers them, since the game does not. |
+| `4`, `` ` `` (`~`) | The game's own pause and slow keys (or whatever you bound them to in the game's key settings). The mod answers them in the countdown before the disaster and on expeditions. |
 
 A key you set in the game's own key settings always wins. If the game uses your pause key for one of its own actions, the pause key stands aside and the log says so. The pause key does nothing while you type in a text box or rebind a key.
 
@@ -36,7 +36,7 @@ A key you set in the game's own key settings always wins. If the game uses your 
 
 **Idle** is the game's own test: no order from you in your character's queue, the same test the game's idle slowdown uses. Something your character does on its own does not count as an order, so the game can pause during it.
 
-**Super speed** is a multiple of the game's high speed (2x by default, set by `FastSpeeds`). The speed never goes past 40x: the game moves its world one step per frame, and past 40x each step at 30 frames a second is longer than the game's own speeds allow.
+**Super speed** is a multiple of the game's Fastest speed (2x by default, set by `FastSpeeds`). Speeds are capped at 40x: the game moves its world one step per frame, and past 40x each step at 30 frames a second is longer than the game's own speeds allow.
 
 **The pause badge** shows only for pauses the mod knows the reason for:
 
