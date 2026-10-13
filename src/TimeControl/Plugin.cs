@@ -18,11 +18,11 @@ public sealed class Plugin : BasePlugin
     public override void Load()
     {
         var slowSpeeds = Config.Bind("SlowButton", "SlowSpeeds", "0.5,0.25",
-            "Speeds for the Slow button and the ` key, separated by commas, each from 0.05 to 0.95. Pressing slow again while slow moves to the next speed, and after the last back to the first. Leave it empty to keep the game's own slow button.\n" +
-            "慢速按钮和 ` 键使用的速度，用逗号分隔，每个在 0.05 到 0.95 之间。已经在慢速时再按一次慢速，会换到下一个速度，最后一个之后回到第一个。留空则保留游戏原本的慢速按钮。").Value;
+            "Speeds for the Slow button and the ` (~) key, separated by commas, each from 0.05 to 0.95. Pressing slow again while slow moves to the next speed, and after the last back to the first. Leave it empty to keep the game's own slow button.\n" +
+            "慢速按钮和 ` (~) 键使用的速度，用逗号分隔，每个在 0.05 到 0.95 之间。已经在慢速时再按一次慢速，会换到下一个速度，最后一个之后回到第一个。留空则保留游戏原本的慢速按钮。").Value;
         var fastMultiples = Config.Bind("FastButton", "FastSpeeds", "2",
-            "Extra speeds above the game's Fastest speed, as multiples of it, separated by commas, each from 1.1 to 10. Pressing the Fastest button or the 3 key while already at Fastest moves to the next one, and after the last back to Fastest. The game never runs faster than 40x, whatever the multiple. Leave it empty to keep the game's own Fastest button.\n" +
-            "比游戏极速更快的额外速度，按极速的倍数填写，用逗号分隔，每个在 1.1 到 10 之间。已经在极速时再按极速按钮或 3 键，会换到下一档，最后一档之后回到极速。无论倍数多大，游戏最快只到 40 倍速。留空则保留游戏原本的极速按钮。").Value;
+            "Extra speeds above the game's Fastest speed, as multiples of it, separated by commas, each from 1.1 to 10. Pressing the Fastest button or the 3 key while already at Fastest moves to the next one, and after the last back to Fastest. Speeds are capped at 40x. Leave it empty to keep the game's own Fastest button.\n" +
+            "比游戏极速更快的额外速度，按极速的倍数填写，用逗号分隔，每个在 1.1 到 10 之间。已经在极速时再按极速按钮或 3 键，会换到下一档，最后一档之后回到极速。速度上限为 40 倍。留空则保留游戏原本的极速按钮。").Value;
         var clockRate = Config.Bind("Clock", "ClockRate", 1f,
             "How fast the day clock runs, from 0.05 to 4. At 0.5 each day lasts twice as long, while walking and actions keep their speed. 1 is the game's own pace. It only changes the clock at home, not before the disaster or on expeditions.\n" +
             "游戏时钟走得多快，范围 0.05 到 4。设为 0.5 时每一天变成原来的两倍长，走路和各种动作的速度不变。1 为游戏原本的速度。只影响安全屋里的时钟，不影响灾前筹备和外出探索。").Value;
@@ -42,11 +42,11 @@ public sealed class Plugin : BasePlugin
             "The key that pauses the game and, on the next press, brings back the speed you had. Works at home, before the disaster and on expeditions. The game uses Space for camera follow (centering the camera on your character), so while this is Space the mod moves camera follow to CenterCameraKey. A key the game uses for anything else does not pause. None turns it off.\n" +
             "暂停游戏的按键，再按一次恢复之前的速度。在安全屋、灾前筹备和外出探索时都有效。游戏原本用 Space（空格键）做镜头跟随，所以这里设为 Space 时，本模组会把镜头跟随改到 CenterCameraKey 设置的键。如果这个键已被游戏用于其他功能，按下不会暂停。设为 None 则关闭。").Value;
         var centerCameraKeyText = Config.Bind("Keys", "CenterCameraKey", "G",
-            "The key for camera follow (centering the camera on your character) when PauseToggleKey is Space, which is the game's own key for camera follow. The game does not use G for anything else. A key you set for camera follow in the game's key settings still wins. None leaves camera follow with no key.\n" +
-            "当 PauseToggleKey 为 Space 时，镜头跟随（把镜头对准你的角色）改用的按键；Space 原本是游戏的镜头跟随键。游戏没有把 G 键用在别的地方。你在游戏「按键」设置里给镜头跟随设的键仍然优先。设为 None 则镜头跟随没有按键。").Value;
+            "The key for camera follow (centering the camera on your character) when PauseToggleKey is Space, which is the game's own key for camera follow. By default the game does not use G for anything else. A key you set for camera follow in the game's key settings still wins. None leaves camera follow with no key.\n" +
+            "当 PauseToggleKey 为 Space 时，镜头跟随（把镜头对准你的角色）改用的按键；Space 原本是游戏的镜头跟随键。游戏默认没有把 G 用在别处。你在游戏「按键」设置里给镜头跟随设的键仍然优先。设为 None 则镜头跟随没有按键。").Value;
         var isExpeditionOn = Config.Bind("Expedition", "TimeControlOnExpeditions", true,
-            "Let the pause key, the game's speed keys (1, 2, 3, 4 for pause and ` for slow, by default), the SlowSpeeds and FastSpeeds speeds, the idle pause and the alert pauses work on expeditions. Pausing there also stops the exposure meter. Off leaves expeditions at the game's own pace and hides the mod's speed buttons there.\n" +
-            "外出探索时启用暂停键、游戏的速度键（默认 1、2、3，4 为暂停，` 为慢速）、SlowSpeeds 和 FastSpeeds 的速度、空闲暂停和事件暂停。外出探索中暂停时，暴露值也会停止上涨。关闭则外出探索保持游戏原本的速度，也不显示本模组的速度按钮。").Value;
+            "Let the pause key, the game's speed keys (1, 2, 3, 4 for pause and ` (~) for slow, by default), the SlowSpeeds and FastSpeeds speeds, the idle pause and the alert pauses work on expeditions. Pausing there also stops the exposure meter. Off leaves expeditions at the game's own pace and hides the mod's speed buttons there.\n" +
+            "外出探索时启用暂停键、游戏的速度键（默认 1、2、3，4 为暂停，` (~) 为慢速）、SlowSpeeds 和 FastSpeeds 的速度、空闲暂停和事件暂停。外出探索中暂停时，暴露值也会停止上涨。关闭则外出探索保持游戏原本的速度，也不显示本模组的速度按钮。").Value;
         var isPauseOnWaveOn = Config.Bind("Alerts", "PauseOnWave", true,
             "Pause the game once when a zombie wave starts. Pick a speed or press the pause key (Space by default) to carry on; the same wave does not pause the game again.\n" +
             "尸潮开始时暂停游戏一次。选一个速度或按暂停键（默认 Space）继续；同一波尸潮不会再暂停。").Value;
@@ -55,7 +55,7 @@ public sealed class Plugin : BasePlugin
             "危机事件开始时暂停游戏一次。选一个速度或按暂停键（默认 Space）继续。").Value;
         var isPauseOnDroneArrivalOn = Config.Bind("Alerts", "PauseOnDroneArrival", false,
             "Pause the game once when a trade drone comes home from a trip. Pick a speed or press the pause key (Space by default) to carry on.\n" +
-            "无人机出行回到家时暂停游戏一次。选一个速度或按暂停键（默认 Space）继续。").Value;
+            "交易无人机出行归来时暂停游戏一次。选一个速度或按暂停键（默认 Space）继续。").Value;
         var isPauseOnQueueEmptyOn = Config.Bind("Alerts", "PauseOnQueueEmpty", false,
             "Pause the game once when your character finishes the last order in their queue. Unlike IdleFreeze, it pauses right away and stays paused until you pick a speed or press the pause key (Space by default).\n" +
             "角色做完队列里最后一个指令时暂停游戏一次。与 IdleFreeze 不同，它会立刻暂停，并一直停着，直到你选一个速度或按暂停键（默认 Space）。").Value;
