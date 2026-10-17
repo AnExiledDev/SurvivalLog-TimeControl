@@ -204,6 +204,28 @@ public class SpeedButtonsPageTests
     }
 
     [Fact]
+    public void Without_page_texts_a_chinese_game_gets_the_games_own_chinese_speed_names()
+    {
+        var ui = new FakeWebUi(BothPages);
+
+        ui.Send(SpeedButtons.Script(Countdown with { SlowLabel = "0.25x", IsChinese = true }));
+
+        Assert.Equal("慢速 0.25x", ui.Text("tooltipFor(countdown, 4)"));
+        Assert.Equal("极速", ui.Text("tooltipFor(countdown, 3)"));
+    }
+
+    [Fact]
+    public void Switching_the_game_to_chinese_renames_the_buttons_on_the_next_draw()
+    {
+        var ui = new FakeWebUi(BothPages);
+
+        ui.Send(Draw);
+        ui.Send(SpeedButtons.Script(Countdown with { IsChinese = true }));
+
+        Assert.Equal("暂停", ui.Text("tooltipFor(countdown, 0)"));
+    }
+
+    [Fact]
     public void A_slow_label_cannot_run_as_script()
     {
         var ui = new FakeWebUi(BothPages);

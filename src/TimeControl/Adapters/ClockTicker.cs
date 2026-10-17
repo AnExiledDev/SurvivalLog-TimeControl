@@ -38,6 +38,7 @@ public sealed class ClockTicker : MonoBehaviour
     internal static Action<string> Log = _ => { };
     internal static Action<string> LogFileOnly = _ => { };
     internal static PageClockLink? Page;
+    internal static Func<bool> IsChinese = () => false;
 
     private IdlePause _idle = IdlePause.Start;
     private SleepWatch _sleep = SleepWatch.Start;
@@ -368,10 +369,11 @@ public sealed class ClockTicker : MonoBehaviour
     {
         var isRefreshDue = TakePageRefresh(now);
         var isPaused = time.IsPausedScale();
+        var isChinese = IsChinese();
         var slowLabel = SpeedPatches.HeldSlowSpeed(time) is { } held ? SlowGear.Label(held) : "";
-        SpeedButtonsView? buttons = AreSpeedButtonsShown(timer) ? SpeedButtons.View(timer, isPaused, time.GetSpeedLevel(), slowLabel) : null;
+        SpeedButtonsView? buttons = AreSpeedButtonsShown(timer) ? SpeedButtons.View(timer, isPaused, time.GetSpeedLevel(), slowLabel, isChinese) : null;
         Alert? alertHolding = _alert is AlertPause.Holding holding ? holding.Reason : null;
-        var badge = PauseBadge.Text(Settings.Badges, isPaused, _idle is IdlePause.Frozen, SpeedPatches.IsPausedByKey, alertHolding);
+        var badge = PauseBadge.Text(Settings.Badges, isPaused, _idle is IdlePause.Frozen, SpeedPatches.IsPausedByKey, alertHolding, isChinese);
 
         Page?.SyncSpeedButtons(buttons, isRefreshDue);
         Page?.SyncBadge(badge, buttons?.Page ?? HudPage.Home, isRefreshDue);

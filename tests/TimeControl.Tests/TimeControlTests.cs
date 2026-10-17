@@ -706,6 +706,22 @@ public class PauseBadgeTests
     }
 
     [Fact]
+    public void In_a_chinese_game_the_badge_says_why_in_chinese()
+    {
+        Assert.Equal("已暂停：空闲", PauseBadge.Text(BothOn, isPaused: true, isIdleHolding: true, isPauseKeyHolding: false, isChinese: true));
+        Assert.Equal("已暂停：尸潮", PauseBadge.Text(BothOn, isPaused: true, isIdleHolding: false, isPauseKeyHolding: false, Alert.Wave, isChinese: true));
+        Assert.Equal("已暂停", PauseBadge.Text(BothOn, isPaused: true, isIdleHolding: false, isPauseKeyHolding: true, isChinese: true));
+    }
+
+    [Fact]
+    public void A_turned_off_badge_stays_hidden_in_chinese_too()
+    {
+        var pauseKeyOnly = BothOn with { IsIdleBadgeOn = false };
+
+        Assert.Equal("", PauseBadge.Text(pauseKeyOnly, isPaused: true, isIdleHolding: true, isPauseKeyHolding: false, isChinese: true));
+    }
+
+    [Fact]
     public void The_pause_key_says_it_holds_the_game()
     {
         Assert.Equal("Paused", PauseBadge.Text(BothOn, isPaused: true, isIdleHolding: false, isPauseKeyHolding: true));

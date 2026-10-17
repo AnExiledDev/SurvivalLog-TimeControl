@@ -78,13 +78,15 @@ Game time is finicky. Events, sleep, zombie waves and expedition timers all run 
 - The badge's new place beside the speed buttons and the see-through paused banner are new in 0.6.1 and have not been played through in the game yet. If either covers something, set `PauseOverlayOpacity` to `1` or turn the badge off, and report it.
 - When a pause starts, the paused banner can show at full strength for up to half a second before it turns see-through.
 - Lifting any pause when you finish an expedition, and ignoring pauses until the trip home is over, are new in 0.6.1 and have not been played through in the game yet. If the trip home still freezes or the game will not pause once you are back, set `TimeControlOnExpeditions` to `false` and report it.
-- In the countdown before the disaster, the speed buttons' tooltips are in English, because that screen has no text for them in your language. They hide while the planning view is open, along with the game's buttons in the bottom left corner.
+- In the countdown before the disaster that screen has no text for the speed buttons, so the mod names them itself, in English or Chinese to match the game, without the hotkey. They hide while the planning view is open, along with the game's buttons in the bottom left corner.
 - An alert that starts while your character sleeps does not pause the game. `PauseOnWake` pauses it when they wake.
 - A line in the log reading `speed change reached N time managers in one frame (expected 1)` means leftover game worlds are answering the game's events, so one trade or one order can happen several times. Restart the game if you see it. `speed change reached 1 time manager, as it should` after your first use of the speed buttons is the healthy reading.
 
+Works in English and Chinese: the pause badge and the speed buttons follow the game's language, switching when you switch it, and every config setting is explained in English and Simplified Chinese. The log stays in English.
+
 ## Requirements
 
-- Survival Log 1.1.18317. Built and tested on this version; a game update can break it until the mod is updated.
+- Survival Log 1.1.18902. Built for this version; a game update can break it until the mod is updated.
 - The [BepInEx Pack for Survival Log](https://www.nexusmods.com/survivallog/mods/12), the BepInEx 6 (IL2CPP) build for the game.
 
 ## Install
@@ -103,9 +105,9 @@ Settings live in `BepInEx\config\com.dev.survivallog.timecontrol.cfg`, created t
 
 ## Troubleshooting
 
-Tested on Survival Log 1.1.18317 with BepInEx `6.0.0-be.788`.
+Built against BepInEx `6.0.0-be.788`.
 
-Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.6.2 started`. It lists the clock rate and which features are on. The next lines say which game hooks are in place and what the game's own pause key is; a line starting `could not hook` names a feature that will not work.
+Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.6.3 started`. It lists the clock rate and which features are on. The next lines say which game hooks are in place and what the game's own pause key is; a line starting `could not hook` names a feature that will not work.
 
 The same lines, plus every idle pause, alert pause, sleep and wake, are in `BepInEx\time-control.log`, which survives restarts and trims itself past 1 MB.
 
@@ -113,6 +115,7 @@ If `Space` does not pause, look in the log for a line saying it is bound to one 
 
 ## Changelog
 
+- 0.6.3: The pause badge, and the speed button names in the countdown before the disaster, now show in Chinese when the game is in Chinese.
 - 0.6.2: Plainer descriptions for every setting in the config file, each with a Simplified Chinese translation. Nothing else changed.
 - 0.6.1: Finishing an expedition no longer freezes the game when it was paused. Any pause (idle pause, pause key, speed buttons or an alert) is lifted for the trip home, and pausing does nothing until you are back.
 

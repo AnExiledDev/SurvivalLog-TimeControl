@@ -6,7 +6,7 @@ using System.Linq;
 namespace TimeControl.Core;
 
 /// <summary>What the mod's speed buttons show: the page they go on, the level lit, and the slow speed held, if any.</summary>
-public readonly record struct SpeedButtonsView(HudPage Page, int ActiveLevel, string SlowLabel);
+public readonly record struct SpeedButtonsView(HudPage Page, int ActiveLevel, string SlowLabel, bool IsChinese = false);
 
 /// <summary>
 /// The game's speed buttons (slow, normal, fast, fastest and pause) are missing in the countdown to the disaster, whose
@@ -47,11 +47,11 @@ public static class SpeedButtons
     /// <summary>The game's buttons in its own order, each with the game's icon and the page texts it builds its tooltip from.</summary>
     private static readonly Button[] Buttons =
     {
-        new(PauseToggle.Slow, "i18n_speedSlow", "Slow", "i18n_hotkeySpeedSlow", "<path d=\"M9 4v11l8-5.5z\"/><rect x=\"5\" y=\"17.5\" width=\"14\" height=\"2\" rx=\"1\"/>"),
-        new(PauseToggle.Normal, "i18n_speedNormal", "Normal", "i18n_hotkeySpeed1x", "<path d=\"M8 5v14l11-7z\"/>"),
-        new(PauseToggle.Double, "i18n_speedFast", "Fast", "i18n_hotkeySpeed2x", "<path d=\"M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z\"/>"),
-        new(PauseToggle.Triple, "i18n_speedMax", "Fastest", "i18n_hotkeySpeed3x", "<path d=\"M2 18l6-6-6-6v12zm7-12v12l6-6-6-6zm7 0v12l6-6-6-6z\"/>"),
-        new(PauseToggle.Paused, "i18n_speedPause", "Pause", "i18n_hotkeySpeedPause", "<path d=\"M6 5h4v14H6zm8 0h4v14h-4z\"/>"),
+        new(PauseToggle.Slow, "i18n_speedSlow", Texts.SpeedSlow, "i18n_hotkeySpeedSlow", "<path d=\"M9 4v11l8-5.5z\"/><rect x=\"5\" y=\"17.5\" width=\"14\" height=\"2\" rx=\"1\"/>"),
+        new(PauseToggle.Normal, "i18n_speedNormal", Texts.SpeedNormal, "i18n_hotkeySpeed1x", "<path d=\"M8 5v14l11-7z\"/>"),
+        new(PauseToggle.Double, "i18n_speedFast", Texts.SpeedFast, "i18n_hotkeySpeed2x", "<path d=\"M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z\"/>"),
+        new(PauseToggle.Triple, "i18n_speedMax", Texts.SpeedFastest, "i18n_hotkeySpeed3x", "<path d=\"M2 18l6-6-6-6v12zm7-12v12l6-6-6-6zm7 0v12l6-6-6-6z\"/>"),
+        new(PauseToggle.Paused, "i18n_speedPause", Texts.SpeedPause, "i18n_hotkeySpeedPause", "<path d=\"M6 5h4v14H6zm8 0h4v14h-4z\"/>"),
     };
 
     /// <summary>
@@ -69,8 +69,8 @@ public static class SpeedButtons
     /// The pause button is lit while paused, as the game lights its own; otherwise the button for the speed level, which
     /// is the slow one on every slow speed and the fastest one on every fast speed.
     /// </summary>
-    public static SpeedButtonsView View(GameTimer timer, bool isPaused, int speedLevel, string slowLabel) =>
-        new(Page(timer), isPaused ? PauseToggle.Paused : speedLevel, slowLabel);
+    public static SpeedButtonsView View(GameTimer timer, bool isPaused, int speedLevel, string slowLabel, bool isChinese = false) =>
+        new(Page(timer), isPaused ? PauseToggle.Paused : speedLevel, slowLabel, isChinese);
 
     /// <summary>Whether the page drew or removed the buttons: it answers "ok", or "ok:" and the clicks made since the last check.</summary>
     public static bool IsOk(string? reply) => reply == Ok || (reply?.StartsWith(ClicksPrefix, StringComparison.Ordinal) ?? false);
@@ -108,7 +108,7 @@ public static class SpeedButtons
         "var put=function(p,css){if(g.parentNode!==p)p.appendChild(g);if(g.getAttribute('data-tc-css')!==css){g.style.cssText=css;g.setAttribute('data-tc-css',css);}};" +
         Placement(view.Page) +
         "var s=null;try{s=w.eval('state');}catch(e){}" +
-        $"var T={{{TooltipTable(view.SlowLabel)}}},bs=g.querySelectorAll('.speed-btn');" +
+        $"var T={{{TooltipTable(view.SlowLabel, view.IsChinese)}}},bs=g.querySelectorAll('.speed-btn');" +
         "for(var j=0;j<bs.length;j++){var b=bs[j],l=+b.getAttribute('data-level'),k=T[l];if(!k)continue;" +
         $"var on=l==={view.ActiveLevel.ToString(CultureInfo.InvariantCulture)};if(b.classList.contains('active')!==on)b.classList.toggle('active',on);" +
         "var t=(s&&s[k[0]]?String(s[k[0]]):k[1])+(s&&s.i18n_hotkey&&s[k[2]]?' ('+s.i18n_hotkey+':'+s[k[2]]+')':'');" +
@@ -153,19 +153,20 @@ public static class SpeedButtons
     /// Per level: the page text naming the button, the English name used where the page has no such text, and the
     /// page text for its key. The slow button's English name carries the slow speed held, as the game's tooltip does.
     /// </summary>
-    private static string TooltipTable(string slowLabel)
+    private static string TooltipTable(string slowLabel, bool isChinese)
     {
         var slowSuffix = PageClock.Sanitize(slowLabel) is { Length: > 0 } label ? " " + label : "";
 
         return string.Join(",", Buttons.Select(button =>
         {
-            var englishName = button.Level == PauseToggle.Slow ? button.EnglishName + slowSuffix : button.EnglishName;
+            var name = button.Name.Pick(isChinese);
+            var fallbackName = button.Level == PauseToggle.Slow ? name + slowSuffix : name;
 
-            return $"{button.Level}:['{button.NameText}',{PauseBadge.Quote(englishName)},'{button.KeyText}']";
+            return $"{button.Level}:['{button.NameText}',{PauseBadge.Quote(fallbackName)},'{button.KeyText}']";
         }));
     }
 
     private static bool IsButtonLevel(int level) => level is >= PauseToggle.Paused and <= PauseToggle.Slow;
 
-    private readonly record struct Button(int Level, string NameText, string EnglishName, string KeyText, string Icon);
+    private readonly record struct Button(int Level, string NameText, Phrase Name, string KeyText, string Icon);
 }

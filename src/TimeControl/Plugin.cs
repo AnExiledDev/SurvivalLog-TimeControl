@@ -13,7 +13,7 @@ namespace TimeControl;
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.timecontrol";
-    private const string Version = "0.6.2";
+    private const string Version = "0.6.3";
 
     public override void Load()
     {
@@ -61,13 +61,13 @@ public sealed class Plugin : BasePlugin
             "角色做完队列里最后一个指令时暂停游戏一次。与 IdleFreeze 不同，它会立刻暂停，并一直停着，直到你选一个速度或按暂停键（默认 Space）。").Value;
         var isIdleBadgeOn = Config.Bind("Display", "IdleBadge", true,
             "Show a small \"Paused: idle\" badge next to the speed buttons while the idle pause holds the game. It goes away as soon as time runs again.\n" +
-            "空闲暂停期间，在速度按钮旁显示一个小标记「Paused: idle」。时间重新走动后立刻消失。").Value;
+            "空闲暂停期间，在速度按钮旁显示一个小标记「已暂停：空闲」。时间重新走动后立刻消失。").Value;
         var isPauseKeyBadgeOn = Config.Bind("Display", "PauseKeyBadge", true,
             "Show a small \"Paused\" badge next to the speed buttons while a pause you made with a key holds the game: the pause key anywhere, or the game's own pause key (4 by default) before the disaster and on expeditions. It goes away as soon as time runs again.\n" +
-            "你用按键暂停游戏时，在速度按钮旁显示一个小标记「Paused」：任何地方按暂停键，或在灾前筹备和外出探索时按游戏自带的暂停键（默认 4）。时间重新走动后立刻消失。").Value;
+            "你用按键暂停游戏时，在速度按钮旁显示一个小标记「已暂停」：任何地方按暂停键，或在灾前筹备和外出探索时按游戏自带的暂停键（默认 4）。时间重新走动后立刻消失。").Value;
         var isAlertBadgeOn = Config.Bind("Display", "AlertBadge", true,
             "Show a small badge naming the alert, such as \"Paused: wave\", next to the speed buttons while an alert pause holds the game. It goes away as soon as time runs again.\n" +
-            "因尸潮、危机等事件暂停时，在速度按钮旁显示一个写明原因的小标记，例如「Paused: wave」。时间重新走动后立刻消失。").Value;
+            "因尸潮、危机等事件暂停时，在速度按钮旁显示一个写明原因的小标记，例如「已暂停：尸潮」。时间重新走动后立刻消失。").Value;
         var areSpeedButtonsOn = Config.Bind("Display", "SpeedButtons", true,
             "Show speed buttons (slow, normal, fast, fastest and pause) before the disaster and on expeditions, where the game has none. They work like the game's own buttons at home, using your SlowSpeeds and FastSpeeds. On expeditions they only show when TimeControlOnExpeditions is on.\n" +
             "在灾前筹备和外出探索时显示速度按钮（慢速、正常速度、快速、极速、暂停），游戏在这些时候没有这些按钮。用法和安全屋里游戏自带的按钮一样，并使用你的 SlowSpeeds 和 FastSpeeds。外出探索时只有开启 TimeControlOnExpeditions 才会显示。").Value;
@@ -111,6 +111,7 @@ public sealed class Plugin : BasePlugin
         GameClock.Log = log.Write;
         ClockTicker.LogFileOnly = log.WriteFileOnly;
         ClockTicker.Page = new PageClockLink(log.Write);
+        ClockTicker.IsChinese = GameLanguage.IsChinese;
         AddComponent<ClockTicker>();
     }
 

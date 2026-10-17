@@ -15,9 +15,6 @@ public readonly record struct BadgeSettings(bool IsIdleBadgeOn, bool IsPauseKeyB
 /// </summary>
 public static class PauseBadge
 {
-    public const string IdleText = "Paused: idle";
-    public const string PauseKeyText = "Paused";
-
     /// <summary>The element the script owns in the page, found again by this id after every reload.</summary>
     private const string ElementId = "tc-pause-badge";
 
@@ -40,23 +37,24 @@ public static class PauseBadge
     /// <param name="isIdleHolding">The idle pause made the pause and still owns it.</param>
     /// <param name="isPauseKeyHolding">The player's last speed change through the mod's keys was a pause.</param>
     /// <param name="alertHolding">The alert an alert pause made the pause for and still holds it for, if any.</param>
-    public static string Text(BadgeSettings settings, bool isPaused, bool isIdleHolding, bool isPauseKeyHolding, Alert? alertHolding = null)
+    /// <param name="isChinese">The game is in Chinese right now.</param>
+    public static string Text(BadgeSettings settings, bool isPaused, bool isIdleHolding, bool isPauseKeyHolding, Alert? alertHolding = null, bool isChinese = false)
     {
         if (!isPaused) return "";
 
-        if (isIdleHolding) return settings.IsIdleBadgeOn ? IdleText : "";
+        if (isIdleHolding) return settings.IsIdleBadgeOn ? Texts.PausedIdle.Pick(isChinese) : "";
 
-        if (alertHolding is { } alert) return settings.IsAlertBadgeOn ? AlertText(alert) : "";
+        if (alertHolding is { } alert) return settings.IsAlertBadgeOn ? AlertText(alert).Pick(isChinese) : "";
 
-        return isPauseKeyHolding && settings.IsPauseKeyBadgeOn ? PauseKeyText : "";
+        return isPauseKeyHolding && settings.IsPauseKeyBadgeOn ? Texts.Paused.Pick(isChinese) : "";
     }
 
-    public static string AlertText(Alert alert) => alert switch
+    public static Phrase AlertText(Alert alert) => alert switch
     {
-        Alert.Wave => "Paused: wave",
-        Alert.Emergency => "Paused: emergency",
-        Alert.DroneArrival => "Paused: drone back",
-        Alert.QueueEmpty => "Paused: queue empty",
+        Alert.Wave => Texts.PausedWave,
+        Alert.Emergency => Texts.PausedEmergency,
+        Alert.DroneArrival => Texts.PausedDroneBack,
+        Alert.QueueEmpty => Texts.PausedQueueEmpty,
         _ => throw new ArgumentOutOfRangeException(nameof(alert), alert, "an alert with no badge text"),
     };
 
