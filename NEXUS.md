@@ -34,16 +34,9 @@ Works in English and Chinese.
 
 [size=5]Known issues[/size]
 [list]
-[*]Back up your save before trying it for the first time.[/*]
-[*]Game time is finicky. Events, sleep, zombie waves and expedition timers all run on it, so anything that happens at an odd time is worth reporting.[/*]
-[*]Expedition support and the pause badge are new in 0.4.0 and have not been played through in the game yet. Each can be turned off in the config.[/*]
-[*]Pause on alerts is new in 0.5.0 and has not been played through in the game yet. Each alert can be turned off in the config.[/*]
-[*]The speed buttons before the disaster and on expeditions are new in 0.6.0 and have not been played through in the game yet. Turn them off with SpeedButtons in the config if they get in the way.[/*]
 [*]On an expedition the exposure alarm keeps sounding while paused. The meter itself stops.[/*]
 [*]The badge can blink out for up to half a second when the game redraws its speed buttons.[/*]
-[*]The badge's place beside the speed buttons and the see-through paused banner are new in 0.6.1 and have not been played through in the game yet. Set PauseOverlayOpacity to 1 to keep the game's banner as it is.[/*]
 [/list]
-If you run into anything strange, please tell me (see Feedback below).
 
 [size=5]Requirements[/size]
 [list]
@@ -106,16 +99,9 @@ Time Control 不会往存档里添加自己的数据，也不会修改游戏文�
 
 [size=5]已知问题[/size]
 [list]
-[*]第一次使用前请先备份存档。[/*]
-[*]游戏时间比较敏感。事件、睡眠、尸潮和外出探索的计时都依赖它，所以出现任何时机不对的情况都值得反馈。[/*]
-[*]外出探索支持和暂停标签是 0.4.0 新增的，还没有在游戏中完整玩过。每项都可以在配置中关闭。[/*]
-[*]事件暂停是 0.5.0 新增的，还没有在游戏中完整玩过。每种事件都可以在配置中关闭。[/*]
-[*]灾前筹备和外出探索时的速度按钮是 0.6.0 新增的，还没有在游戏中完整玩过。如果碍事，可以在配置中用 SpeedButtons 关闭。[/*]
 [*]外出探索时，暂停期间暴露值的警报声还会继续响，但暴露值本身会停止上涨。[/*]
 [*]游戏重绘速度按钮时，暂停标签可能会消失最多半秒。[/*]
-[*]暂停标签移到速度按钮旁边以及半透明的暂停横幅是 0.6.1 新增的，还没有在游戏中完整玩过。把 PauseOverlayOpacity 设为 1 可保持游戏原本的横幅。[/*]
 [/list]
-如果遇到任何奇怪的情况，欢迎告诉我（见下方「反馈」）。
 
 [size=5]前置要求[/size]
 [list]

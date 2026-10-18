@@ -59,10 +59,6 @@ Alerts pause only where the idle pause can: at home, in the countdown before the
 
 ## Known issues and limits
 
-Game time is finicky. Events, sleep, zombie waves and expedition timers all run on it, and this mod changes how fast it runs. If anything happens at an odd time, too early, too late, twice or not at all, please tell me (see [Feedback](#feedback-and-bug-reports)), even if you are not sure the mod caused it.
-
-- **Back up your save before trying it for the first time.**
-- Expedition support and the pause badge are new in 0.4.0 and have not been played through in the game yet. If the keys, the pause or the badge misbehave, set `TimeControlOnExpeditions`, `IdleBadge` or `PauseKeyBadge` to `false` and report it.
 - On an expedition the game's exposure alarm keeps sounding while the game is paused, because the game plays it on real time. The meter itself stops.
 - The badge can blink out for up to half a second when the game redraws its speed buttons, then comes back.
 - Where the screen shows no speed buttons, the badge sits at the top centre and may cover part of the game's display there.
@@ -72,12 +68,8 @@ Game time is finicky. Events, sleep, zombie waves and expedition timers all run 
 - An order you queued before waking does not resume the game after the wake pause. Give a new order, press play or press the pause key.
 - Pressing the game's own pause button while the idle pause holds the game does not make the pause yours: your next order still resumes. Press play first, then pause, to keep it paused.
 - The idle pause works at home, in the countdown before the disaster and on expeditions. Any other timer keeps the game's pace.
-- Pause on alerts is new in 0.5.0 and has not been played through in the game yet. If an alert pauses at the wrong moment, twice or not at all, set its `PauseOn` setting to `false` and report it.
-- The speed buttons before the disaster and on expeditions are new in 0.6.0 and have not been played through in the game yet. If they show in the wrong place, cover something or do not respond, set `SpeedButtons` to `false` and report it.
 - A click on those speed buttons can take up to a tenth of a second to change the speed.
-- The badge's new place beside the speed buttons and the see-through paused banner are new in 0.6.1 and have not been played through in the game yet. If either covers something, set `PauseOverlayOpacity` to `1` or turn the badge off, and report it.
 - When a pause starts, the paused banner can show at full strength for up to half a second before it turns see-through.
-- Lifting any pause when you finish an expedition, and ignoring pauses until the trip home is over, are new in 0.6.1 and have not been played through in the game yet. If the trip home still freezes or the game will not pause once you are back, set `TimeControlOnExpeditions` to `false` and report it.
 - In the countdown before the disaster that screen has no text for the speed buttons, so the mod names them itself, in English or Chinese to match the game, without the hotkey. They hide while the planning view is open, along with the game's buttons in the bottom left corner.
 - An alert that starts while your character sleeps does not pause the game. `PauseOnWake` pauses it when they wake.
 - A line in the log reading `speed change reached N time managers in one frame (expected 1)` means leftover game worlds are answering the game's events, so one trade or one order can happen several times. Restart the game if you see it. `speed change reached 1 time manager, as it should` after your first use of the speed buttons is the healthy reading.
