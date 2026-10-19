@@ -3,7 +3,6 @@ using System.IO;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Unity.IL2CPP;
-using ExiledToolkit;
 using HarmonyLib;
 using TimeControl.Adapters;
 using TimeControl.Core;
@@ -12,7 +11,7 @@ using UnityEngine;
 namespace TimeControl;
 
 [BepInPlugin(Guid, "Time Control", Version)]
-[BepInDependency(ExiledToolkit.Plugin.Guid, ">=0.4.0")]
+[BepInDependency(OptionalLive.ToolkitGuid, BepInDependency.DependencyFlags.SoftDependency)]
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.timecontrol";
@@ -20,6 +19,8 @@ public sealed class Plugin : BasePlugin
 
     public override void Load()
     {
+        if (!OptionalLive.IsToolkitInstalled) Log.LogInfo(OptionalLive.MissingNote);
+
         var slowSpeeds = Config.Bind("SlowButton", "SlowSpeeds", "0.5,0.25",
             new ConfigDescription(
                 "Speeds for the Slow button and the ` (~) key, separated by commas, each from 0.05 to 0.95. Pressing slow again while slow moves to the next speed, and after the last back to the first. Leave it empty to keep the game's own slow button. Takes effect at the next game start.\n" +
@@ -34,8 +35,8 @@ public sealed class Plugin : BasePlugin
             "Pause the game while your character is idle with nothing queued, and resume it on your next order. Works at home, before the disaster and on expeditions. Pick a speed or press the pause key (Space by default) while it is paused to let time run until your next order.\n" +
             "角色空闲、没有待执行的指令时暂停游戏，你下达下一个指令时自动恢复。在安全屋、灾前筹备和外出探索时都有效。暂停时选一个速度或按暂停键（默认 Space），时间会一直走到你下达下一个指令。");
         var idleDelay = Config.Bind("Clock", "IdleFreezeDelaySeconds", IdlePause.DefaultDelaySeconds,
-            "How many real seconds your character stands idle before the game pauses, so a short gap between two orders does not pause it. 0 pauses as soon as nothing is queued.\n" +
-            "角色空闲多少秒（现实时间）后才暂停游戏，这样两个指令之间的短暂空档不会触发暂停。设为 0 则一没有待执行的指令就立刻暂停。");
+            new ConfigDescription("How many real seconds your character stands idle before the game pauses, so a short gap between two orders does not pause it. 0 pauses as soon as nothing is queued.\n" +
+            "角色空闲多少秒（现实时间）后才暂停游戏，这样两个指令之间的短暂空档不会触发暂停。设为 0 则一没有待执行的指令就立刻暂停。", null, "ModManager.ShowWhen=IdleFreeze"));
         var isSleepFastForwardOn = Config.Bind("Sleep", "FastForwardSleep", true,
             new ConfigDescription(
                 "Run sleep and naps at the fastest FastSpeeds speed (or at Fastest if FastSpeeds is empty), instead of the game's own sleep speed-up. A speed you pick while asleep is kept until you wake. Off keeps the game's own sleep speed-up. Takes effect at the next game start.\n" +
@@ -72,8 +73,8 @@ public sealed class Plugin : BasePlugin
             "Pause the game once when your character finishes the last order in their queue. Unlike IdleFreeze, it pauses right away and stays paused until you pick a speed or press the pause key (Space by default).\n" +
             "角色做完队列里最后一个指令时暂停游戏一次。与 IdleFreeze 不同，它会立刻暂停，并一直停着，直到你选一个速度或按暂停键（默认 Space）。");
         var isIdleBadgeOn = Config.Bind("Display", "IdleBadge", true,
-            "Show a small \"Paused: idle\" badge next to the speed buttons while the idle pause holds the game. It goes away as soon as time runs again.\n" +
-            "空闲暂停期间，在速度按钮旁显示一个小标记「已暂停：空闲」。时间重新走动后立刻消失。");
+            new ConfigDescription("Show a small \"Paused: idle\" badge next to the speed buttons while the idle pause holds the game. It goes away as soon as time runs again.\n" +
+            "空闲暂停期间，在速度按钮旁显示一个小标记「已暂停：空闲」。时间重新走动后立刻消失。", null, "ModManager.ShowWhen=Clock.IdleFreeze"));
         var isPauseKeyBadgeOn = Config.Bind("Display", "PauseKeyBadge", true,
             "Show a small \"Paused\" badge next to the speed buttons while a pause you made with a key holds the game: the pause key anywhere, or the game's own pause key (4 by default) before the disaster and on expeditions. It goes away as soon as time runs again.\n" +
             "你用按键暂停游戏时，在速度按钮旁显示一个小标记「已暂停」：任何地方按暂停键，或在灾前筹备和外出探索时按游戏自带的暂停键（默认 4）。时间重新走动后立刻消失。");
@@ -101,7 +102,7 @@ public sealed class Plugin : BasePlugin
         log.Write($"===== Time Control {Version} started: sleep fast-forward {OnOff(isSleepFastForwardOn)}, on expeditions {OnOff(isExpeditionOn)}");
         SpeedPatches.Apply(harmony, speeds, log.Write);
 
-        LiveSettings.Watch(() =>
+        OptionalLive.Watch(() =>
         {
             var alerts = new AlertSettings(isPauseOnWaveOn.Value, isPauseOnEmergencyOn.Value, isPauseOnDroneArrivalOn.Value, isPauseOnQueueEmptyOn.Value);
             var settings = new ClockSettings(
