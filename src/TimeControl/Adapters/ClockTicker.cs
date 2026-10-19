@@ -7,7 +7,6 @@ namespace TimeControl.Adapters;
 
 /// <summary>The settings the ticker reads; fixed for the session.</summary>
 internal sealed record ClockSettings(
-    float ClockRate,
     bool IsIdleFreezeOn,
     float IdleFreezeDelaySeconds,
     bool IsSleepFastForwardOn,
@@ -22,8 +21,8 @@ internal sealed record ClockSettings(
 /// Ten times a second: pauses the game while the player idles at home, in the countdown to the disaster or on an
 /// expedition and resumes it on their next order, fast-forwards sleep and pauses on waking, pauses once when an alert
 /// starts, lets no pause hold up the trip home from an expedition, keeps the chosen slow or fast speed held, remembers
-/// the speed to resume to, sets the day clock's pace, shows the pause badge, shows speed buttons where the game has
-/// none, makes the game's pause strip see-through and keeps the page's drawn clock in step.
+/// the speed to resume to, shows the pause badge, shows speed buttons where the game has none, makes the game's pause
+/// strip see-through and puts the slow speed in use on the slow button's tooltip.
 /// </summary>
 public sealed class ClockTicker : MonoBehaviour
 {
@@ -33,7 +32,7 @@ public sealed class ClockTicker : MonoBehaviour
     private const float SpeedTolerance = 0.001f;
     private const int MaxLoggedFailures = 3;
 
-    internal static ClockSettings Settings = new(1f, false, IdlePause.DefaultDelaySeconds, false, false, false,
+    internal static ClockSettings Settings = new(false, IdlePause.DefaultDelaySeconds, false, false, false,
         new AlertSettings(false, false, false, false), new BadgeSettings(false, false, false), false, "");
     internal static Action<string> Log = _ => { };
     internal static Action<string> LogFileOnly = _ => { };
@@ -84,7 +83,6 @@ public sealed class ClockTicker : MonoBehaviour
 
         if (GameClock.Find() is not { } time)
         {
-            SpeedPatches.ClockFactor = 1f;
             _idle = IdlePause.Start;
             _sleep = SleepWatch.Start;
             _alert = AlertPause.Start;
@@ -99,7 +97,6 @@ public sealed class ClockTicker : MonoBehaviour
 
         if (!time.IsGameStart)
         {
-            SpeedPatches.ClockFactor = 1f;
             _alert = AlertPause.Start;
             HidePage(now);
 
@@ -123,7 +120,6 @@ public sealed class ClockTicker : MonoBehaviour
         UpdateAlertPause(time, timer, isAsleep, isLeavingExpedition, elapsed, wasChangedByHand);
         UpdateIdlePause(time, time.IsPausedScale(), timer, elapsed, isAsleep, isLeavingExpedition);
         UpdateExpeditionFinish(time, isLeavingExpedition);
-        SpeedPatches.ClockFactor = ClockPace.Factor(Settings.ClockRate, isDayClock: timer == GameTimer.DayClock);
         SyncPage(time, timer, now);
     }
 
@@ -379,7 +375,7 @@ public sealed class ClockTicker : MonoBehaviour
         Page?.SyncBadge(badge, buttons?.Page ?? HudPage.Home, isRefreshDue);
         Page?.SyncPauseOverlay(Settings.PauseOverlayCss, isRefreshDue);
 
-        if (isRefreshDue) Page?.Sync(SpeedPatches.ClockFactor, time.BattleTimeScale, slowLabel);
+        if (isRefreshDue) Page?.Sync(slowLabel);
     }
 
     /// <summary>
@@ -426,14 +422,12 @@ public sealed class ClockTicker : MonoBehaviour
     }
 
     /// <summary>
-    /// A failed check must never leave the game paused by this mod or the clock off its pace. An alert pause is left
+    /// A failed check must never leave the game paused by this mod. An alert pause is left
     /// as it is: it holds the game until the player resumes it in any case, and only its badge goes. The speed buttons
     /// go too, so none stay up that no check would answer.
     /// </summary>
     private void RecoverFromFailure(Exception ex, float now)
     {
-        SpeedPatches.ClockFactor = 1f;
-
         if (_idle is IdlePause.Frozen frozen) TryResume(time => SpeedPatches.ChangeSpeed(time, frozen.ResumeLevel));
 
         if (_sleep is SleepWatch.WakePaused wake) TryResume(time => SpeedPatches.ChangeSpeed(time, wake.ResumeAt));

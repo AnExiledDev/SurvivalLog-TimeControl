@@ -22,11 +22,10 @@ A comma-separated list, for example `2,4`. Each multiple is kept between 1.1 and
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| `ClockRate` | `1` | How fast the day clock runs. At `0.5` each day lasts twice as long, while walking and actions keep their speed. `1` is the game's own pace. |
 | `IdleFreeze` | `true` | Pause the game while your character is idle with nothing queued, and resume it on your next order. Works at home, before the disaster and on expeditions. Pick a speed or press the pause key (`Space` by default) while it is paused to let time run until your next order. |
 | `IdleFreezeDelaySeconds` | `3` | How many real seconds your character stands idle before the game pauses, so a short gap between two orders does not pause it. `0` pauses as soon as nothing is queued. |
 
-`ClockRate` is kept between 0.05 and 4. It changes only the day clock at home, not the countdown before the disaster or an expedition. `IdleFreezeDelaySeconds` below 0 counts as 0.
+`IdleFreezeDelaySeconds` below 0 counts as 0.
 
 ## Sleep
 

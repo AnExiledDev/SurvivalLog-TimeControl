@@ -13,7 +13,7 @@ namespace TimeControl;
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.timecontrol";
-    private const string Version = "0.6.3";
+    private const string Version = "0.7.0";
 
     public override void Load()
     {
@@ -23,9 +23,6 @@ public sealed class Plugin : BasePlugin
         var fastMultiples = Config.Bind("FastButton", "FastSpeeds", "2",
             "Extra speeds above the game's Fastest speed, as multiples of it, separated by commas, each from 1.1 to 10. Pressing the Fastest button or the 3 key while already at Fastest moves to the next one, and after the last back to Fastest. Speeds are capped at 40x. Leave it empty to keep the game's own Fastest button.\n" +
             "比游戏极速更快的额外速度，按极速的倍数填写，用逗号分隔，每个在 1.1 到 10 之间。已经在极速时再按极速按钮或 3 键，会换到下一档，最后一档之后回到极速。速度上限为 40 倍。留空则保留游戏原本的极速按钮。").Value;
-        var clockRate = Config.Bind("Clock", "ClockRate", 1f,
-            "How fast the day clock runs, from 0.05 to 4. At 0.5 each day lasts twice as long, while walking and actions keep their speed. 1 is the game's own pace. It only changes the clock at home, not before the disaster or on expeditions.\n" +
-            "游戏时钟走得多快，范围 0.05 到 4。设为 0.5 时每一天变成原来的两倍长，走路和各种动作的速度不变。1 为游戏原本的速度。只影响安全屋里的时钟，不影响灾前筹备和外出探索。").Value;
         var isIdleFreezeOn = Config.Bind("Clock", "IdleFreeze", true,
             "Pause the game while your character is idle with nothing queued, and resume it on your next order. Works at home, before the disaster and on expeditions. Pick a speed or press the pause key (Space by default) while it is paused to let time run until your next order.\n" +
             "角色空闲、没有待执行的指令时暂停游戏，你下达下一个指令时自动恢复。在安全屋、灾前筹备和外出探索时都有效。暂停时选一个速度或按暂停键（默认 Space），时间会一直走到你下达下一个指令。").Value;
@@ -85,7 +82,6 @@ public sealed class Plugin : BasePlugin
             isExpeditionOn);
         var alerts = new AlertSettings(isPauseOnWaveOn, isPauseOnEmergencyOn, isPauseOnDroneArrivalOn, isPauseOnQueueEmptyOn);
         var settings = new ClockSettings(
-            ClockPace.ClampRate(clockRate),
             isIdleFreezeOn,
             IdlePause.ClampDelay(idleDelay),
             isSleepFastForwardOn,
@@ -98,7 +94,7 @@ public sealed class Plugin : BasePlugin
         var harmony = new Harmony(Guid);
 
         log.TrimIfLarge();
-        log.Write($"===== Time Control {Version} started: clock rate {settings.ClockRate:0.##}, idle pause {(isIdleFreezeOn ? $"after {settings.IdleFreezeDelaySeconds:0.#}s" : "off")}, " +
+        log.Write($"===== Time Control {Version} started: idle pause {(isIdleFreezeOn ? $"after {settings.IdleFreezeDelaySeconds:0.#}s" : "off")}, " +
             $"sleep fast-forward {OnOff(isSleepFastForwardOn)}, pause on waking {OnOff(isPauseOnWakeOn)}, on expeditions {OnOff(isExpeditionOn)}, " +
             $"pause on wave {OnOff(alerts.IsWaveOn)}, on emergency {OnOff(alerts.IsEmergencyOn)}, on drone arrival {OnOff(alerts.IsDroneArrivalOn)}, on queue empty {OnOff(alerts.IsQueueEmptyOn)}, " +
             $"idle badge {OnOff(isIdleBadgeOn)}, pause key badge {OnOff(isPauseKeyBadgeOn)}, alert badge {OnOff(isAlertBadgeOn)}, " +

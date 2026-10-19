@@ -37,13 +37,13 @@ internal sealed class PageClockLink
         _overlayReply = new PageReply("pause overlay", log);
     }
 
-    public void Sync(float clockFactor, float battleScale, string slowLabel)
+    public void Sync(string slowLabel)
     {
         _clockReply.Report();
 
-        if (PageClock.Next(clockFactor, battleScale, slowLabel, _wasNeutralLastSent) is not { } update) return;
+        if (PageClock.Next(slowLabel, _wasNeutralLastSent) is not { } update) return;
 
-        if (Run(() => PageClock.Script(update), _clockReply.Take, _clockReply)) _wasNeutralLastSent = PageClock.IsNeutral(clockFactor, slowLabel);
+        if (Run(() => PageClock.Script(update), _clockReply.Take, _clockReply)) _wasNeutralLastSent = PageClock.IsNeutral(slowLabel);
     }
 
     /// <param name="text">What the badge says; empty hides it.</param>

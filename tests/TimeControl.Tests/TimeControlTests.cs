@@ -536,29 +536,6 @@ public class HoverClockTests
     }
 }
 
-public class ClockPaceTests
-{
-    [Fact]
-    public void The_day_clock_follows_the_configured_rate()
-    {
-        Assert.Equal(0.5f, ClockPace.Factor(0.5f, isDayClock: true));
-    }
-
-    [Fact]
-    public void Exploration_timers_keep_the_games_pace()
-    {
-        Assert.Equal(1f, ClockPace.Factor(0.5f, isDayClock: false));
-    }
-
-    [Fact]
-    public void A_broken_rate_setting_cannot_stop_or_race_the_clock()
-    {
-        Assert.Equal(ClockPace.SlowestRate, ClockPace.ClampRate(0f));
-        Assert.Equal(ClockPace.FastestRate, ClockPace.ClampRate(100f));
-        Assert.Equal(1f, ClockPace.ClampRate(float.NaN));
-    }
-}
-
 public class PauseToggleTests
 {
     [Fact]
@@ -638,57 +615,33 @@ public class SpeedChangeFanOutTests
 public class PageClockTests
 {
     [Fact]
-    public void A_slowed_clock_is_drawn_at_the_slowed_pace()
+    public void Holding_a_slow_speed_puts_it_on_the_tooltip()
     {
-        var update = PageClock.Next(0.5f, 2f, "", wasNeutralLastSent: true);
-
-        Assert.Equal(new PageClockUpdate(1f, ""), update);
+        Assert.Equal(new PageClockUpdate("0.25x"), PageClock.Next("0.25x", wasNeutralLastSent: true));
     }
 
     [Fact]
-    public void A_frozen_clock_is_drawn_stopped()
+    public void Nothing_is_sent_while_no_slow_speed_is_held()
     {
-        Assert.Equal(0f, PageClock.Next(0f, 1f, "", wasNeutralLastSent: true)?.ClockScale);
+        Assert.Null(PageClock.Next("", wasNeutralLastSent: true));
     }
 
     [Fact]
-    public void Holding_a_slow_speed_only_relabels_and_leaves_the_clock_to_the_game()
+    public void Leaving_the_slow_speed_strips_the_label_once()
     {
-        Assert.Equal(new PageClockUpdate(null, "0.25x"), PageClock.Next(1f, 0.25f, "0.25x", wasNeutralLastSent: true));
+        Assert.Equal(new PageClockUpdate(""), PageClock.Next("", wasNeutralLastSent: false));
     }
 
     [Fact]
-    public void Nothing_is_sent_while_the_mod_changes_nothing()
+    public void The_page_clock_is_left_to_the_game()
     {
-        Assert.Null(PageClock.Next(1f, 1f, "", wasNeutralLastSent: true));
-    }
-
-    [Fact]
-    public void Turning_everything_off_puts_the_clock_back_at_game_speed_once()
-    {
-        Assert.Equal(new PageClockUpdate(2f, ""), PageClock.Next(1f, 2f, "", wasNeutralLastSent: false));
-    }
-
-    [Fact]
-    public void Scripts_use_a_dot_decimal_whatever_the_system_culture()
-    {
-        var previous = System.Globalization.CultureInfo.CurrentCulture;
-        System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("de-DE");
-
-        try
-        {
-            Assert.Contains("var k=0.25;", PageClock.Script(new PageClockUpdate(0.25f, "")));
-        }
-        finally
-        {
-            System.Globalization.CultureInfo.CurrentCulture = previous;
-        }
+        Assert.DoesNotContain("setTimeScale", PageClock.Script(new PageClockUpdate("0.5x")));
     }
 
     [Fact]
     public void A_label_cannot_break_out_of_the_script_string()
     {
-        var script = PageClock.Script(new PageClockUpdate(null, "0.5x');alert(1);//"));
+        var script = PageClock.Script(new PageClockUpdate("0.5x');alert(1);//"));
 
         Assert.DoesNotContain("alert", script);
         Assert.Contains("n=b+' 0.5x1'", script);

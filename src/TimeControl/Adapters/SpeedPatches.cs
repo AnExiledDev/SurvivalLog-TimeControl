@@ -22,8 +22,8 @@ internal sealed record SpeedSettings(
 
 /// <summary>
 /// The Harmony hooks into the game's time manager, hotkeys and hover testing. Static because a patch has nowhere else
-/// to look; the ticker owns everything that changes over time and writes <see cref="ClockFactor"/> and
-/// <see cref="LastRunningLevel"/> here.
+/// to look; the ticker owns everything that changes over time and writes <see cref="LastRunningLevel"/>
+/// here.
 /// </summary>
 internal static class SpeedPatches
 {
@@ -78,9 +78,6 @@ internal static class SpeedPatches
     private static int _failures;
     private static Action<string> _log = _ => { };
 
-    /// <summary>Multiplies the day clock's frame delta: 1 runs it at game pace.</summary>
-    internal static float ClockFactor = 1f;
-
     /// <summary>The speed level the pause key and idle freeze resume to.</summary>
     internal static int LastRunningLevel = PauseToggle.Normal;
 
@@ -112,8 +109,6 @@ internal static class SpeedPatches
         _isExpeditionOn = settings.IsExpeditionOn;
         _log = log;
 
-        Patch(harmony, typeof(GameTimeManager), nameof(GameTimeManager.Update), prefix: nameof(ScaleDayClock),
-            done: "day clock pace hooked", consequence: "ClockRate will do nothing");
         Patch(harmony, typeof(GameTimeManager), nameof(GameTimeManager.ChangeGameSpeed), prefix: nameof(BeforeSpeedChange),
             done: "speed changes watched", consequence: "leftover game worlds cannot be detected and the slow button keeps the game's behaviour");
 
@@ -328,9 +323,6 @@ internal static class SpeedPatches
             _log("the key rebinding state was not found, so the pause key also works while a key is being rebound");
         }
     }
-
-    // Runs every frame, so it only reads the factor the ticker already worked out.
-    private static void ScaleDayClock(ref float deltaTime) => deltaTime *= ClockFactor;
 
     private static bool SkipGameIdleSlowdown() => false;
 
