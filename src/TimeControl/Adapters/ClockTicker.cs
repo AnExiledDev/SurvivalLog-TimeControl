@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace TimeControl.Adapters;
 
-/// <summary>The settings the ticker reads; fixed for the session.</summary>
+/// <summary>The settings the ticker reads, swapped whole when one changes on the Mods screen.</summary>
 internal sealed record ClockSettings(
     bool IsIdleFreezeOn,
     float IdleFreezeDelaySeconds,

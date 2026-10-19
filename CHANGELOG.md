@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.0
+
+- Settings changed on the Mod Manager's Mods screen take effect at once, except SlowSpeeds, FastSpeeds, FastForwardSleep, PauseToggleKey, CenterCameraKey and TimeControlOnExpeditions, which take effect at the next game start.
+- The Mods screen shows the mod's name, description, category and links.
+- Needs Exiled's Toolkit 0.4.0 or newer.
+
 ## 0.7.0
 
 - Removed the `ClockRate` setting. For longer days, use the Day Length mod. An old `ClockRate` line left in the config file does nothing.

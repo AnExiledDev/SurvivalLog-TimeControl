@@ -24,18 +24,28 @@ internal static class AlertSignals
     private static int _droneRestoreFrame = -1;
     private static int _failures;
     private static Action<string> _log = _ => { };
+    private static bool _isCrisisHooked;
+    private static bool _isDroneHooked;
 
-    public static void Apply(Harmony harmony, AlertSettings settings, Action<string> log)
+    /// <summary>
+    /// Called on the main thread at start and after each change. Each hook goes in the first time its alert is turned on
+    /// and stays in; the ticker lets go of the counts of an alert that is off.
+    /// </summary>
+    public static void Use(Harmony harmony, AlertSettings settings, Action<string> log)
     {
         _log = log;
 
-        if (settings.IsEmergencyOn)
+        if (settings.IsEmergencyOn && !_isCrisisHooked)
         {
+            _isCrisisHooked = true;
+
             Patch(harmony, typeof(DynamicEventManager), nameof(DynamicEventManager.TriggerCrisisEvent), nameof(BeforeCrisis), nameof(AfterCrisis),
                 done: "emergencies watched", consequence: "PauseOnEmergency will do nothing");
         }
 
-        if (!settings.IsDroneArrivalOn) return;
+        if (!settings.IsDroneArrivalOn || _isDroneHooked) return;
+
+        _isDroneHooked = true;
 
         Patch(harmony, typeof(StrangerTradeActiveManager), nameof(StrangerTradeActiveManager.SettleDroneReturn), nameof(BeforeDroneSettle), nameof(AfterDroneSettle),
             done: "trade drone landings watched", consequence: "PauseOnDroneArrival will do nothing");

@@ -1,6 +1,6 @@
 # Time Control settings
 
-Settings live in `BepInEx\config\com.dev.survivallog.timecontrol.cfg`, created the first time the game starts with the mod. Edit the file while the game is closed; changes apply at the next game start. Delete the file to get the defaults back. Each setting in the file is described in English and in Simplified Chinese.
+Settings live in `BepInEx\config\com.dev.survivallog.timecontrol.cfg`, created the first time the game starts with the mod. Change them in game on the Mod Manager's Mods screen, or edit the file while the game is closed. Changed on the Mods screen, every setting takes effect at once except `SlowSpeeds`, `FastSpeeds`, `FastForwardSleep`, `PauseToggleKey`, `CenterCameraKey` and `TimeControlOnExpeditions`, which take effect at the next game start. Delete the file to get the defaults back. Each setting in the file is described in English and in Simplified Chinese.
 
 ## SlowButton
 

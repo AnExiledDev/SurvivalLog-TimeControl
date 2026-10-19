@@ -79,12 +79,14 @@ Works in English and Chinese: the pause badge and the speed buttons follow the g
 
 - Survival Log 1.1.18902. Built for this version; a game update can break it until the mod is updated.
 - The [BepInEx Pack for Survival Log](https://www.nexusmods.com/survivallog/mods/12), the BepInEx 6 (IL2CPP) build for the game.
+- [Exiled's Toolkit](https://github.com/AnExiledDev/SurvivalLog-ExiledToolkit) 0.4.0 or newer, which applies changed settings at once. Time Control does not load without it.
 
 ## Install
 
 1. Install the [BepInEx Pack for Survival Log](https://www.nexusmods.com/survivallog/mods/12) (if no other mods were installed before, start the game once so BepInEx finishes setup, then quit).
-2. Download `TimeControl-x.y.z.zip` from the [latest release](https://github.com/AnExiledDev/SurvivalLog-TimeControl/releases/latest) or from [Nexus Mods](https://www.nexusmods.com/survivallog/mods/47).
-3. Extract the zip into the game folder (the folder with `SurvivalLog.exe`). It holds a `BepInEx` folder, so the DLL lands in the right place. When asked, merge the folders. The result should be:
+2. Install Exiled's Toolkit: download `ExiledToolkit-x.y.z.zip` from [its latest release](https://github.com/AnExiledDev/SurvivalLog-ExiledToolkit/releases/latest) or from Nexus Mods, and extract it into the game folder (the folder with `SurvivalLog.exe`).
+3. Download `TimeControl-x.y.z.zip` from the [latest release](https://github.com/AnExiledDev/SurvivalLog-TimeControl/releases/latest) or from [Nexus Mods](https://www.nexusmods.com/survivallog/mods/47).
+4. Extract the zip into the game folder (the folder with `SurvivalLog.exe`). It holds a `BepInEx` folder, so the DLL lands in the right place. When asked, merge the folders. The result should be:
    `C:\Program Files (x86)\Steam\steamapps\common\Survival Log\BepInEx\plugins\TimeControl.dll`
 
 ## Uninstall
@@ -93,13 +95,13 @@ Delete `TimeControl.dll` from the `BepInEx\plugins` folder. For a clean slate, a
 
 ## Configuration
 
-Settings live in `BepInEx\config\com.dev.survivallog.timecontrol.cfg`, created the first time the game starts with the mod. Edit it while the game is closed; changes apply at the next game start. See [CONFIG.md](CONFIG.md) for every setting.
+Settings live in `BepInEx\config\com.dev.survivallog.timecontrol.cfg`, created the first time the game starts with the mod. Change them in game on the Mod Manager's Mods screen, or edit the file while the game is closed. Changed on the Mods screen, every setting takes effect at once except `SlowSpeeds`, `FastSpeeds`, `FastForwardSleep`, `PauseToggleKey`, `CenterCameraKey` and `TimeControlOnExpeditions`, which take effect at the next game start. See [CONFIG.md](CONFIG.md) for every setting.
 
 ## Troubleshooting
 
 Built against BepInEx `6.0.0-be.788`.
 
-Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.7.0 started`. It lists which features are on. The next lines say which game hooks are in place and what the game's own pause key is; a line starting `could not hook` names a feature that will not work.
+Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.8.0 started`. It says whether sleep fast-forward and expeditions are on, and the line after it lists the other features; that line is written again when a setting changes on the Mods screen. The next lines say which game hooks are in place and what the game's own pause key is; a line starting `could not hook` names a feature that will not work.
 
 The same lines, plus every idle pause, alert pause, sleep and wake, are in `BepInEx\time-control.log`, which survives restarts and trims itself past 1 MB.
 
