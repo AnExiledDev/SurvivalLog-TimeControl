@@ -18,6 +18,9 @@ var FakeElement = class {
         this.markup = '';
         this.isHidden = false;
         this.right = 0;
+        this.offsetLeft = 0;
+        this.offsetTop = 0;
+        this.offsetWidth = 0;
         this.classList = {
             contains: function (name) { return element.classes.indexOf(name) >= 0; },
             toggle: function (name, force) {
@@ -167,9 +170,24 @@ function openHome(spec) {
     return page;
 }
 
-function showOwnButtons(page) {
-    (page.queue || page.middle).appendChild(new FakeElement('div', 'speed-controls'));
+// The game's own buttons: slow (where the game shows it), normal, fast, fastest, pause, 30px wide and 34px apart in
+// the group's 2px padding, with no level marked on them.
+function showOwnButtons(page, hasNoSlowButton) {
+    var group = (page.queue || page.middle).appendChild(new FakeElement('div', 'speed-controls'));
+    var count = hasNoSlowButton ? 4 : 5;
+
+    for (var i = 0; i < count; i++) {
+        var button = group.appendChild(new FakeElement('button', 'speed-btn'));
+
+        button.offsetLeft = 2 + i * 34;
+        button.offsetTop = 2;
+        button.offsetWidth = 30;
+    }
 }
+
+function ownButtonsOn(page) { return page.document.querySelector('.speed-controls').querySelectorAll('.speed-btn'); }
+
+function chipOn(page) { return page.document.getElementById('tc-speed-chip'); }
 
 // A page reload, or anything else that drops the mod's buttons from the page.
 function loseButtons(page) {

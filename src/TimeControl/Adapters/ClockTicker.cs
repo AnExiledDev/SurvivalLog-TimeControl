@@ -373,6 +373,7 @@ public sealed class ClockTicker : MonoBehaviour
 
         Page?.SyncSpeedButtons(buttons, isRefreshDue);
         Page?.SyncBadge(badge, buttons?.Page ?? HudPage.Home, isRefreshDue);
+        Page?.SyncSpeedChip(SpeedChip.View(isPaused, SpeedPatches.HeldSlowSpeed(time), SpeedPatches.HeldFastSpeed(time)), buttons?.Page ?? HudPage.Home, isRefreshDue);
         Page?.SyncPauseOverlay(Settings.PauseOverlayCss, isRefreshDue);
 
         if (isRefreshDue) Page?.Sync(slowLabel);
@@ -388,6 +389,7 @@ public sealed class ClockTicker : MonoBehaviour
 
         Page?.SyncSpeedButtons(null, isRefreshDue);
         Page?.SyncBadge("", HudPage.Home, isRefreshDue);
+        Page?.SyncSpeedChip(null, HudPage.Home, isRefreshDue);
         Page?.SyncPauseOverlay("", isRefreshDue);
     }
 

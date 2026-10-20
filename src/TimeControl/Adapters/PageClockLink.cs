@@ -19,12 +19,15 @@ internal sealed class PageClockLink
     private readonly PageReply _badgeReply;
     private readonly PageReply _buttonsReply;
     private readonly PageReply _overlayReply;
+    private readonly PageReply _chipReply;
     private readonly List<int> _speedClicks = new();
     private bool _wasNeutralLastSent = true;
     private string _lastBadgeSent = "";
     private bool _isLastBadgeConfirmed = true;
     private string _lastOverlaySent = "";
     private bool _isLastOverlayConfirmed = true;
+    private SpeedChipView? _lastChipSent;
+    private bool _isLastChipConfirmed = true;
     private ButtonsOnPage _buttonsOnPage = ButtonsOnPage.Start;
     private SpeedButtonsView? _drawnScriptView;
     private string _drawnScript = "";
@@ -35,6 +38,7 @@ internal sealed class PageClockLink
         _badgeReply = new PageReply("pause badge", log);
         _buttonsReply = new PageReply("speed buttons", log);
         _overlayReply = new PageReply("pause overlay", log);
+        _chipReply = new PageReply("speed chip", log);
     }
 
     public void Sync(string slowLabel)
@@ -67,6 +71,28 @@ internal sealed class PageClockLink
         _badgeReply.Take(reply);
 
         if (reply == Ok && sent == _lastBadgeSent) _isLastBadgeConfirmed = true;
+    }
+
+    /// <param name="view">The chip on the speed button holding the mod's speed; null takes it off.</param>
+    /// <param name="page">The page the chip goes on: the one showing the speed buttons.</param>
+    /// <param name="isRefreshDue">Whether a shown chip, or an unconfirmed removal, is due to be sent again.</param>
+    public void SyncSpeedChip(SpeedChipView? view, HudPage page, bool isRefreshDue)
+    {
+        _chipReply.Report();
+
+        if (!SpeedChip.ShouldSend(view, _lastChipSent, _isLastChipConfirmed, isRefreshDue)) return;
+
+        if (!Run(() => SpeedChip.Script(view, page), reply => ConfirmChip(view, reply), _chipReply)) return;
+
+        _lastChipSent = view;
+        _isLastChipConfirmed = false;
+    }
+
+    private void ConfirmChip(SpeedChipView? sent, string? reply)
+    {
+        _chipReply.Take(reply);
+
+        if (reply == Ok && sent == _lastChipSent) _isLastChipConfirmed = true;
     }
 
     /// <param name="css">The style for the game's pause strip; empty takes it off.</param>
