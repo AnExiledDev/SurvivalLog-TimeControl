@@ -3,8 +3,8 @@
 ## 0.8.1
 
 - A small chip on the top right corner of the slow or fastest speed button shows the speed the game really runs at while the mod holds a slow speed or a speed above Fastest, such as 0.25x or 6x. It never takes a click.
-
 - After a game update, a hook that can no longer be placed is logged as an error, so the Mod Manager can mark the mod as maybe needing an update.
+- Made for Survival Log 1.1.19131.
 
 ## 0.8.0
 
