@@ -77,7 +77,7 @@ Works in English and Chinese: the pause badge and the speed buttons follow the g
 
 ## Requirements
 
-- Survival Log 1.1.18902. Built for this version; a game update can break it until the mod is updated.
+- Survival Log 1.1.19131. Built for this version; a game update can break it until the mod is updated.
 - The [BepInEx Pack for Survival Log](https://www.nexusmods.com/survivallog/mods/12), the BepInEx 6 (IL2CPP) build for the game.
 - Optional: [Exiled's Toolkit](https://github.com/AnExiledDev/SurvivalLog-ExiledToolkit) 0.4.0 or newer. With it, settings changed on the Mod Manager's Mods screen take effect without restarting the game. Without it, they take effect at the next game start.
 
