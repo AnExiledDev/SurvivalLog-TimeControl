@@ -36,7 +36,7 @@
     <AssemblyMetadata Include="ModManager.Description" Value="A true slow speed, a super speed, a pause while you stand idle or when a wave or emergency starts, fast sleep with a pause on waking, and a pause key that works before the disaster and on expeditions.&#10;真正的慢速、超高速、空闲或尸潮和危机事件开始时自动暂停、快速睡眠并在醒来时暂停，暂停键在灾前筹备和外出探索时也能用。" />
     <AssemblyMetadata Include="ModManager.Author" Value="AnExiledDev" />
     <AssemblyMetadata Include="ModManager.Category" Value="QualityOfLife" />
-    <AssemblyMetadata Include="ModManager.GameVersion" Value="1.1.18902" />
+    <AssemblyMetadata Include="ModManager.GameVersion" Value="1.1.19131" />
     <AssemblyMetadata Include="ModManager.Settings" Value="Restart" />
     <AssemblyMetadata Include="ModManager.NexusId" Value="47" />
     <AssemblyMetadata Include="ModManager.GitHub" Value="AnExiledDev/SurvivalLog-TimeControl" />

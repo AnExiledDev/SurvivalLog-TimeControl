@@ -1,0 +1,4 @@
+# Game versions each version of Time Control is known to work on.
+# mod version = game versions, separated by commas
+0.8.0 = 1.1.18902, 1.1.19131
+0.8.1 = 1.1.19131
