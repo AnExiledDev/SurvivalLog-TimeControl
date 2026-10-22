@@ -125,6 +125,7 @@ public sealed class Plugin : BasePlugin
         }, isIdleFreezeOn, idleDelay, isPauseOnWakeOn, isPauseOnWaveOn, isPauseOnEmergencyOn, isPauseOnDroneArrivalOn,
             isIdleBadgeOn, isPauseKeyBadgeOn, isAlertBadgeOn, areSpeedButtonsOn, pauseOverlayOpacity);
 
+        WaitConfig.Bind(Config, harmony, log.Write);
         ClockTicker.Log = log.Write;
         GameClock.Log = log.Write;
         ClockTicker.LogFileOnly = log.WriteFileOnly;

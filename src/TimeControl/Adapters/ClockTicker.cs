@@ -123,6 +123,7 @@ public sealed partial class ClockTicker : MonoBehaviour
 
         UpdateAlertPause(time, timer, isAsleep, isLeavingExpedition, elapsed, wasChangedByHand);
         UpdateAwayPause(time, timer, isLeavingExpedition, wasChangedByHand);
+        UpdateWaits(time, timer, isAsleep, isLeavingExpedition, wasChangedByHand, elapsed, now);
         UpdateIdlePause(time, time.IsPausedScale(), timer, elapsed, isAsleep, isLeavingExpedition);
         UpdateQueueSlow(time, timer, isAsleep, isLeavingExpedition, elapsed, wasChangedByHand);
         UpdateExpeditionFinish(time, isLeavingExpedition);
@@ -249,7 +250,7 @@ public sealed partial class ClockTicker : MonoBehaviour
 
         if (!alerts.IsAnyOn) return;
 
-        var canPause = AlertPause.CanPause(timer, IsFastForwarding(time) || isAsleep, isLeavingExpedition);
+        var canPause = AlertPause.CanPause(timer, (IsFastForwarding(time) || isAsleep) && !CanAlertWakeSleep(isAsleep), isLeavingExpedition);
         var isWaveActive = alerts.IsWaveOn && AlertSignals.IsWaveActive();
         var isBusy = alerts.IsQueueEmptyOn && time.IsLeadingRoleBusy();
         var seen = new AlertSnapshot(canPause, time.IsPausedScale(), isWaveActive, emergenciesFired, dronesLanded, isBusy, elapsed, wasChangedByHand, moreRaised);
@@ -402,6 +403,7 @@ public sealed partial class ClockTicker : MonoBehaviour
         Page?.SyncSpeedChip(null, HudPage.Home, isRefreshDue);
         Page?.SyncPauseOverlay("", isRefreshDue);
         HideKeysPage(now);
+        HideWaitPage(isRefreshDue);
     }
 
     /// <summary>Whether the slower page pace is due a refresh; when it is, the next one is counted from now.</summary>
@@ -445,6 +447,7 @@ public sealed partial class ClockTicker : MonoBehaviour
 
         if (_sleep is SleepWatch.WakePaused wake) TryResume(time => SpeedPatches.ChangeSpeed(time, wake.ResumeAt));
 
+        ForgetWaits();
         _idle = IdlePause.Start;
         _sleep = SleepWatch.Start;
         _alert = AlertPause.Start;
