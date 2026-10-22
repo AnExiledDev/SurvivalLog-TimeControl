@@ -9,12 +9,39 @@ public enum Alert
     Emergency,
     DroneArrival,
     QueueEmpty,
+
+    /// <summary>Zombies first damaged the house, a door or a window, in this wave.</summary>
+    HouseHit,
+
+    /// <summary>Zombies first damaged a trap in this wave.</summary>
+    TrapHit,
+
+    PowerOut,
+    LowSatiety,
+    LowMorale,
+    LowStamina,
+    LowHealth,
+    LowVitality,
+
+    /// <summary>The character caught an illness.</summary>
+    Sick,
+
+    PhoneMessage,
+    TradeMessage,
+    PlantRipe,
+
+    /// <summary>Night fell, by the game's own hours.</summary>
+    Dusk,
+
+    /// <summary>Night ended, by the game's own hours.</summary>
+    Dawn,
 }
 
 /// <summary>Which alerts pause the game; fixed for the session.</summary>
-public readonly record struct AlertSettings(bool IsWaveOn, bool IsEmergencyOn, bool IsDroneArrivalOn, bool IsQueueEmptyOn)
+/// <param name="MoreOn">The alerts after <see cref="Alert.QueueEmpty"/> that are switched on.</param>
+public readonly record struct AlertSettings(bool IsWaveOn, bool IsEmergencyOn, bool IsDroneArrivalOn, bool IsQueueEmptyOn, AlertSet MoreOn = default)
 {
-    public bool IsAnyOn => IsWaveOn || IsEmergencyOn || IsDroneArrivalOn || IsQueueEmptyOn;
+    public bool IsAnyOn => IsWaveOn || IsEmergencyOn || IsDroneArrivalOn || IsQueueEmptyOn || !MoreOn.IsEmpty;
 }
 
 /// <summary>What the ticker saw on one check.</summary>
@@ -26,6 +53,7 @@ public readonly record struct AlertSettings(bool IsWaveOn, bool IsEmergencyOn, b
 /// <param name="IsBusy">The player's character has an order queued, the game's own test for "not idle".</param>
 /// <param name="ElapsedSeconds">Real seconds since the last check.</param>
 /// <param name="WasSpeedChangedByHand">The player or the game's own buttons changed the speed since the last check, so a pause seen now may be theirs.</param>
+/// <param name="MoreRaised">The alerts after <see cref="Alert.QueueEmpty"/> that started since the last check.</param>
 public readonly record struct AlertSnapshot(
     bool CanPause,
     bool IsPaused,
@@ -34,16 +62,17 @@ public readonly record struct AlertSnapshot(
     int DronesLanded,
     bool IsBusy,
     float ElapsedSeconds,
-    bool WasSpeedChangedByHand);
+    bool WasSpeedChangedByHand,
+    AlertSet MoreRaised = default);
 
 /// <param name="PauseFor">The alert to pause the game for now, or null to leave its speed alone.</param>
 public readonly record struct AlertStep(AlertPause State, Alert? PauseFor);
 
 /// <summary>
-/// Pause on alerts: the game is paused once when a zombie wave starts, an emergency fires, a trade drone comes home or
-/// the player's order queue runs out, each only if switched on. Every alert is one pause at the moment it starts and
-/// never again: a player who resumes keeps time running, and an alert that starts while the game is already paused, or
-/// where the mod does not pause, is let go rather than saved for later.
+/// Pause on alerts: the game is paused once when a zombie wave starts, an emergency fires, a trade drone comes home,
+/// the player's order queue runs out or any other <see cref="Alert"/> starts, each only if switched on. Every alert is
+/// one pause at the moment it starts and never again: a player who resumes keeps time running, and an alert that starts
+/// while the game is already paused, or where the mod does not pause, is let go rather than saved for later.
 /// </summary>
 public abstract record AlertPause
 {
@@ -54,7 +83,7 @@ public abstract record AlertPause
     public const int SettleChecks = 10;
 
     /// <summary>Longer than the moment between two queued orders, when the game reads the queue as empty.</summary>
-    public const float QueueSettleSeconds = 0.3f;
+    public const float QueueSettleSeconds = QueueRunOut.SettleSeconds;
 
     public static readonly AlertPause Start = new Unseen(0);
 
@@ -119,7 +148,9 @@ public abstract record AlertPause
 
         if (settings.IsDroneArrivalOn && seen.DronesLanded > 0) return Alert.DroneArrival;
 
-        return settings.IsQueueEmptyOn && hasQueueRunOut ? Alert.QueueEmpty : null;
+        if (settings.IsQueueEmptyOn && hasQueueRunOut) return Alert.QueueEmpty;
+
+        return settings.MoreOn.Within(seen.MoreRaised).First();
     }
 
     /// <summary>A pause someone else holds is theirs, and an alert where the mod does not pause is let go; either way it is spent.</summary>
@@ -133,21 +164,8 @@ public abstract record AlertPause
         return new AlertStep(new Holding(alert, seen.IsWaveActive, queue.EmptySeconds), alert);
     }
 
-    /// <summary>
-    /// The game reads the queue as empty for a moment between two queued orders, so it has run out only once it has
-    /// stayed empty for <see cref="QueueSettleSeconds"/>; an order in that time means it never ran out. Each run-out
-    /// counts once.
-    /// </summary>
-    private static (float? EmptySeconds, bool HasRunOut) TrackQueue(float? emptySeconds, AlertSnapshot seen)
-    {
-        if (seen.IsBusy) return (0f, false);
-
-        if (emptySeconds is not { } before) return (null, false);
-
-        var after = before + seen.ElapsedSeconds;
-
-        return after >= QueueSettleSeconds ? (null, true) : (after, false);
-    }
+    private static (float? EmptySeconds, bool HasRunOut) TrackQueue(float? emptySeconds, AlertSnapshot seen) =>
+        QueueRunOut.Track(emptySeconds, seen.IsBusy, seen.ElapsedSeconds);
 
     private static Watching Remember(AlertSnapshot seen) => new(seen.IsWaveActive, seen.IsBusy ? 0f : null);
 

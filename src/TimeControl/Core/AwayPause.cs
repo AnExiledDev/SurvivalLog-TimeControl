@@ -1,0 +1,113 @@
+using System;
+
+namespace TimeControl.Core;
+
+/// <summary>Why the player is away from the running game.</summary>
+public enum AwayReason
+{
+    /// <summary>The game's window lost focus, as after Alt+Tab.</summary>
+    Background,
+
+    /// <summary>One of the game's menus that leave time running is open: the bag, the workbench, the phone or trade.</summary>
+    Menu,
+}
+
+/// <summary>Which ways of being away pause the game; swapped whole when one changes.</summary>
+public readonly record struct AwaySettings(bool IsFocusLossOn, bool IsBagOn, bool IsWorkbenchOn, bool IsPhoneOn, bool IsTradeOn)
+{
+    public bool IsAnyOn => IsFocusLossOn || IsAnyMenuOn;
+
+    public bool IsAnyMenuOn => IsBagOn || IsWorkbenchOn || IsPhoneOn || IsTradeOn;
+
+    /// <summary>The window being in the background wins over a menu, as a menu cannot be used from there.</summary>
+    /// <param name="isWatchedMenuOpen">A menu whose setting is on is open.</param>
+    public AwayReason? Reason(bool isInBackground, bool isWatchedMenuOpen)
+    {
+        if (IsFocusLossOn && isInBackground) return AwayReason.Background;
+
+        return isWatchedMenuOpen ? AwayReason.Menu : null;
+    }
+}
+
+/// <summary>What the ticker saw on one check.</summary>
+/// <param name="Away">Why the player is away now, or null when they are back.</param>
+/// <param name="CanPause">The game is where the mod's pauses apply.</param>
+/// <param name="IsPaused">The game is paused, by anyone.</param>
+/// <param name="Running">The speed the game runs at, or last ran at when paused.</param>
+/// <param name="WasSpeedChangedByHand">The player or the game's own buttons changed the speed since the last check.</param>
+public readonly record struct AwaySnapshot(AwayReason? Away, bool CanPause, bool IsPaused, GameSpeed Running, bool WasSpeedChangedByHand);
+
+/// <param name="IsPausing">Pause the game now.</param>
+/// <param name="ResumeAt">Resume the game at this speed now, if it is still paused.</param>
+public readonly record struct AwayStep(AwayPause State, bool IsPausing, GameSpeed? ResumeAt);
+
+/// <summary>
+/// Pause while away: the game pauses when the player leaves it running, for another window or a menu, and resumes at
+/// the speed it ran at when they come back. Being away pauses at most once: one that starts while the game is already
+/// paused, or where the mod does not pause, is let go until the player is back. A speed change by hand, or anyone
+/// resuming, makes the speed the player's again, and nothing is resumed on their return.
+/// </summary>
+public abstract record AwayPause
+{
+    public static readonly AwayPause Start = new Watching();
+
+    private AwayPause()
+    {
+    }
+
+    /// <summary>The player is at the game.</summary>
+    public sealed record Watching : AwayPause;
+
+    /// <summary>The game is paused while the player is away for <paramref name="Reason"/>, and resumes at <paramref name="ResumeAt"/>.</summary>
+    public sealed record Holding(AwayReason Reason, GameSpeed ResumeAt) : AwayPause;
+
+    /// <summary>The player is away, but the speed is theirs; nothing happens until they are back.</summary>
+    public sealed record Released : AwayPause;
+
+    public static AwayStep Next(AwayPause state, AwaySnapshot seen) => state switch
+    {
+        Watching => Watch(seen),
+        Holding holding => Hold(holding, seen),
+        Released => seen.Away == null ? Stay(Start) : Stay(state),
+        _ => throw new ArgumentOutOfRangeException(nameof(state), state, "an away pause state Next does not handle"),
+    };
+
+    /// <summary>
+    /// The badge for the pause while it holds the game: the alert badge setting covers it, as it is a pause the player
+    /// did not make by hand. Null when this pause holds nothing, so the other badges decide.
+    /// </summary>
+    public static string? Badge(AwayPause state, BadgeSettings badges, bool isPaused, bool isChinese)
+    {
+        if (state is not Holding holding || !isPaused) return null;
+
+        return badges.IsAlertBadgeOn ? BadgeText(holding.Reason).Pick(isChinese) : "";
+    }
+
+    public static Phrase BadgeText(AwayReason reason) => reason switch
+    {
+        AwayReason.Background => Texts.PausedInBackground,
+        AwayReason.Menu => Texts.PausedMenuOpen,
+        _ => throw new ArgumentOutOfRangeException(nameof(reason), reason, "an away reason with no badge text"),
+    };
+
+    private static AwayStep Watch(AwaySnapshot seen)
+    {
+        if (seen.Away is not { } reason) return Stay(Start);
+
+        if (seen.IsPaused || !seen.CanPause) return Stay(new Released());
+
+        return new AwayStep(new Holding(reason, seen.Running), IsPausing: true, ResumeAt: null);
+    }
+
+    /// <summary>Going from the background into a menu, or back, keeps the game held until the player is fully back.</summary>
+    private static AwayStep Hold(Holding holding, AwaySnapshot seen)
+    {
+        if (seen.WasSpeedChangedByHand || !seen.IsPaused) return Stay(seen.Away == null ? Start : new Released());
+
+        if (seen.Away is not { } reason) return new AwayStep(Start, IsPausing: false, holding.ResumeAt);
+
+        return Stay(holding with { Reason = reason });
+    }
+
+    private static AwayStep Stay(AwayPause state) => new(state, IsPausing: false, ResumeAt: null);
+}

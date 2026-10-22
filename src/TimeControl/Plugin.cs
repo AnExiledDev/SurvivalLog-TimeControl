@@ -69,9 +69,6 @@ public sealed class Plugin : BasePlugin
         var isPauseOnDroneArrivalOn = Config.Bind("Alerts", "PauseOnDroneArrival", false,
             "Pause the game once when a trade drone comes home from a trip. Pick a speed or press the pause key (Space by default) to carry on.\n" +
             "交易无人机出行归来时暂停游戏一次。选一个速度或按暂停键（默认 Space）继续。");
-        var isPauseOnQueueEmptyOn = Config.Bind("Alerts", "PauseOnQueueEmpty", false,
-            "Pause the game once when your character finishes the last order in their queue. Unlike IdleFreeze, it pauses right away and stays paused until you pick a speed or press the pause key (Space by default).\n" +
-            "角色做完队列里最后一个指令时暂停游戏一次。与 IdleFreeze 不同，它会立刻暂停，并一直停着，直到你选一个速度或按暂停键（默认 Space）。");
         var isIdleBadgeOn = Config.Bind("Display", "IdleBadge", true,
             new ConfigDescription("Show a small \"Paused: idle\" badge next to the speed buttons while the idle pause holds the game. It goes away as soon as time runs again.\n" +
             "空闲暂停期间，在速度按钮旁显示一个小标记「已暂停：空闲」。时间重新走动后立刻消失。", null, "ModManager.ShowWhen=Clock.IdleFreeze"));
@@ -101,10 +98,11 @@ public sealed class Plugin : BasePlugin
         log.TrimIfLarge();
         log.Write($"===== Time Control {Version} started: sleep fast-forward {OnOff(isSleepFastForwardOn)}, on expeditions {OnOff(isExpeditionOn)}");
         SpeedPatches.Apply(harmony, speeds, log.Write);
+        AlertsConfig.Bind(Config, harmony, log.Write);
 
         OptionalLive.Watch(() =>
         {
-            var alerts = new AlertSettings(isPauseOnWaveOn.Value, isPauseOnEmergencyOn.Value, isPauseOnDroneArrivalOn.Value, isPauseOnQueueEmptyOn.Value);
+            var alerts = new AlertSettings(isPauseOnWaveOn.Value, isPauseOnEmergencyOn.Value, isPauseOnDroneArrivalOn.Value, AlertsConfig.IsQueuePauseOn, AlertsConfig.MoreOn);
             var settings = new ClockSettings(
                 isIdleFreezeOn.Value,
                 IdlePause.ClampDelay(idleDelay.Value),
@@ -123,7 +121,7 @@ public sealed class Plugin : BasePlugin
                 $"game's paused banner opacity {PauseOverlay.ClampOpacity(pauseOverlayOpacity.Value):0.##}");
             AlertSignals.Use(harmony, alerts, log.Write);
             ClockTicker.Settings = settings;
-        }, isIdleFreezeOn, idleDelay, isPauseOnWakeOn, isPauseOnWaveOn, isPauseOnEmergencyOn, isPauseOnDroneArrivalOn, isPauseOnQueueEmptyOn,
+        }, isIdleFreezeOn, idleDelay, isPauseOnWakeOn, isPauseOnWaveOn, isPauseOnEmergencyOn, isPauseOnDroneArrivalOn,
             isIdleBadgeOn, isPauseKeyBadgeOn, isAlertBadgeOn, areSpeedButtonsOn, pauseOverlayOpacity);
 
         ClockTicker.Log = log.Write;

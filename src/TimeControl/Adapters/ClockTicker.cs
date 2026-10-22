@@ -24,7 +24,7 @@ internal sealed record ClockSettings(
 /// the speed to resume to, shows the pause badge, shows speed buttons where the game has none, makes the game's pause
 /// strip see-through and puts the slow speed in use on the slow button's tooltip.
 /// </summary>
-public sealed class ClockTicker : MonoBehaviour
+public sealed partial class ClockTicker : MonoBehaviour
 {
     private const float CheckSeconds = 0.1f;
     private const float PageSeconds = 0.5f;
@@ -88,6 +88,7 @@ public sealed class ClockTicker : MonoBehaviour
             _alert = AlertPause.Start;
             _finish = ExpeditionFinish.Start;
             _timeSeen = IntPtr.Zero;
+            ForgetExtraWatches();
             HidePage(now);
 
             return;
@@ -98,6 +99,7 @@ public sealed class ClockTicker : MonoBehaviour
         if (!time.IsGameStart)
         {
             _alert = AlertPause.Start;
+            ForgetExtraWatches();
             HidePage(now);
 
             return;
@@ -118,7 +120,9 @@ public sealed class ClockTicker : MonoBehaviour
         var isAsleep = UpdateSleep(time, isPaused, wasChangedByHand, isLeavingExpedition);
 
         UpdateAlertPause(time, timer, isAsleep, isLeavingExpedition, elapsed, wasChangedByHand);
+        UpdateAwayPause(time, timer, isLeavingExpedition, wasChangedByHand);
         UpdateIdlePause(time, time.IsPausedScale(), timer, elapsed, isAsleep, isLeavingExpedition);
+        UpdateQueueSlow(time, timer, isAsleep, isLeavingExpedition, elapsed, wasChangedByHand);
         UpdateExpeditionFinish(time, isLeavingExpedition);
         SyncPage(time, timer, now);
     }
@@ -147,6 +151,7 @@ public sealed class ClockTicker : MonoBehaviour
         _sleep = SleepWatch.Start;
         _alert = AlertPause.Start;
         _finish = ExpeditionFinish.Start;
+        ForgetExtraWatches();
         SpeedPatches.ForgetWorld();
     }
 
@@ -236,13 +241,14 @@ public sealed class ClockTicker : MonoBehaviour
         var alerts = Settings.Alerts;
         var emergenciesFired = AlertSignals.TakeEmergenciesFired();
         var dronesLanded = AlertSignals.TakeDronesLanded();
+        var moreRaised = TakeMoreAlerts(time, alerts.MoreOn);
 
         if (!alerts.IsAnyOn) return;
 
         var canPause = AlertPause.CanPause(timer, IsFastForwarding(time) || isAsleep, isLeavingExpedition);
         var isWaveActive = alerts.IsWaveOn && AlertSignals.IsWaveActive();
         var isBusy = alerts.IsQueueEmptyOn && time.IsLeadingRoleBusy();
-        var seen = new AlertSnapshot(canPause, time.IsPausedScale(), isWaveActive, emergenciesFired, dronesLanded, isBusy, elapsed, wasChangedByHand);
+        var seen = new AlertSnapshot(canPause, time.IsPausedScale(), isWaveActive, emergenciesFired, dronesLanded, isBusy, elapsed, wasChangedByHand, moreRaised);
         var step = AlertPause.Next(_alert, seen, alerts);
 
         _alert = step.State;
@@ -259,7 +265,7 @@ public sealed class ClockTicker : MonoBehaviour
         Alert.Emergency => "an emergency fired",
         Alert.DroneArrival => "a trade drone came home",
         Alert.QueueEmpty => "the order queue ran out",
-        _ => throw new ArgumentOutOfRangeException(nameof(alert), alert, "an alert with no description"),
+        _ => DescribeMore(alert),
     };
 
     /// <summary>
@@ -369,7 +375,7 @@ public sealed class ClockTicker : MonoBehaviour
         var slowLabel = SpeedPatches.HeldSlowSpeed(time) is { } held ? SlowGear.Label(held) : "";
         SpeedButtonsView? buttons = AreSpeedButtonsShown(timer) ? SpeedButtons.View(timer, isPaused, time.GetSpeedLevel(), slowLabel, isChinese) : null;
         Alert? alertHolding = _alert is AlertPause.Holding holding ? holding.Reason : null;
-        var badge = PauseBadge.Text(Settings.Badges, isPaused, _idle is IdlePause.Frozen, SpeedPatches.IsPausedByKey, alertHolding, isChinese);
+        var badge = AwayPause.Badge(_away, Settings.Badges, isPaused, isChinese) ?? PauseBadge.Text(Settings.Badges, isPaused, _idle is IdlePause.Frozen, SpeedPatches.IsPausedByKey, alertHolding, isChinese);
 
         Page?.SyncSpeedButtons(buttons, isRefreshDue);
         Page?.SyncBadge(badge, buttons?.Page ?? HudPage.Home, isRefreshDue);
@@ -437,6 +443,7 @@ public sealed class ClockTicker : MonoBehaviour
         _idle = IdlePause.Start;
         _sleep = SleepWatch.Start;
         _alert = AlertPause.Start;
+        RecoverExtraWatches();
         _failures++;
 
         TryHidePage(now);
