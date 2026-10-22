@@ -69,6 +69,15 @@ public class AwayPauseTests
     }
 
     [Fact]
+    public void A_pause_made_by_hand_while_away_still_holds_on_coming_back()
+    {
+        var steps = Steps(InBackground, Paused(InBackground) with { WasSpeedChangedByHand = true }, Paused(AtTheGame));
+
+        Assert.Null(steps[2].ResumeAt);
+        Assert.Equal(AwayPause.Start, steps[2].State);
+    }
+
+    [Fact]
     public void Time_resumed_by_anyone_while_away_runs_on_and_nothing_is_resumed_later()
     {
         var steps = Steps(InBackground, InBackground, InBackground, AtTheGame);
