@@ -109,12 +109,14 @@ public sealed partial class ClockTicker : MonoBehaviour
         var isLeavingExpedition = GameClock.IsExpeditionEnding(timer);
 
         PressSpeedButtons(time, timer);
+        UpdateSpeedKeys(time, timer, isLeavingExpedition);
 
         var isPaused = time.IsPausedScale();
 
         if (!isPaused) SpeedPatches.LastRunningLevel = time.GetSpeedLevel();
 
         KeepGearSpeedHeld(time, isPaused, now);
+        KeepCustomSpeedHeld(time, isPaused);
 
         var wasChangedByHand = SpeedPatches.TakeSpeedChangedByHand();
         var isAsleep = UpdateSleep(time, isPaused, wasChangedByHand, isLeavingExpedition);
@@ -125,6 +127,7 @@ public sealed partial class ClockTicker : MonoBehaviour
         UpdateQueueSlow(time, timer, isAsleep, isLeavingExpedition, elapsed, wasChangedByHand);
         UpdateExpeditionFinish(time, isLeavingExpedition);
         SyncPage(time, timer, now);
+        SyncKeysPage(time, timer, now);
     }
 
     /// <summary>
@@ -153,6 +156,7 @@ public sealed partial class ClockTicker : MonoBehaviour
         _finish = ExpeditionFinish.Start;
         ForgetExtraWatches();
         SpeedPatches.ForgetWorld();
+        ForgetSpeedKeysOnNewWorld();
     }
 
     /// <summary>
@@ -397,6 +401,7 @@ public sealed partial class ClockTicker : MonoBehaviour
         Page?.SyncBadge("", HudPage.Home, isRefreshDue);
         Page?.SyncSpeedChip(null, HudPage.Home, isRefreshDue);
         Page?.SyncPauseOverlay("", isRefreshDue);
+        HideKeysPage(now);
     }
 
     /// <summary>Whether the slower page pace is due a refresh; when it is, the next one is counted from now.</summary>

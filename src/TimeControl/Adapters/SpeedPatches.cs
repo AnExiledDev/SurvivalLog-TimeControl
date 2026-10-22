@@ -25,7 +25,7 @@ internal sealed record SpeedSettings(
 /// to look; the ticker owns everything that changes over time and writes <see cref="LastRunningLevel"/>
 /// here.
 /// </summary>
-internal static class SpeedPatches
+internal static partial class SpeedPatches
 {
     private const int MaxLoggedFailures = 3;
 

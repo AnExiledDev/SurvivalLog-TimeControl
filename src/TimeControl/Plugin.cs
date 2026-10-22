@@ -99,6 +99,7 @@ public sealed class Plugin : BasePlugin
         log.Write($"===== Time Control {Version} started: sleep fast-forward {OnOff(isSleepFastForwardOn)}, on expeditions {OnOff(isExpeditionOn)}");
         SpeedPatches.Apply(harmony, speeds, log.Write);
         AlertsConfig.Bind(Config, harmony, log.Write);
+        KeysConfig.Bind(Config, harmony, log.Write);
 
         OptionalLive.Watch(() =>
         {
