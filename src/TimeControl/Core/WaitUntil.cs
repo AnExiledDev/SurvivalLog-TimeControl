@@ -33,13 +33,6 @@ public abstract record WaitGoal
 
     /// <param name="EmptySeconds">How long the queue has read empty since it last read busy.</param>
     public sealed record QueueDone(float EmptySeconds) : WaitGoal;
-
-    public WaitKind Kind => this switch
-    {
-        At at => at.Kind,
-        QueueDone => WaitKind.Queue,
-        _ => throw new ArgumentOutOfRangeException(nameof(WaitGoal), this, "a wait goal with no kind"),
-    };
 }
 
 /// <summary>What the ticker saw on one check.</summary>
