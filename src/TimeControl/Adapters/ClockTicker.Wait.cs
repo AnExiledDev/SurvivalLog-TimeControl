@@ -77,7 +77,7 @@ public sealed partial class ClockTicker
         if (reading is { } read) _wait = WaitUntil.FollowBrew(_wait, brewDoneAt, read);
 
         var isBusy = _wait is WaitUntil.Waiting { Goal: WaitGoal.QueueDone } && time.IsLeadingRoleBusy();
-        var seen = new WaitSnapshot(timer, reading, time.IsPausedScale(), wasChangedByHand, isBusy, isAsleep, _sleep is SleepWatch.Asleep, IsFastForwarding(time), elapsed);
+        var seen = new WaitSnapshot(timer, reading, time.IsPausedScale(), wasChangedByHand, isBusy, isAsleep, _sleep is SleepWatch.Asleep, IsFastForwarding(time), elapsed, _away is AwayPause.Holding);
         var before = _wait;
         var step = WaitUntil.Next(before, seen);
 

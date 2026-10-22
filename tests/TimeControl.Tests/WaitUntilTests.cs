@@ -73,6 +73,15 @@ public class WaitUntilTests
         Assert.Equal(new WaitStep(WaitUntil.Start, new WaitCommand.ResumeTo(Normal)), step);
     }
 
+    [Fact]
+    public void A_pause_held_while_the_player_is_away_keeps_the_wait_for_when_they_come_back()
+    {
+        var waiting = Waiting(ToMorning);
+        var step = WaitUntil.Next(waiting, Seen(Now) with { IsPaused = true, IsHeldAway = true });
+
+        Assert.Equal(new WaitStep(waiting, WaitCommand.Nothing), step);
+    }
+
     [Theory]
     [InlineData(GameTimer.Expedition)]
     [InlineData(GameTimer.PrologueCountdown)]

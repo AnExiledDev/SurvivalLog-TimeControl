@@ -45,6 +45,7 @@ public abstract record WaitGoal
 /// <param name="IsSleepWatched">The mod's sleep handling is watching the sleep, and puts back the speed from before it on waking.</param>
 /// <param name="IsGameFastForwarding">The game's own sleep speed-up is still running; it ends a moment after the character wakes.</param>
 /// <param name="ElapsedSeconds">Real seconds since the last check.</param>
+/// <param name="IsHeldAway">The mod is holding the game paused while the player is away, in another window or a menu.</param>
 public readonly record struct WaitSnapshot(
     GameTimer Timer,
     ClockReading? Reading,
@@ -54,7 +55,8 @@ public readonly record struct WaitSnapshot(
     bool IsAsleep,
     bool IsSleepWatched,
     bool IsGameFastForwarding,
-    float ElapsedSeconds);
+    float ElapsedSeconds,
+    bool IsHeldAway = false);
 
 /// <summary>What the ticker has to do to the game after a step.</summary>
 public abstract record WaitCommand
@@ -173,6 +175,9 @@ public abstract record WaitUntil
         if (seen.IsAsleep) return seen.IsSleepWatched ? new WaitStep(Start, new WaitCommand.HandToSleep(waiting.Before)) : Stay(new AfterSleep(waiting.Before));
 
         if (seen.WasSpeedChangedByHand) return Stay(Start);
+
+        // The player stepped away and comes back to the wait's own speed, so the wait carries on from there.
+        if (seen.IsPaused && seen.IsHeldAway) return Stay(waiting);
 
         if (!CanWait(seen.Timer) || seen.Timer != waiting.Timer || seen.Reading is not { } reading) return new WaitStep(Start, new WaitCommand.Restore(waiting.Before));
 
