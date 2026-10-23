@@ -507,7 +507,7 @@ internal static partial class SpeedPatches
             return false;
         }
 
-        if (HotKeyManager.IsKeyTakenByOtherAction(_pauseKey))
+        if (IsGameKey(_pauseKey))
         {
             LogOnce(ref _hasLoggedPauseKeyTaken,
                 $"{_pauseKey} is bound to one of the game's own actions, so it does not pause: rebind that action in the game's key settings or pick another PauseToggleKey; logged once");

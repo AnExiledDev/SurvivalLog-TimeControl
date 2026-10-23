@@ -250,6 +250,12 @@ internal static partial class SpeedPatches
     private static bool IsHeld(KeyCode key) => key != KeyCode.None && Input.GetKey(key);
 
     /// <summary>
+    /// Whether one of the game's own actions is bound to the key. The game's check skips the action it is asked about;
+    /// HideUI is the one it always skipped before it took that argument, so the answer stays the same.
+    /// </summary>
+    private static bool IsGameKey(KeyCode key) => HotKeyManager.IsKeyTakenByOtherAction(key, GameCore.HotUpdate.HotKeyAction.HideUI);
+
+    /// <summary>
     /// A key the game uses for one of its own actions does not hold a speed, as with the pause key. Asked once per
     /// press rather than on every frame the key is held.
     /// </summary>
@@ -257,7 +263,7 @@ internal static partial class SpeedPatches
     {
         if (!Input.GetKeyDown(key)) return !isTaken;
 
-        isTaken = HotKeyManager.IsKeyTakenByOtherAction(key);
+        isTaken = IsGameKey(key);
 
         if (isTaken)
         {

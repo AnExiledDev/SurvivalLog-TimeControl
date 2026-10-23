@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.1
+
+- Works with Survival Log 1.1.19611, which changed how the game checks whether a key belongs to one of its own actions.
+- Made for Survival Log 1.1.19611.
+
 ## 0.9.0
 
 - Pause when the game window goes to the background (on by default), and optional pauses while the bag, workbench, phone or trade window is open. Your speed comes back when you return.
