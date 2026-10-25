@@ -92,7 +92,7 @@ internal static partial class SpeedPatches
 
         var speed = CurrentSpeed(time, isPaused);
 
-        return speed.Level == PauseToggle.Slow && OwnsSlowGear ? new SpeedTarget.SlowSpeed(SlowIndexInUse()) : new SpeedTarget.Level(speed);
+        return speed.Level == PauseToggle.Slow && IsOnOurSlowSpeed ? new SpeedTarget.SlowSpeed(_slowIndex) : new SpeedTarget.Level(speed);
     }
 
     /// <summary>
@@ -109,6 +109,7 @@ internal static partial class SpeedPatches
             {
                 case SpeedTarget.Level level:
                     _forcedFastGear = level.Speed.Gear;
+                    _forcedSlowIndex = SlowGear.GamesOwn;
                     ChangeSpeedAs(time, level.Speed.Level, ChangeSource.Player);
                     break;
                 case SpeedTarget.SlowSpeed slow:
@@ -127,6 +128,7 @@ internal static partial class SpeedPatches
         finally
         {
             _forcedFastGear = null;
+            _forcedSlowIndex = null;
             _isKeysChanging = false;
         }
     }
@@ -153,6 +155,7 @@ internal static partial class SpeedPatches
         {
             case SpeedTarget.Level level:
                 SetResumeSpeed(level.Speed);
+                _slowIndex = SlowGear.GamesOwn;
                 break;
             case SpeedTarget.SlowSpeed slow:
                 SetResumeSpeed(new GameSpeed(PauseToggle.Slow, FastGear.GamesOwn));
@@ -187,8 +190,6 @@ internal static partial class SpeedPatches
     /// <summary>Whether the hold key of this kind is down where the game's speed keys would be answered.</summary>
     public static bool IsHoldKeyDown(HoldKind kind, float now) =>
         now - (kind == HoldKind.Fast ? _fastKeySeenAt : _slowKeySeenAt) <= HeldKeyGraceSeconds;
-
-    private static int SlowIndexInUse() => Math.Clamp(_slowIndex, 0, Math.Max(_slowSpeeds.Count - 1, 0));
 
     /// <summary>The slow button's press picks a speed by its own turn; the keys want a given one, so it is set after.</summary>
     private static void PinSlowSpeed(GameTimeManager time, int index)

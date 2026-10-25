@@ -59,8 +59,9 @@ internal static partial class SpeedPatches
     private static KeyCode _centerCameraKey = KeyCode.None;
     private static IntPtr _listeningActionField;
     private static IntPtr _listeningActionClass;
-    private static int _slowIndex = -1;
-    private static bool _wasSlowBeforeChange;
+    private static int _slowIndex = SlowGear.GamesOwn;
+    private static SlowPress _slowPressFrom = SlowPress.FromOtherSpeed;
+    private static int? _forcedSlowIndex;
     private static float? _lastLoggedHeld;
     private static int _fastGear = FastGear.GamesOwn;
     private static int? _forcedFastGear;
@@ -115,9 +116,9 @@ internal static partial class SpeedPatches
         if (OwnsSlowGear)
         {
             Patch(harmony, typeof(GameTimeManager), nameof(GameTimeManager.ChangeGameSpeed), postfix: nameof(HoldChosenSlowSpeed),
-                done: $"slow button holds {string.Join(" then ", Labels())}", consequence: "the slow button keeps the game's behaviour");
-            Patch(harmony, typeof(GameTimeManager), nameof(GameTimeManager.UpdateIdleSlowdown), prefix: nameof(SkipGameIdleSlowdown),
-                done: "the game's own idle slowdown is off while the slow button is ours", consequence: "the game may drop the slow speed to 0.3x when idle");
+                done: $"slow button goes on from the game's own slow to {string.Join(" then ", Labels())}", consequence: "the slow button keeps the game's behaviour");
+            Patch(harmony, typeof(GameTimeManager), nameof(GameTimeManager.UpdateIdleSlowdown), prefix: nameof(SkipGameIdleSlowdownOnOurSpeeds),
+                done: "the game's own idle slowdown is off while one of our slow speeds is held", consequence: "the game may drop our slow speeds to 0.3x when idle");
         }
 
         if (OwnsFastGear)
@@ -150,13 +151,16 @@ internal static partial class SpeedPatches
             : $"{pauseKey} toggles pause, and the game's speed keys work {where}";
     }
 
-    /// <summary>The slow speed being held, or null when the slow button is not in use or not ours.</summary>
+    /// <summary>The slow speed being held, or null when the slow button is not in use, not ours, or on the game's own slow.</summary>
     public static float? HeldSlowSpeed(GameTimeManager time)
     {
-        if (!OwnsSlowGear || !time.IsSlowGearActive) return null;
+        if (!IsOnOurSlowSpeed || !time.IsSlowGearActive) return null;
 
-        return _slowSpeeds[Math.Clamp(_slowIndex, 0, _slowSpeeds.Count - 1)];
+        return _slowSpeeds[_slowIndex];
     }
+
+    /// <summary>Whether the slow button sits on one of our speeds rather than the game's own slow.</summary>
+    private static bool IsOnOurSlowSpeed => _slowIndex >= 0 && _slowIndex < _slowSpeeds.Count;
 
     /// <summary>
     /// The fast speed being held, or null on the game's own high speed, at any other speed, while paused, or before
@@ -324,7 +328,8 @@ internal static partial class SpeedPatches
         }
     }
 
-    private static bool SkipGameIdleSlowdown() => false;
+    /// <summary>The game's own slow keeps its idle slowdown; on our speeds it would put the game at 0.3x instead.</summary>
+    private static bool SkipGameIdleSlowdownOnOurSpeeds() => !IsOnOurSlowSpeed;
 
     /// <summary>
     /// The game's sleep speed-up would run at its high speed partway through the sleep and put its own speed back
@@ -353,18 +358,21 @@ internal static partial class SpeedPatches
 
             var isPaused = __instance.IsPausedScale();
 
-            _wasSlowBeforeChange = __instance.IsSlowGearActive && !isPaused;
+            _slowPressFrom = SlowGear.PressFrom(isPaused, __instance.IsSlowGearActive);
             _fastPressFrom = FastGear.PressFrom(isPaused, __instance.GetSpeedLevel());
         }
         catch (Exception ex)
         {
-            _wasSlowBeforeChange = false;
+            _slowPressFrom = SlowPress.FromOtherSpeed;
             _fastPressFrom = FastPress.FromOtherSpeed;
             Fail("reading the speed before a change", ex);
         }
     }
 
-    /// <summary>The game's slow gear runs at full speed until the player idles; this makes it the chosen slow speed at once.</summary>
+    /// <summary>
+    /// The game's own slow is left as the game made it. On one of our speeds the game would run at full speed until
+    /// the player idles, so the chosen speed is held at once.
+    /// </summary>
     private static void HoldChosenSlowSpeed(GameTimeManager __instance, int speed)
     {
         if (speed != PauseToggle.Slow) return;
@@ -373,16 +381,16 @@ internal static partial class SpeedPatches
         {
             if (!GameClock.IsLive(__instance)) return;
 
-            _slowIndex = SlowGear.NextIndex(_slowIndex, _slowSpeeds.Count, _wasSlowBeforeChange);
+            _slowIndex = _forcedSlowIndex ?? SlowGear.NextIndex(_slowIndex, _slowSpeeds.Count, _slowPressFrom);
 
-            var held = _slowSpeeds[_slowIndex];
+            float? held = IsOnOurSlowSpeed ? _slowSpeeds[_slowIndex] : null;
 
-            GameClock.HoldSpeed(__instance, held);
+            if (held is { } scale) GameClock.HoldSpeed(__instance, scale);
 
             if (held == _lastLoggedHeld) return;
 
             _lastLoggedHeld = held;
-            _log($"slow button: holding {SlowGear.Label(held)}");
+            _log(held is { } logged ? $"slow button: holding {SlowGear.Label(logged)}" : "slow button: the game's own slow");
         }
         catch (Exception ex)
         {

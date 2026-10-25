@@ -1,17 +1,17 @@
 Name: Time Control
-Summary: A real pause and a real slow speed, before the disaster and on expeditions too. Space pauses anywhere, the game pauses itself when you go idle, Alt+Tab or a wave hits, and Wait until skips to morning then pauses. Hold X to fast-forward, set an alarm, and sleep until the hour you pick. Slow holds 0.5x or 0.25x and super speed doubles Fastest.
+Summary: A real pause and a real slow speed, before the disaster and on expeditions too. Space pauses anywhere, the game pauses itself when you go idle, Alt+Tab or a wave hits, and Wait until skips to morning then pauses. Hold X to fast-forward, set an alarm, and sleep until the hour you pick. Slow adds 0.5x and 0.25x and super speed doubles Fastest.
 
 Description (BBCode):
-The game's slow button only slows once you stand idle, and there is no way to pause before the disaster or on an expedition. Time Control gives you a real slow speed, a faster speed, and a pause that waits while your character has nothing to do.
+The game's slow button only slows once you stand idle, and there is no way to pause before the disaster or on an expedition. Time Control gives you slower speeds, a faster speed, and a pause that waits while your character has nothing to do.
 
 [size=5]Main features[/size]
 [list]
-[*][b]True slow speed[/b]: the slow button holds 0.5x, then 0.25x on the next press.[/*]
+[*][b]Slower speeds[/b]: the first press of the slow button is the game's own slow; press again for a true 0.5x, then 0.25x, then back to the game's own.[/*]
 [*][b]Super speed[/b]: press the fast button or key 3 again at high speed to run twice as fast. A small chip on the button shows the speed in use.[/*]
 [*][b]Idle pause[/b]: the game pauses after 3 seconds with nothing queued, and your next order resumes it.[/*]
 [*][b]Pause on alerts[/b]: the game pauses once when a zombie wave starts or an emergency fires. More can be switched on: a trade drone coming home, zombies hitting the house or a trap, the power going out, a need running low, falling ill, phone and trade messages, a ripe crop, dusk and dawn. On expeditions alerts only pause when TimeControlOnExpeditions is true.[/*]
 [*][b]When the queue runs out[/b]: the game can slow down or pause when your character finishes their last order.[/*]
-[*][b]Pause while away[/b]: the game pauses when you Alt+Tab out and picks up your speed when you come back. It can pause while the bag, workbench, phone or trade window is open too.[/*]
+[*][b]Pause while away[/b]: the game pauses when you Alt+Tab out and picks up your speed when you come back. It can pause while the bag, workbench, phone or trade window is open too, and an order given there, such as a craft, picks your speed back up.[/*]
 [*][b]Hold keys[/b]: hold X for the fastest speed or K for the slowest; let go and your speed comes back. Keys 5 to 9 can hold speeds of your own, and the mouse wheel over the speed buttons steps through every speed.[/*]
 [*][b]Wait until[/b]: a clock button beside the speed buttons runs the game at top speed until morning, your alarm, a brew or the queue is done, or a few hours on, then pauses.[/*]
 [*][b]Alarm clock[/b]: pause at a time of day, daily or once, or a few hours from now from the Wait until menu.[/*]
@@ -82,16 +82,16 @@ Open source under MIT: [url=https://github.com/AnExiledDev/SurvivalLog-TimeContr
 [line]
 [size=5]简体中文[/size]
 
-游戏的慢速按钮只有在角色空闲时才会变慢，而且在灾前筹备和外出探索时都没法暂停。Time Control 提供真正的慢速、更快的速度，以及在角色无事可做时自动等待的暂停。
+游戏的慢速按钮只有在角色空闲时才会变慢，而且在灾前筹备和外出探索时都没法暂停。Time Control 提供更慢的速度、更快的速度，以及在角色无事可做时自动等待的暂停。
 
 [size=5]主要功能[/size]
 [list]
-[*][b]真正的慢速[/b]：慢速按钮保持 0.5 倍速，再按一次变为 0.25 倍速。[/*]
+[*][b]更慢的速度[/b]：第一次按慢速按钮是游戏原本的慢速；再按一次变为真正的 0.5 倍速，再按变为 0.25 倍速，然后回到游戏原本的慢速。[/*]
 [*][b]超高速[/b]：在高速时再按一次快进按钮或 3 键，速度再翻一倍。按钮右上角的小标签会显示当前实际速度。[/*]
 [*][b]空闲暂停[/b]：队列里没有指令 3 秒后游戏会暂停，下一个指令会让游戏继续。[/*]
 [*][b]事件暂停[/b]：尸潮开始或危机事件发生时，游戏暂停一次。还可以打开更多：交易无人机归来、丧尸破坏房屋或陷阱、停电、某项需求过低、生病、手机短信和交易短信、作物成熟、黄昏和清晨。外出探索时，只有 TimeControlOnExpeditions 为 true 才会因事件暂停。[/*]
 [*][b]队列做完时[/b]：角色做完最后一个指令时，游戏可以减速或暂停。[/*]
-[*][b]离开时暂停[/b]：按 Alt+Tab 切走时游戏暂停，切回来时恢复原来的速度。也可以在打开背包、工作台、手机或交易窗口时暂停。[/*]
+[*][b]离开时暂停[/b]：按 Alt+Tab 切走时游戏暂停，切回来时恢复原来的速度。也可以在打开背包、工作台、手机或交易窗口时暂停，在其中下达指令（例如制作）会恢复原来的速度。[/*]
 [*][b]按住加速或减速[/b]：按住 X 以最快速度运行，按住 K 以最慢速度运行，松开后恢复原来的速度。5 到 9 键可以设为你自己的速度，在速度按钮上滚动鼠标滚轮可以依次切换所有速度。[/*]
 [*][b]等到[/b]：速度按钮旁的时钟按钮会以最高速度运行，直到早上、闹钟时间、酿造完成、队列做完或几小时后，然后暂停。[/*]
 [*][b]闹钟[/b]：在一天中的某个时间暂停，每天或只响一次；也可以在「等到」菜单里设几小时后暂停。[/*]

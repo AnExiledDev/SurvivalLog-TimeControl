@@ -6,9 +6,9 @@ Settings live in `BepInEx\config\com.dev.survivallog.timecontrol.cfg`, created t
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| `SlowSpeeds` | `0.5,0.25` | Speeds for the Slow button and the `` ` `` (`~`) key. Pressing slow again while slow moves to the next speed, and after the last back to the first. |
+| `SlowSpeeds` | `0.5,0.25` | Extra slower speeds for the Slow button and the `` ` `` (`~`) key. The first press is the game's own slow; pressing slow again moves on to these speeds, and after the last back to the game's own slow. |
 
-A comma-separated list. Each speed is kept between 0.05 and 0.95; a number outside that range is moved to the nearest end, and an entry that is not a number is skipped. Leave it empty to keep the game's own slow button.
+A comma-separated list. Each speed is kept between 0.05 and 0.95; a number outside that range is moved to the nearest end, and an entry that is not a number is skipped. Leave it empty to keep only the game's own slow.
 
 ## FastButton
 
@@ -25,10 +25,10 @@ A comma-separated list, for example `2,4`. Each multiple is kept between 1.1 and
 | `IdleFreeze` | `true` | Pause the game while your character is idle with nothing queued, and resume it on your next order. Works at home, before the disaster and on expeditions. Pick a speed or press the pause key (`Space` by default) while it is paused to let time run until your next order. |
 | `IdleFreezeDelaySeconds` | `3` | How many real seconds your character stands idle before the game pauses, so a short gap between two orders does not pause it. `0` pauses as soon as nothing is queued. |
 | `PauseOnFocusLoss` | `true` | Pause the game when its window goes to the background, for example after Alt+Tab, and bring back your speed when you switch back. Works at home, before the disaster, on expeditions (with `TimeControlOnExpeditions` on) and during sleep fast-forward. A running Wait until carries on when you come back. |
-| `PauseInBag` | `false` | Pause the game while your bag is open, and bring back your speed when you close it. |
-| `PauseAtWorkbench` | `false` | Pause the game while the workbench window is open, and bring back your speed when you close it. |
-| `PauseInPhone` | `false` | Pause the game while the phone is open, and bring back your speed when you close it. |
-| `PauseInTrade` | `false` | Pause the game while the trade window is open, and bring back your speed when you close it. |
+| `PauseInBag` | `false` | Pause the game while your bag is open, and bring back your speed when you close it. An order given while it is open brings your speed back at once. |
+| `PauseAtWorkbench` | `false` | Pause the game while the workbench window is open, and bring back your speed when you close it. An order given while it is open, such as a craft, brings your speed back at once. |
+| `PauseInPhone` | `false` | Pause the game while the phone is open, and bring back your speed when you close it. An order given while it is open brings your speed back at once. |
+| `PauseInTrade` | `false` | Pause the game while the trade window is open, and bring back your speed when you close it. An order given while it is open brings your speed back at once. |
 | `StartPaused` | `false` | Start paused when a save is loaded or a new game begins, at home and before the disaster. The pause key starts time at the speed the game would have run at. A guided start or a story scene is left running. |
 
 If you change the speed yourself while the game is away-paused or a menu is open, your choice is kept and nothing is brought back.

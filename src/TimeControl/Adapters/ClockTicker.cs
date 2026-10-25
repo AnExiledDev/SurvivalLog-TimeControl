@@ -345,11 +345,12 @@ public sealed partial class ClockTicker : MonoBehaviour
 
     /// <summary>
     /// Saves, menus and the game's other speed changes can put the scale back without going through the slow or fast
-    /// button, so a held slow or fast speed is checked and restored here; the game's own fast-forwards are left alone.
+    /// button, so a held slow or fast speed is checked and restored here; the game's own fast-forwards and its own speed
+    /// boost are left alone.
     /// </summary>
     private void KeepGearSpeedHeld(GameTimeManager time, bool isPaused, float now)
     {
-        if (isPaused || IsFastForwarding(time)) return;
+        if (isPaused || IsFastForwarding(time) || time.IsHoldBoostActive()) return;
 
         var slow = SpeedPatches.HeldSlowSpeed(time);
 

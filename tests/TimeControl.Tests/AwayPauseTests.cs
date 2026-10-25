@@ -125,6 +125,61 @@ public class AwayPauseTests
     }
 
     [Fact]
+    public void An_order_given_in_a_menu_resumes_the_game_so_a_craft_can_run()
+    {
+        var inMenu = AtTheGame with { Away = AwayReason.Menu };
+        var steps = Steps(inMenu, Paused(inMenu), Paused(inMenu) with { IsBusy = true });
+
+        Assert.True(steps[0].IsPausing);
+        Assert.Null(steps[1].ResumeAt);
+        Assert.Equal(Fast, steps[2].ResumeAt);
+        Assert.IsType<AwayPause.Released>(steps[2].State);
+    }
+
+    [Fact]
+    public void After_an_order_resumes_it_the_menu_does_not_pause_again_until_the_player_leaves_it()
+    {
+        var inMenu = AtTheGame with { Away = AwayReason.Menu };
+        var busyInMenu = inMenu with { IsBusy = true };
+        var steps = Steps(inMenu, Paused(busyInMenu), busyInMenu, inMenu, AtTheGame, inMenu);
+
+        Assert.All(steps.GetRange(2, 2), step => Assert.False(step.IsPausing));
+        Assert.Equal(AwayPause.Start, steps[4].State);
+        Assert.True(steps[5].IsPausing);
+    }
+
+    [Fact]
+    public void An_order_already_running_when_the_menu_opened_does_not_let_the_pause_go()
+    {
+        var busyInMenu = AtTheGame with { Away = AwayReason.Menu, IsBusy = true };
+        var steps = Steps(busyInMenu, Paused(busyInMenu), Paused(busyInMenu));
+
+        Assert.True(steps[0].IsPausing);
+        Assert.All(steps.GetRange(1, 2), step => Assert.Null(step.ResumeAt));
+        Assert.IsType<AwayPause.Holding>(steps[2].State);
+    }
+
+    [Fact]
+    public void A_new_order_after_the_running_one_finished_lets_the_menu_pause_go()
+    {
+        var inMenu = AtTheGame with { Away = AwayReason.Menu };
+        var busyInMenu = inMenu with { IsBusy = true };
+        var steps = Steps(busyInMenu, Paused(inMenu), Paused(busyInMenu));
+
+        Assert.Equal(Fast, steps[2].ResumeAt);
+    }
+
+    [Fact]
+    public void Being_busy_in_the_background_does_not_resume_the_game()
+    {
+        var busyInBackground = InBackground with { IsBusy = true };
+        var steps = Steps(InBackground, Paused(busyInBackground));
+
+        Assert.Null(steps[1].ResumeAt);
+        Assert.IsType<AwayPause.Holding>(steps[1].State);
+    }
+
+    [Fact]
     public void The_background_wins_over_an_open_menu()
     {
         Assert.Equal(AwayReason.Background, AllOn.Reason(isInBackground: true, isWatchedMenuOpen: true));

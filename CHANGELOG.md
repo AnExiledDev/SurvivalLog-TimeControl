@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.2
+
+- The Slow button keeps the game's own slow on its first press, idle slowdown included. Pressing it again goes on to the slower speeds in `SlowSpeeds` (0.5x, then 0.25x by default), then back to the game's own slow.
+- Holding the game's own hold-to-speed-up key now works while one of the mod's slow speeds or super speed is in use; before, the mod put its speed straight back.
+- With a menu pause on (`PauseAtWorkbench` and the others), giving an order in that menu, such as a craft at the workbench, brings your speed back at once.
+- Made for Survival Log 1.1.19611.
+
 ## 0.9.1
 
 - Works with Survival Log 1.1.19611, which changed how the game checks whether a key belongs to one of its own actions.

@@ -35,7 +35,8 @@ public readonly record struct AwaySettings(bool IsFocusLossOn, bool IsBagOn, boo
 /// <param name="IsPaused">The game is paused, by anyone.</param>
 /// <param name="Running">The speed the game runs at, or last ran at when paused.</param>
 /// <param name="WasSpeedChangedByHand">The player or the game's own buttons changed the speed since the last check.</param>
-public readonly record struct AwaySnapshot(AwayReason? Away, bool CanPause, bool IsPaused, GameSpeed Running, bool WasSpeedChangedByHand);
+/// <param name="IsBusy">The player's character has an order queued, read only while a menu is open.</param>
+public readonly record struct AwaySnapshot(AwayReason? Away, bool CanPause, bool IsPaused, GameSpeed Running, bool WasSpeedChangedByHand, bool IsBusy = false);
 
 /// <param name="IsPausing">Pause the game now.</param>
 /// <param name="ResumeAt">Resume the game at this speed now, if it is still paused.</param>
@@ -59,7 +60,8 @@ public abstract record AwayPause
     public sealed record Watching : AwayPause;
 
     /// <summary>The game is paused while the player is away for <paramref name="Reason"/>, and resumes at <paramref name="ResumeAt"/>.</summary>
-    public sealed record Holding(AwayReason Reason, GameSpeed ResumeAt) : AwayPause;
+    /// <param name="WasBusy">The character had an order queued at the last check, so only a new one lets a menu's pause go.</param>
+    public sealed record Holding(AwayReason Reason, GameSpeed ResumeAt, bool WasBusy = false) : AwayPause;
 
     /// <summary>The player is away, but the speed is theirs; nothing happens until they are back.</summary>
     public sealed record Released : AwayPause;
@@ -96,17 +98,23 @@ public abstract record AwayPause
 
         if (seen.IsPaused || !seen.CanPause) return Stay(new Released());
 
-        return new AwayStep(new Holding(reason, seen.Running), IsPausing: true, ResumeAt: null);
+        return new AwayStep(new Holding(reason, seen.Running, seen.IsBusy), IsPausing: true, ResumeAt: null);
     }
 
-    /// <summary>Going from the background into a menu, or back, keeps the game held until the player is fully back.</summary>
+    /// <summary>
+    /// Going from the background into a menu, or back, keeps the game held until the player is fully back. An order
+    /// given from a menu, such as a craft at the workbench, resumes the game for it, and the menu does not pause again
+    /// until the player has left it.
+    /// </summary>
     private static AwayStep Hold(Holding holding, AwaySnapshot seen)
     {
         if (seen.WasSpeedChangedByHand || !seen.IsPaused) return Stay(seen.Away == null ? Start : new Released());
 
         if (seen.Away is not { } reason) return new AwayStep(Start, IsPausing: false, holding.ResumeAt);
 
-        return Stay(holding with { Reason = reason });
+        if (reason == AwayReason.Menu && seen.IsBusy && !holding.WasBusy) return new AwayStep(new Released(), IsPausing: false, holding.ResumeAt);
+
+        return Stay(holding with { Reason = reason, WasBusy = seen.IsBusy });
     }
 
     private static AwayStep Stay(AwayPause state) => new(state, IsPausing: false, ResumeAt: null);

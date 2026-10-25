@@ -15,7 +15,7 @@ namespace TimeControl;
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.timecontrol";
-    private const string Version = "0.9.1";
+    private const string Version = "0.9.2";
 
     public override void Load()
     {
@@ -23,8 +23,8 @@ public sealed class Plugin : BasePlugin
 
         var slowSpeeds = Config.Bind("SlowButton", "SlowSpeeds", "0.5,0.25",
             new ConfigDescription(
-                "Speeds for the Slow button and the ` (~) key, separated by commas, each from 0.05 to 0.95. Pressing slow again while slow moves to the next speed, and after the last back to the first. Leave it empty to keep the game's own slow button. Takes effect at the next game start.\n" +
-                "慢速按钮和 ` (~) 键使用的速度，用逗号分隔，每个在 0.05 到 0.95 之间。已经在慢速时再按一次慢速，会换到下一个速度，最后一个之后回到第一个。留空则保留游戏原本的慢速按钮。下次启动游戏时生效。",
+                "Extra slower speeds for the Slow button and the ` (~) key, separated by commas, each from 0.05 to 0.95. The first press is the game's own slow; pressing slow again moves on to these speeds, and after the last back to the game's own. Leave it empty to keep only the game's own slow. Takes effect at the next game start.\n" +
+                "慢速按钮和 ` (~) 键额外的更慢速度，用逗号分隔，每个在 0.05 到 0.95 之间。第一次按是游戏原本的慢速；已经在慢速时再按一次，会依次换到这些速度，最后一个之后回到游戏原本的慢速。留空则只保留游戏原本的慢速。下次启动游戏时生效。",
                 null, "ModManager.Restart")).Value;
         var fastMultiples = Config.Bind("FastButton", "FastSpeeds", "2",
             new ConfigDescription(

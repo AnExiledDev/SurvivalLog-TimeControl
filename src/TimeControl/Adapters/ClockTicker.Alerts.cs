@@ -55,7 +55,8 @@ public sealed partial class ClockTicker
         var isPaused = time.IsPausedScale();
         var away = settings.Reason(!Application.isFocused, settings.IsAnyMenuOn && IsWatchedMenuOpen(settings));
         var canPause = AlertPause.CanPause(timer, IsFastForwarding(time), isLeavingExpedition);
-        var seen = new AwaySnapshot(away, canPause, isPaused, SpeedPatches.CurrentSpeed(time, isPaused), wasChangedByHand);
+        var isBusy = away == AwayReason.Menu && time.IsLeadingRoleBusy();
+        var seen = new AwaySnapshot(away, canPause, isPaused, SpeedPatches.CurrentSpeed(time, isPaused), wasChangedByHand, isBusy);
         var before = _away;
         var step = AwayPause.Next(before, seen);
 
@@ -89,6 +90,7 @@ public sealed partial class ClockTicker
         var line = (from, step.State) switch
         {
             (_, AwayPause.Holding holding) when step.IsPausing => $"away: {Describe(holding.Reason)}, paused the game; coming back resumes {Describe(holding.ResumeAt)}",
+            (AwayPause.Holding holding, AwayPause.Released) when step.ResumeAt != null => $"away: order given in a menu, resumed {Describe(holding.ResumeAt)}",
             (AwayPause.Holding holding, _) when step.ResumeAt != null => $"away: back, resumed {Describe(holding.ResumeAt)}",
             (AwayPause.Holding, AwayPause.Released or AwayPause.Watching) => "away: speed changed while away, it is kept",
             _ => null,

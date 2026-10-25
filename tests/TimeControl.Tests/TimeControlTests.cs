@@ -30,23 +30,47 @@ public class SlowGearTests
     }
 
     [Fact]
-    public void Pressing_slow_while_slow_cycles_to_the_next_speed_and_wraps()
+    public void The_first_slow_press_from_another_speed_is_the_games_own_slow()
     {
-        Assert.Equal(1, SlowGear.NextIndex(0, 2, wasAlreadySlow: true));
-        Assert.Equal(0, SlowGear.NextIndex(1, 2, wasAlreadySlow: true));
+        Assert.Equal(SlowGear.GamesOwn, SlowGear.NextIndex(SlowGear.GamesOwn, 2, SlowPress.FromOtherSpeed));
+        Assert.Equal(SlowGear.GamesOwn, SlowGear.NextIndex(1, 2, SlowPress.FromOtherSpeed));
     }
 
     [Fact]
-    public void Coming_back_to_slow_from_another_speed_keeps_the_speed_last_used()
+    public void Pressing_slow_again_goes_slower_then_wraps_back_to_the_games_own_slow()
     {
-        Assert.Equal(1, SlowGear.NextIndex(1, 2, wasAlreadySlow: false));
+        var presses = new List<int>();
+        var index = SlowGear.NextIndex(SlowGear.GamesOwn, 2, SlowPress.FromOtherSpeed);
+
+        for (var i = 0; i < 3; i++)
+        {
+            index = SlowGear.NextIndex(index, 2, SlowPress.FromSlowSpeed);
+            presses.Add(index);
+        }
+
+        Assert.Equal(new[] { 0, 1, SlowGear.GamesOwn }, presses);
     }
 
     [Fact]
-    public void A_remembered_speed_that_no_longer_exists_falls_back_to_the_first()
+    public void Resuming_from_pause_onto_slow_keeps_the_slow_speed_in_use_before()
     {
-        Assert.Equal(0, SlowGear.NextIndex(5, 2, wasAlreadySlow: false));
-        Assert.Equal(-1, SlowGear.NextIndex(0, 0, wasAlreadySlow: true));
+        Assert.Equal(1, SlowGear.NextIndex(1, 2, SlowPress.FromPause));
+        Assert.Equal(SlowGear.GamesOwn, SlowGear.NextIndex(SlowGear.GamesOwn, 2, SlowPress.FromPause));
+    }
+
+    [Fact]
+    public void A_remembered_speed_that_no_longer_exists_falls_back_to_the_games_own_slow()
+    {
+        Assert.Equal(SlowGear.GamesOwn, SlowGear.NextIndex(5, 2, SlowPress.FromPause));
+        Assert.Equal(SlowGear.GamesOwn, SlowGear.NextIndex(0, 0, SlowPress.FromSlowSpeed));
+    }
+
+    [Fact]
+    public void A_pause_wins_over_the_slow_flag_when_reading_where_a_press_came_from()
+    {
+        Assert.Equal(SlowPress.FromPause, SlowGear.PressFrom(isPaused: true, isSlowGearActive: true));
+        Assert.Equal(SlowPress.FromSlowSpeed, SlowGear.PressFrom(isPaused: false, isSlowGearActive: true));
+        Assert.Equal(SlowPress.FromOtherSpeed, SlowGear.PressFrom(isPaused: false, isSlowGearActive: false));
     }
 
     [Fact]
