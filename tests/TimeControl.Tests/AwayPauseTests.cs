@@ -127,6 +127,9 @@ public class AwayPauseTests
     private static readonly AwaySnapshot InMenu = AtTheGame with { Away = AwayReason.Menu };
     private static readonly AwaySnapshot BusyInMenu = InMenu with { IsBusy = true };
     private static readonly AwaySnapshot OrderGivenInMenu = BusyInMenu with { HasNewOrder = true };
+    private static readonly AwaySnapshot DoneInMenu = InMenu with { Elapsed = AwayPause.SettleSeconds };
+
+    private static AwaySnapshot IdleInMenuFor(float seconds) => InMenu with { Elapsed = seconds };
 
     [Fact]
     public void An_order_given_in_a_menu_resumes_the_game_so_a_craft_can_run()
@@ -142,7 +145,7 @@ public class AwayPauseTests
     [Fact]
     public void The_menu_pauses_again_once_the_order_is_done()
     {
-        var steps = Steps(InMenu, Paused(OrderGivenInMenu), BusyInMenu, BusyInMenu, InMenu);
+        var steps = Steps(InMenu, Paused(OrderGivenInMenu), BusyInMenu, BusyInMenu, DoneInMenu);
 
         Assert.False(steps[2].IsPausing);
         Assert.False(steps[3].IsPausing);
@@ -153,12 +156,34 @@ public class AwayPauseTests
     [Fact]
     public void Each_order_in_the_menu_runs_the_game_again_and_each_finish_pauses_it()
     {
-        var steps = Steps(InMenu, Paused(OrderGivenInMenu), InMenu, Paused(OrderGivenInMenu), InMenu);
+        var steps = Steps(InMenu, Paused(OrderGivenInMenu), DoneInMenu, Paused(OrderGivenInMenu), DoneInMenu);
 
         Assert.Equal(Fast, steps[1].ResumeAt);
         Assert.True(steps[2].IsPausing);
         Assert.Equal(Fast, steps[3].ResumeAt);
         Assert.True(steps[4].IsPausing);
+    }
+
+    [Fact]
+    public void The_next_craft_of_a_batch_starting_within_the_settle_keeps_the_game_running()
+    {
+        var steps = Steps(InMenu, Paused(OrderGivenInMenu), IdleInMenuFor(0.6f), BusyInMenu, IdleInMenuFor(0.6f), IdleInMenuFor(0.6f));
+
+        Assert.False(steps[2].IsPausing);
+        Assert.False(steps[3].IsPausing);
+        Assert.False(steps[4].IsPausing);
+        Assert.True(steps[5].IsPausing);
+        Assert.Equal(new AwayPause.Holding(AwayReason.Menu, Fast), steps[5].State);
+    }
+
+    [Fact]
+    public void Work_starting_in_the_same_check_it_went_idle_is_still_running()
+    {
+        var steps = Steps(InMenu, Paused(OrderGivenInMenu), DoneInMenu with { HasNewOrder = true }, IdleInMenuFor(0.6f));
+
+        Assert.False(steps[2].IsPausing);
+        Assert.False(steps[3].IsPausing);
+        Assert.IsType<AwayPause.RunningOrder>(steps[3].State);
     }
 
     [Fact]
@@ -228,6 +253,27 @@ public class AwayPauseTests
         Assert.False(OrderIds.HasNew(new long[] { 4, 5 }, new long[] { 5 }));
         Assert.False(OrderIds.HasNew(new long[] { 4 }, new long[] { 4 }));
         Assert.False(OrderIds.HasNew(new long[] { 4 }, new long[0]));
+    }
+
+    private static MenuWork Work(long[] orders, long[] benches) => new(orders, benches);
+
+    [Fact]
+    public void A_craft_starting_at_a_workbench_is_new_work_with_no_new_order()
+    {
+        Assert.True(MenuWork.HasNew(Work(new long[] { 4 }, new long[0]), Work(new long[] { 4 }, new long[] { 900 })));
+    }
+
+    [Fact]
+    public void A_bench_whose_id_matches_an_old_order_still_counts_as_a_new_craft()
+    {
+        Assert.True(MenuWork.HasNew(Work(new long[] { 900 }, new long[0]), Work(new long[0], new long[] { 900 })));
+    }
+
+    [Fact]
+    public void A_craft_still_running_or_finishing_is_not_new_work()
+    {
+        Assert.False(MenuWork.HasNew(Work(new long[0], new long[] { 900 }), Work(new long[0], new long[] { 900 })));
+        Assert.False(MenuWork.HasNew(Work(new long[0], new long[] { 900 }), Work(new long[0], new long[0])));
     }
 
     [Fact]

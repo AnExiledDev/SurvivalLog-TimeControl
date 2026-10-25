@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.4
+
+- The speed keys and buttons now work while the workbench window is open. The game stops time on its own when the window opens and when a craft finishes, which is why the speed often could not be changed there; the mod now lifts that stop. `SpeedControlAtWorkbench` (under Clock, on by default) turns this off.
+- `PauseAtWorkbench` is now on by default, so the workbench still opens paused, now with the speed under your control. A saved setting keeps its value.
+- A craft at the workbench now counts as work: with a menu pause on, starting one runs the game until it is done, then the game pauses again, and the next craft of a batch or queue starting within a second keeps it running. Idle freeze no longer pauses the game while a workbench is crafting.
+- Made for Survival Log 1.1.19611.
+
 ## 0.9.3
 
 - With a menu pause on, an order given in that menu now runs the game only until it is done, then the game pauses again. Each new order there runs it again, even one queued behind an order that was already running when the menu opened.

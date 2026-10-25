@@ -56,8 +56,11 @@ internal static class AlertsConfig
             "游戏窗口切到后台时（例如按 Alt+Tab 后）暂停游戏，切回来时恢复原来的速度。如果期间你自己改了速度，则保留你的选择。在安全屋、灾前筹备、外出探索（需开启 TimeControlOnExpeditions）和睡眠快进时都有效。");
         var isBagOn = config.Bind(ClockSection, "PauseInBag", false,
             "Pause the game while your bag is open" + MenuKept + "打开背包" + MenuKeptChinese);
-        var isWorkbenchOn = config.Bind(ClockSection, "PauseAtWorkbench", false,
+        var isWorkbenchOn = config.Bind(ClockSection, "PauseAtWorkbench", true,
             "Pause the game while the workbench window is open" + MenuKept + "打开工作台界面" + MenuKeptChinese);
+        var isBenchSpeedOn = config.Bind(ClockSection, "SpeedControlAtWorkbench", true,
+            "The game stops time on its own when the workbench window opens and when a craft finishes, and then ignores the speed keys and buttons until you start a craft or close the window. With this on, that stop is lifted, so you can change the speed while the window is open. Use PauseAtWorkbench to have the game paused while it is open.\n" +
+            "打开工作台界面时和制作完成时，游戏会自行停住时间，之后在你开始制作或关闭界面前都不响应调速键和按钮。开启后会解除这种停止，让你在界面打开时也能调整速度。想在界面打开时暂停游戏，请用 PauseAtWorkbench。");
         var isPhoneOn = config.Bind(ClockSection, "PauseInPhone", false,
             "Pause the game while the phone is open" + MenuKept + "打开手机" + MenuKeptChinese);
         var isTradeOn = config.Bind(ClockSection, "PauseInTrade", false,
@@ -118,10 +121,11 @@ internal static class AlertsConfig
             "游戏时间到清晨 7:00 时暂停游戏一次。睡觉时经过这个时间不会暂停。" + CarryOnChinese,
             Alert.Dawn);
 
-        var watched = new List<ConfigEntryBase> { isFocusLossOn, isBagOn, isWorkbenchOn, isPhoneOn, isTradeOn, onQueueEmpty, slowSpeed, lowNeedPercent };
+        var watched = new List<ConfigEntryBase> { isFocusLossOn, isBagOn, isWorkbenchOn, isBenchSpeedOn, isPhoneOn, isTradeOn, onQueueEmpty, slowSpeed, lowNeedPercent };
 
         foreach (var (entry, _) in AlertToggles) watched.Add(entry);
 
+        Workbench.Hook(harmony, log);
         OptionalLive.Watch(() =>
         {
             var moreOn = MoreOn;
@@ -130,9 +134,10 @@ internal static class AlertsConfig
 
             ClockTicker.Settings = ClockTicker.Settings with { Alerts = ClockTicker.Settings.Alerts with { IsQueueEmptyOn = IsQueuePauseOn, MoreOn = moreOn } };
             ClockTicker.Away = away;
+            Workbench.IsSpeedControlOn = isBenchSpeedOn.Value;
             ClockTicker.QueueSlowing = queueSlowing;
             ClockTicker.LowNeedPercent = AlertMemory.ClampPercent(lowNeedPercent.Value);
-            log($"pause on focus loss {OnOff(away.IsFocusLossOn)}, in bag {OnOff(away.IsBagOn)}, at workbench {OnOff(away.IsWorkbenchOn)}, in phone {OnOff(away.IsPhoneOn)}, in trade {OnOff(away.IsTradeOn)}, " +
+            log($"pause on focus loss {OnOff(away.IsFocusLossOn)}, in bag {OnOff(away.IsBagOn)}, at workbench {OnOff(away.IsWorkbenchOn)}, speed control at workbench {OnOff(isBenchSpeedOn.Value)}, in phone {OnOff(away.IsPhoneOn)}, in trade {OnOff(away.IsTradeOn)}, " +
                 $"on queue empty {onQueueEmpty.Value}{(queueSlowing.IsOn ? $" to {slowSpeed.Value}" : "")}, " +
                 $"more alerts on: {(moreOn.IsEmpty ? "none" : string.Join(", ", Names(moreOn)))}{(isLowNeedOn.Value ? $", low need at {ClockTicker.LowNeedPercent}%" : "")}");
             MoreAlertSignals.Use(harmony, moreOn, log);

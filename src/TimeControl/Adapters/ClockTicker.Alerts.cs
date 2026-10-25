@@ -23,8 +23,8 @@ public sealed partial class ClockTicker
     private QueueSlow _queueSlow = QueueSlow.Start;
     private AlertMemory _readings = AlertMemory.Start;
 
-    /// <summary>The ids of the player's orders at the last check while a menu was open; null outside a menu or after a failed read.</summary>
-    private HashSet<long>? _menuOrders;
+    /// <summary>The work under way at the last check while a menu was open; null outside a menu or after a failed read.</summary>
+    private MenuWork? _menuWork;
 
     /// <summary>A new world, or none, starts every watch here afresh; a pause held on the old world went with it.</summary>
     private void ForgetExtraWatches()
@@ -32,7 +32,7 @@ public sealed partial class ClockTicker
         _away = AwayPause.Start;
         _queueSlow = QueueSlow.Start;
         _readings = AlertMemory.Start;
-        _menuOrders = null;
+        _menuWork = null;
     }
 
     /// <summary>The alerts after the queue running out that started since the last check, of those in <paramref name="on"/>.</summary>
@@ -51,7 +51,7 @@ public sealed partial class ClockTicker
     /// the game's own sleep speed-up is left alone, as pausing it would have the game undo the pause. Like idle freeze's,
     /// the pause is kept before it is made and the resume after.
     /// </summary>
-    private void UpdateAwayPause(GameTimeManager time, GameTimer timer, bool isLeavingExpedition, bool wasChangedByHand)
+    private void UpdateAwayPause(GameTimeManager time, GameTimer timer, bool isLeavingExpedition, bool wasChangedByHand, float elapsed)
     {
         var settings = Away;
 
@@ -60,9 +60,9 @@ public sealed partial class ClockTicker
         var isPaused = time.IsPausedScale();
         var away = settings.Reason(!Application.isFocused, settings.IsAnyMenuOn && IsWatchedMenuOpen(settings));
         var canPause = AlertPause.CanPause(timer, IsFastForwarding(time), isLeavingExpedition);
-        var isBusy = away == AwayReason.Menu && time.IsLeadingRoleBusy();
-        var hasNewOrder = TakeNewMenuOrder(away == AwayReason.Menu);
-        var seen = new AwaySnapshot(away, canPause, isPaused, SpeedPatches.CurrentSpeed(time, isPaused), wasChangedByHand, isBusy, hasNewOrder);
+        var isBusy = away == AwayReason.Menu && IsWorking(time);
+        var hasNewOrder = TakeNewMenuWork(away == AwayReason.Menu);
+        var seen = new AwaySnapshot(away, canPause, isPaused, SpeedPatches.CurrentSpeed(time, isPaused), wasChangedByHand, isBusy, hasNewOrder, elapsed);
         var before = _away;
         var step = AwayPause.Next(before, seen);
 
@@ -78,18 +78,24 @@ public sealed partial class ClockTicker
         LogAway(before, step);
     }
 
+    /// <summary>The character has an order queued, or a workbench is crafting, which runs on its own timer and is no order.</summary>
+    private static bool IsWorking(GameTimeManager time) => time.IsLeadingRoleBusy() || Workbench.IsAnyCrafting();
+
     /// <summary>
-    /// Whether the player gave an order since the last check in the same open menu: one of their orders carries an id
-    /// not seen before, so a craft queued behind an order already running counts too.
+    /// Whether the player gave an order or started a craft since the last check in the same open menu: an order or a
+    /// crafting bench not seen before, so a craft queued behind an order already running counts too.
     /// </summary>
-    private bool TakeNewMenuOrder(bool isInMenu)
+    private bool TakeNewMenuWork(bool isInMenu)
     {
-        var before = _menuOrders;
+        var before = _menuWork;
 
-        _menuOrders = isInMenu ? ReadPlayerOrders() : null;
+        _menuWork = isInMenu ? ReadMenuWork() : null;
 
-        return before != null && _menuOrders != null && OrderIds.HasNew(before, _menuOrders);
+        return before is { } was && _menuWork is { } now && MenuWork.HasNew(was, now);
     }
+
+    private static MenuWork? ReadMenuWork() =>
+        ReadPlayerOrders() is { } orders && Workbench.CraftingBenches() is { } benches ? new MenuWork(orders, benches) : null;
 
     /// <summary>The ids of the orders the player gave the character that are queued or running; null when unreadable.</summary>
     private static HashSet<long>? ReadPlayerOrders()
@@ -127,7 +133,7 @@ public sealed partial class ClockTicker
         if (ui == null) return false;
 
         return (settings.IsBagOn && ui.IsUIActive(Il2CppType.Of<WebUI_BackpackUI>()))
-            || (settings.IsWorkbenchOn && ui.IsUIActive(Il2CppType.Of<WebUI_ToolTable>()))
+            || (settings.IsWorkbenchOn && Workbench.IsOpen())
             || (settings.IsPhoneOn && ui.IsUIActive(Il2CppType.Of<WebUI_PhoneSMS>()))
             || (settings.IsTradeOn && ui.IsUIActive(Il2CppType.Of<WebUI_TradeUI>()));
     }
@@ -136,9 +142,9 @@ public sealed partial class ClockTicker
     {
         var line = (from, step.State) switch
         {
-            (AwayPause.RunningOrder, AwayPause.Holding { Reason: AwayReason.Menu }) when step.IsPausing => "away: the order given in the menu is done, paused the game again",
+            (AwayPause.RunningOrder, AwayPause.Holding { Reason: AwayReason.Menu }) when step.IsPausing => "away: the work started in the menu is done, paused the game again",
             (_, AwayPause.Holding holding) when step.IsPausing => $"away: {Describe(holding.Reason)}, paused the game; coming back resumes {Describe(holding.ResumeAt)}",
-            (AwayPause.Holding holding, AwayPause.RunningOrder) when step.ResumeAt != null => $"away: order given in a menu, resumed {Describe(holding.ResumeAt)} until it is done",
+            (AwayPause.Holding holding, AwayPause.RunningOrder) when step.ResumeAt != null => $"away: order or craft started in a menu, resumed {Describe(holding.ResumeAt)} until it is done",
             (AwayPause.Holding holding, _) when step.ResumeAt != null => $"away: back, resumed {Describe(holding.ResumeAt)}",
             (AwayPause.Holding, AwayPause.Released or AwayPause.Watching) => "away: speed changed while away, it is kept",
             _ => null,

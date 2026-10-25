@@ -108,6 +108,7 @@ public sealed partial class ClockTicker : MonoBehaviour
         var timer = GameTimers.Controlled(GameClock.Timer(time), Settings.IsExpeditionOn);
         var isLeavingExpedition = GameClock.IsExpeditionEnding(timer);
 
+        Workbench.LiftLateFreeze(now);
         PressSpeedButtons(time, timer);
         UpdateSpeedKeys(time, timer, isLeavingExpedition);
 
@@ -122,7 +123,7 @@ public sealed partial class ClockTicker : MonoBehaviour
         var isAsleep = UpdateSleep(time, isPaused, wasChangedByHand, isLeavingExpedition);
 
         UpdateAlertPause(time, timer, isAsleep, isLeavingExpedition, elapsed, wasChangedByHand);
-        UpdateAwayPause(time, timer, isLeavingExpedition, wasChangedByHand);
+        UpdateAwayPause(time, timer, isLeavingExpedition, wasChangedByHand, elapsed);
         UpdateWaits(time, timer, isAsleep, isLeavingExpedition, wasChangedByHand, elapsed, now);
         UpdateIdlePause(time, time.IsPausedScale(), timer, elapsed, isAsleep, isLeavingExpedition);
         UpdateQueueSlow(time, timer, isAsleep, isLeavingExpedition, elapsed, wasChangedByHand);
@@ -275,13 +276,13 @@ public sealed partial class ClockTicker : MonoBehaviour
 
     /// <summary>
     /// A pause is kept as Frozen before it is made, so one that fails halfway is still undone by the recovery; a resume
-    /// is kept after, so one that fails is tried again by it. Whether the player is busy only matters while time runs
-    /// where idle freeze applies or the game is held by this mod.
+    /// is kept after, so one that fails is tried again by it. Whether the player is busy, with an order queued or a
+    /// workbench crafting, only matters while time runs where idle freeze applies or the game is held by this mod.
     /// </summary>
     private void UpdateIdlePause(GameTimeManager time, bool isPaused, GameTimer timer, float elapsed, bool isAsleep, bool isLeavingExpedition)
     {
         var canFreeze = IdlePause.CanFreeze(Settings.IsIdleFreezeOn, timer, IsFastForwarding(time) || isAsleep);
-        var isBusy = ((canFreeze && !isPaused) || _idle is not IdlePause.Watching) && time.IsLeadingRoleBusy();
+        var isBusy = ((canFreeze && !isPaused) || _idle is not IdlePause.Watching) && IsWorking(time);
         var seen = new IdleSnapshot(canFreeze, isBusy, isPaused, elapsed, SpeedPatches.LastRunningLevel, isLeavingExpedition);
         var before = _idle;
         var step = IdlePause.Next(before, seen, Settings.IdleFreezeDelaySeconds);
