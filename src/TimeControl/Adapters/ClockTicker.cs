@@ -108,7 +108,7 @@ public sealed partial class ClockTicker : MonoBehaviour
         var timer = GameTimers.Controlled(GameClock.Timer(time), Settings.IsExpeditionOn);
         var isLeavingExpedition = GameClock.IsExpeditionEnding(timer);
 
-        Workbench.LiftLateFreeze(now);
+        GameFreeze.Update(elapsed);
         PressSpeedButtons(time, timer);
         UpdateSpeedKeys(time, timer, isLeavingExpedition);
 
