@@ -21,8 +21,8 @@ internal static class AlertsConfig
 
     private const string CarryOn = " Pick a speed or press the pause key (Space by default) to carry on.\n";
     private const string CarryOnChinese = "选一个速度或按暂停键（默认 Space）继续。";
-    private const string MenuKept = ", and bring back your speed when you close it. Giving an order while it is open, such as a craft, brings your speed back at once. If you change the speed yourself while it is open, your choice is kept.\n";
-    private const string MenuKeptChinese = "时暂停游戏，关闭时恢复原来的速度。打开期间下达指令（例如制作）会立刻恢复原来的速度。如果打开期间你自己改了速度，则保留你的选择。";
+    private const string MenuKept = ", and bring back your speed when you close it. Giving an order while it is open, such as a craft, runs the game until the order is done, then it pauses again. If you change the speed yourself while it is open, your choice is kept.\n";
+    private const string MenuKeptChinese = "时暂停游戏，关闭时恢复原来的速度。打开期间下达指令（例如制作）会让游戏运行到指令完成，然后再次暂停。如果打开期间你自己改了速度，则保留你的选择。";
 
     private static readonly List<(ConfigEntry<bool> Entry, Alert[] Alerts)> AlertToggles = new();
 

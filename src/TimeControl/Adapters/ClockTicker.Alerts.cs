@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using GameCore.HotUpdate;
 using GameCore.HotUpdate.Battle.Logic;
 using GameCore.HotUpdate.ReduxUI;
@@ -22,12 +23,16 @@ public sealed partial class ClockTicker
     private QueueSlow _queueSlow = QueueSlow.Start;
     private AlertMemory _readings = AlertMemory.Start;
 
+    /// <summary>The ids of the player's orders at the last check while a menu was open; null outside a menu or after a failed read.</summary>
+    private HashSet<long>? _menuOrders;
+
     /// <summary>A new world, or none, starts every watch here afresh; a pause held on the old world went with it.</summary>
     private void ForgetExtraWatches()
     {
         _away = AwayPause.Start;
         _queueSlow = QueueSlow.Start;
         _readings = AlertMemory.Start;
+        _menuOrders = null;
     }
 
     /// <summary>The alerts after the queue running out that started since the last check, of those in <paramref name="on"/>.</summary>
@@ -56,7 +61,8 @@ public sealed partial class ClockTicker
         var away = settings.Reason(!Application.isFocused, settings.IsAnyMenuOn && IsWatchedMenuOpen(settings));
         var canPause = AlertPause.CanPause(timer, IsFastForwarding(time), isLeavingExpedition);
         var isBusy = away == AwayReason.Menu && time.IsLeadingRoleBusy();
-        var seen = new AwaySnapshot(away, canPause, isPaused, SpeedPatches.CurrentSpeed(time, isPaused), wasChangedByHand, isBusy);
+        var hasNewOrder = TakeNewMenuOrder(away == AwayReason.Menu);
+        var seen = new AwaySnapshot(away, canPause, isPaused, SpeedPatches.CurrentSpeed(time, isPaused), wasChangedByHand, isBusy, hasNewOrder);
         var before = _away;
         var step = AwayPause.Next(before, seen);
 
@@ -70,6 +76,47 @@ public sealed partial class ClockTicker
 
         _away = step.State;
         LogAway(before, step);
+    }
+
+    /// <summary>
+    /// Whether the player gave an order since the last check in the same open menu: one of their orders carries an id
+    /// not seen before, so a craft queued behind an order already running counts too.
+    /// </summary>
+    private bool TakeNewMenuOrder(bool isInMenu)
+    {
+        var before = _menuOrders;
+
+        _menuOrders = isInMenu ? ReadPlayerOrders() : null;
+
+        return before != null && _menuOrders != null && OrderIds.HasNew(before, _menuOrders);
+    }
+
+    /// <summary>The ids of the orders the player gave the character that are queued or running; null when unreadable.</summary>
+    private static HashSet<long>? ReadPlayerOrders()
+    {
+        try
+        {
+            var world = BaseSingleton<BattleLogicWorld>.IsInstanceCreated ? BaseSingleton<BattleLogicWorld>.Instance : null;
+            var role = world?._AgentManager?.GetLeadingRole();
+            var orders = role == null ? null : world!._ActionManager?.GetActionSource(role.InstanceId)?.ParentList;
+
+            if (orders == null) return null;
+
+            var ids = new HashSet<long>();
+
+            for (var i = 0; i < orders.Count; i++)
+            {
+                var order = orders[i];
+
+                if (order != null && order.SourceType == ActionSourceType.ManualCreate) ids.Add(order.ListId);
+            }
+
+            return ids;
+        }
+        catch (Exception)
+        {
+            return null;
+        }
     }
 
     /// <summary>Whether a menu whose setting is on is open, by the game's own record of the menus it shows.</summary>
@@ -89,8 +136,9 @@ public sealed partial class ClockTicker
     {
         var line = (from, step.State) switch
         {
+            (AwayPause.RunningOrder, AwayPause.Holding { Reason: AwayReason.Menu }) when step.IsPausing => "away: the order given in the menu is done, paused the game again",
             (_, AwayPause.Holding holding) when step.IsPausing => $"away: {Describe(holding.Reason)}, paused the game; coming back resumes {Describe(holding.ResumeAt)}",
-            (AwayPause.Holding holding, AwayPause.Released) when step.ResumeAt != null => $"away: order given in a menu, resumed {Describe(holding.ResumeAt)}",
+            (AwayPause.Holding holding, AwayPause.RunningOrder) when step.ResumeAt != null => $"away: order given in a menu, resumed {Describe(holding.ResumeAt)} until it is done",
             (AwayPause.Holding holding, _) when step.ResumeAt != null => $"away: back, resumed {Describe(holding.ResumeAt)}",
             (AwayPause.Holding, AwayPause.Released or AwayPause.Watching) => "away: speed changed while away, it is kept",
             _ => null,

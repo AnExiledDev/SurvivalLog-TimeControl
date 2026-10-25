@@ -36,7 +36,8 @@ public readonly record struct AwaySettings(bool IsFocusLossOn, bool IsBagOn, boo
 /// <param name="Running">The speed the game runs at, or last ran at when paused.</param>
 /// <param name="WasSpeedChangedByHand">The player or the game's own buttons changed the speed since the last check.</param>
 /// <param name="IsBusy">The player's character has an order queued, read only while a menu is open.</param>
-public readonly record struct AwaySnapshot(AwayReason? Away, bool CanPause, bool IsPaused, GameSpeed Running, bool WasSpeedChangedByHand, bool IsBusy = false);
+/// <param name="HasNewOrder">An order was given since the last check, read only while a menu is open.</param>
+public readonly record struct AwaySnapshot(AwayReason? Away, bool CanPause, bool IsPaused, GameSpeed Running, bool WasSpeedChangedByHand, bool IsBusy = false, bool HasNewOrder = false);
 
 /// <param name="IsPausing">Pause the game now.</param>
 /// <param name="ResumeAt">Resume the game at this speed now, if it is still paused.</param>
@@ -46,7 +47,8 @@ public readonly record struct AwayStep(AwayPause State, bool IsPausing, GameSpee
 /// Pause while away: the game pauses when the player leaves it running, for another window or a menu, and resumes at
 /// the speed it ran at when they come back. Being away pauses at most once: one that starts while the game is already
 /// paused, or where the mod does not pause, is let go until the player is back. A speed change by hand, or anyone
-/// resuming, makes the speed the player's again, and nothing is resumed on their return.
+/// resuming, makes the speed the player's again, and nothing is resumed on their return. An order given from a menu,
+/// such as a craft at the workbench, runs the game until the character has no orders left, then the menu pauses again.
 /// </summary>
 public abstract record AwayPause
 {
@@ -60,8 +62,10 @@ public abstract record AwayPause
     public sealed record Watching : AwayPause;
 
     /// <summary>The game is paused while the player is away for <paramref name="Reason"/>, and resumes at <paramref name="ResumeAt"/>.</summary>
-    /// <param name="WasBusy">The character had an order queued at the last check, so only a new one lets a menu's pause go.</param>
-    public sealed record Holding(AwayReason Reason, GameSpeed ResumeAt, bool WasBusy = false) : AwayPause;
+    public sealed record Holding(AwayReason Reason, GameSpeed ResumeAt) : AwayPause;
+
+    /// <summary>An order given from a menu runs the game; the menu pauses again once the character has no orders left.</summary>
+    public sealed record RunningOrder : AwayPause;
 
     /// <summary>The player is away, but the speed is theirs; nothing happens until they are back.</summary>
     public sealed record Released : AwayPause;
@@ -70,6 +74,7 @@ public abstract record AwayPause
     {
         Watching => Watch(seen),
         Holding holding => Hold(holding, seen),
+        RunningOrder => RunOrder(seen),
         Released => seen.Away == null ? Stay(Start) : Stay(state),
         _ => throw new ArgumentOutOfRangeException(nameof(state), state, "an away pause state Next does not handle"),
     };
@@ -98,13 +103,12 @@ public abstract record AwayPause
 
         if (seen.IsPaused || !seen.CanPause) return Stay(new Released());
 
-        return new AwayStep(new Holding(reason, seen.Running, seen.IsBusy), IsPausing: true, ResumeAt: null);
+        return new AwayStep(new Holding(reason, seen.Running), IsPausing: true, ResumeAt: null);
     }
 
     /// <summary>
     /// Going from the background into a menu, or back, keeps the game held until the player is fully back. An order
-    /// given from a menu, such as a craft at the workbench, resumes the game for it, and the menu does not pause again
-    /// until the player has left it.
+    /// given from a menu resumes the game for it, even when an older order was already queued.
     /// </summary>
     private static AwayStep Hold(Holding holding, AwaySnapshot seen)
     {
@@ -112,9 +116,26 @@ public abstract record AwayPause
 
         if (seen.Away is not { } reason) return new AwayStep(Start, IsPausing: false, holding.ResumeAt);
 
-        if (reason == AwayReason.Menu && seen.IsBusy && !holding.WasBusy) return new AwayStep(new Released(), IsPausing: false, holding.ResumeAt);
+        if (reason == AwayReason.Menu && seen.HasNewOrder) return new AwayStep(new RunningOrder(), IsPausing: false, holding.ResumeAt);
 
-        return Stay(holding with { Reason = reason, WasBusy = seen.IsBusy });
+        return Stay(holding with { Reason = reason });
+    }
+
+    /// <summary>
+    /// Leaving the menu ends it with nothing to resume, as the game is running. A speed change by hand, or a pause by
+    /// anyone else, makes the speed the player's. Going to the background pauses as it would from the game.
+    /// </summary>
+    private static AwayStep RunOrder(AwaySnapshot seen)
+    {
+        if (seen.Away is not { } reason) return Stay(Start);
+
+        if (seen.WasSpeedChangedByHand || seen.IsPaused || !seen.CanPause) return Stay(new Released());
+
+        if (reason == AwayReason.Background) return new AwayStep(new Holding(reason, seen.Running), IsPausing: true, ResumeAt: null);
+
+        if (seen.IsBusy) return Stay(new RunningOrder());
+
+        return new AwayStep(new Holding(reason, seen.Running), IsPausing: true, ResumeAt: null);
     }
 
     private static AwayStep Stay(AwayPause state) => new(state, IsPausing: false, ResumeAt: null);

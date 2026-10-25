@@ -1,5 +1,5 @@
 Name: Time Control
-Summary: A real pause and a real slow speed, before the disaster and on expeditions too. Space pauses anywhere, the game pauses itself when you go idle, Alt+Tab or a wave hits, and Wait until skips to morning then pauses. Hold X to fast-forward, set an alarm, and sleep until the hour you pick. Slow adds 0.5x and 0.25x and super speed doubles Fastest.
+Summary: A real pause and a real slow speed, before the disaster and on expeditions too. Space pauses anywhere, the game pauses itself when you go idle, Alt+Tab or a wave hits, and an optional Wait until button skips to morning. Hold X to fast-forward, set an alarm, and sleep until the hour you pick. Slow adds 0.5x and 0.25x and super speed doubles Fastest.
 
 Description (BBCode):
 The game's slow button only slows once you stand idle, and there is no way to pause before the disaster or on an expedition. Time Control gives you slower speeds, a faster speed, and a pause that waits while your character has nothing to do.
@@ -11,9 +11,9 @@ The game's slow button only slows once you stand idle, and there is no way to pa
 [*][b]Idle pause[/b]: the game pauses after 3 seconds with nothing queued, and your next order resumes it.[/*]
 [*][b]Pause on alerts[/b]: the game pauses once when a zombie wave starts or an emergency fires. More can be switched on: a trade drone coming home, zombies hitting the house or a trap, the power going out, a need running low, falling ill, phone and trade messages, a ripe crop, dusk and dawn. On expeditions alerts only pause when TimeControlOnExpeditions is true.[/*]
 [*][b]When the queue runs out[/b]: the game can slow down or pause when your character finishes their last order.[/*]
-[*][b]Pause while away[/b]: the game pauses when you Alt+Tab out and picks up your speed when you come back. It can pause while the bag, workbench, phone or trade window is open too, and an order given there, such as a craft, picks your speed back up.[/*]
+[*][b]Pause while away[/b]: the game pauses when you Alt+Tab out and picks up your speed when you come back. It can pause while the bag, workbench, phone or trade window is open too, and an order given there, such as a craft, runs until it is done, then the game pauses again.[/*]
 [*][b]Hold keys[/b]: hold X for the fastest speed or K for the slowest; let go and your speed comes back. Keys 5 to 9 can hold speeds of your own, and the mouse wheel over the speed buttons steps through every speed.[/*]
-[*][b]Wait until[/b]: a clock button beside the speed buttons runs the game at top speed until morning, your alarm, a brew or the queue is done, or a few hours on, then pauses.[/*]
+[*][b]Wait until[/b] (switch on with WaitButton): a clock button beside the speed buttons runs the game at top speed until morning, your alarm, a brew or the queue is done, or a few hours on, then pauses.[/*]
 [*][b]Alarm clock[/b]: pause at a time of day, daily or once, or a few hours from now from the Wait until menu.[/*]
 [*][b]Sleep until[/b]: wake your character at the hour you pick, or when an alert goes off. Naps are never cut short.[/*]
 [*][b]Start paused[/b]: a save can load paused.[/*]
@@ -91,9 +91,9 @@ Open source under MIT: [url=https://github.com/AnExiledDev/SurvivalLog-TimeContr
 [*][b]空闲暂停[/b]：队列里没有指令 3 秒后游戏会暂停，下一个指令会让游戏继续。[/*]
 [*][b]事件暂停[/b]：尸潮开始或危机事件发生时，游戏暂停一次。还可以打开更多：交易无人机归来、丧尸破坏房屋或陷阱、停电、某项需求过低、生病、手机短信和交易短信、作物成熟、黄昏和清晨。外出探索时，只有 TimeControlOnExpeditions 为 true 才会因事件暂停。[/*]
 [*][b]队列做完时[/b]：角色做完最后一个指令时，游戏可以减速或暂停。[/*]
-[*][b]离开时暂停[/b]：按 Alt+Tab 切走时游戏暂停，切回来时恢复原来的速度。也可以在打开背包、工作台、手机或交易窗口时暂停，在其中下达指令（例如制作）会恢复原来的速度。[/*]
+[*][b]离开时暂停[/b]：按 Alt+Tab 切走时游戏暂停，切回来时恢复原来的速度。也可以在打开背包、工作台、手机或交易窗口时暂停，在其中下达指令（例如制作）会让游戏运行到指令完成，然后再次暂停。[/*]
 [*][b]按住加速或减速[/b]：按住 X 以最快速度运行，按住 K 以最慢速度运行，松开后恢复原来的速度。5 到 9 键可以设为你自己的速度，在速度按钮上滚动鼠标滚轮可以依次切换所有速度。[/*]
-[*][b]等到[/b]：速度按钮旁的时钟按钮会以最高速度运行，直到早上、闹钟时间、酿造完成、队列做完或几小时后，然后暂停。[/*]
+[*][b]等到[/b]（用 WaitButton 开启）：速度按钮旁的时钟按钮会以最高速度运行，直到早上、闹钟时间、酿造完成、队列做完或几小时后，然后暂停。[/*]
 [*][b]闹钟[/b]：在一天中的某个时间暂停，每天或只响一次；也可以在「等到」菜单里设几小时后暂停。[/*]
 [*][b]睡到几点[/b]：在你选的时间或有事件发生时叫醒角色。打盹不会被打断。[/*]
 [*][b]暂停开局[/b]：读取存档时可以以暂停状态开始。[/*]

@@ -16,13 +16,15 @@ internal static class WaitConfig
 
     public static bool IsStartPausedOn { get; private set; }
 
+    public static bool IsWaitButtonOn { get; private set; }
+
     public static SleepUntilSettings SleepUntil { get; private set; } = new(null, false);
 
     public static void Bind(ConfigFile config, Harmony harmony, Action<string> log)
     {
         var alarmTime = config.Bind("Alarm", "AlarmTime", "",
-            "A time of day on a 24-hour clock, such as 7 or 21:30, at which the game pauses once, at home and before the disaster. The pause key (Space by default) carries on at the speed you had. It stays quiet while your character sleeps and rings once they wake. Leave it empty for no alarm. The Wait until button beside the speed buttons can also set a one-time alarm a few hours ahead.\n" +
-            "一天中的某个时间（24 小时制），例如 7 或 21:30，到这个时间游戏会暂停一次，在安全屋和灾前筹备时都有效。按暂停键（默认 Space）会以原来的速度继续。角色睡觉时不会响，醒来后才响。留空则不设闹钟。速度按钮旁的「等到」按钮也可以设一个几小时后响一次的闹钟。");
+            "A time of day on a 24-hour clock, such as 7 or 21:30, at which the game pauses once, at home and before the disaster. The pause key (Space by default) carries on at the speed you had. It stays quiet while your character sleeps and rings once they wake. Leave it empty for no alarm. With WaitButton on, the Wait until button beside the speed buttons can also set a one-time alarm a few hours ahead.\n" +
+            "一天中的某个时间（24 小时制），例如 7 或 21:30，到这个时间游戏会暂停一次，在安全屋和灾前筹备时都有效。按暂停键（默认 Space）会以原来的速度继续。角色睡觉时不会响，醒来后才响。留空则不设闹钟。开启 WaitButton 后，速度按钮旁的「等到」按钮也可以设一个几小时后响一次的闹钟。");
         var isAlarmDaily = config.Bind("Alarm", "AlarmDaily", true,
             "Pause at the AlarmTime every day. Off pauses only once, and again only after AlarmTime changes or the game restarts.\n" +
             "每天都在 AlarmTime 的时间暂停。关闭则只暂停一次，修改 AlarmTime 或重新启动游戏后才会再次暂停。");
@@ -36,6 +38,10 @@ internal static class WaitConfig
             "Wake your character from sleep when an alert switched on under Alerts pauses the game, such as a zombie wave or an emergency, and keep the game paused once they are up. Off lets a sleeping character sleep through alerts. Naps are never cut short.\n" +
             "当 Alerts 中开启的事件（例如尸潮或危机）让游戏暂停时，把正在睡觉的角色叫醒，并在角色起身后保持暂停。关闭则角色睡觉时会睡过这些事件。打盹不会被打断。");
 
+        var isWaitButtonOn = config.Bind("Display", "WaitButton", false,
+            "Show the Wait until button beside the speed buttons. It runs the game at top speed until morning, the alarm time, a brew or the queue being done, or a few hours on, then pauses.\n" +
+            "在速度按钮旁显示「等到」按钮。它会以最快速度运行游戏，直到早上、闹钟时间、酿造或队列完成，或几小时后，然后暂停。");
+
         GameWait.HookEnter(harmony, log);
         ClockTicker.WaitPage = new WaitPageLink(log);
 
@@ -43,13 +49,15 @@ internal static class WaitConfig
         {
             Alarm = new AlarmSettings(ReadTime("Alarm", "AlarmTime", alarmTime.Value, "no alarm", log), isAlarmDaily.Value);
             IsStartPausedOn = isStartPausedOn.Value;
+            IsWaitButtonOn = isWaitButtonOn.Value;
             SleepUntil = new SleepUntilSettings(ReadTime("Sleep", "WakeAtHour", wakeAtHour.Value, "the game wakes the character", log), isWakeOnAlertOn.Value);
 
             log($"alarm {(Alarm.SecondOfDay is { } alarmAt ? $"at {ClockHour.Label(alarmAt)} {(Alarm.IsDaily ? "every day" : "once")}" : "off")}, " +
                 $"start paused {OnOff(IsStartPausedOn)}, " +
+                $"wait button {OnOff(IsWaitButtonOn)}, " +
                 $"sleep wakes {(SleepUntil.WakeAtSecond is { } wakeAt ? $"at {ClockHour.Label(wakeAt)}" : "when the game wakes the character")}, " +
                 $"wake on alert {OnOff(SleepUntil.IsWakeOnAlertOn)}");
-        }, alarmTime, isAlarmDaily, isStartPausedOn, wakeAtHour, isWakeOnAlertOn);
+        }, alarmTime, isAlarmDaily, isStartPausedOn, isWaitButtonOn, wakeAtHour, isWakeOnAlertOn);
     }
 
     private static int? ReadTime(string section, string key, string text, string meaningWhenUnread, Action<string> log)

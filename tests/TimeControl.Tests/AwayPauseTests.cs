@@ -124,59 +124,110 @@ public class AwayPauseTests
         Assert.Equal(Fast, steps[2].ResumeAt);
     }
 
+    private static readonly AwaySnapshot InMenu = AtTheGame with { Away = AwayReason.Menu };
+    private static readonly AwaySnapshot BusyInMenu = InMenu with { IsBusy = true };
+    private static readonly AwaySnapshot OrderGivenInMenu = BusyInMenu with { HasNewOrder = true };
+
     [Fact]
     public void An_order_given_in_a_menu_resumes_the_game_so_a_craft_can_run()
     {
-        var inMenu = AtTheGame with { Away = AwayReason.Menu };
-        var steps = Steps(inMenu, Paused(inMenu), Paused(inMenu) with { IsBusy = true });
+        var steps = Steps(InMenu, Paused(InMenu), Paused(OrderGivenInMenu));
 
         Assert.True(steps[0].IsPausing);
         Assert.Null(steps[1].ResumeAt);
         Assert.Equal(Fast, steps[2].ResumeAt);
-        Assert.IsType<AwayPause.Released>(steps[2].State);
+        Assert.IsType<AwayPause.RunningOrder>(steps[2].State);
     }
 
     [Fact]
-    public void After_an_order_resumes_it_the_menu_does_not_pause_again_until_the_player_leaves_it()
+    public void The_menu_pauses_again_once_the_order_is_done()
     {
-        var inMenu = AtTheGame with { Away = AwayReason.Menu };
-        var busyInMenu = inMenu with { IsBusy = true };
-        var steps = Steps(inMenu, Paused(busyInMenu), busyInMenu, inMenu, AtTheGame, inMenu);
+        var steps = Steps(InMenu, Paused(OrderGivenInMenu), BusyInMenu, BusyInMenu, InMenu);
 
-        Assert.All(steps.GetRange(2, 2), step => Assert.False(step.IsPausing));
-        Assert.Equal(AwayPause.Start, steps[4].State);
-        Assert.True(steps[5].IsPausing);
+        Assert.False(steps[2].IsPausing);
+        Assert.False(steps[3].IsPausing);
+        Assert.True(steps[4].IsPausing);
+        Assert.Equal(new AwayPause.Holding(AwayReason.Menu, Fast), steps[4].State);
     }
 
     [Fact]
-    public void An_order_already_running_when_the_menu_opened_does_not_let_the_pause_go()
+    public void Each_order_in_the_menu_runs_the_game_again_and_each_finish_pauses_it()
     {
-        var busyInMenu = AtTheGame with { Away = AwayReason.Menu, IsBusy = true };
-        var steps = Steps(busyInMenu, Paused(busyInMenu), Paused(busyInMenu));
+        var steps = Steps(InMenu, Paused(OrderGivenInMenu), InMenu, Paused(OrderGivenInMenu), InMenu);
+
+        Assert.Equal(Fast, steps[1].ResumeAt);
+        Assert.True(steps[2].IsPausing);
+        Assert.Equal(Fast, steps[3].ResumeAt);
+        Assert.True(steps[4].IsPausing);
+    }
+
+    [Fact]
+    public void A_new_order_lets_the_pause_go_even_when_an_older_one_was_running_when_the_menu_opened()
+    {
+        var steps = Steps(BusyInMenu, Paused(BusyInMenu), Paused(OrderGivenInMenu));
 
         Assert.True(steps[0].IsPausing);
-        Assert.All(steps.GetRange(1, 2), step => Assert.Null(step.ResumeAt));
-        Assert.IsType<AwayPause.Holding>(steps[2].State);
+        Assert.Null(steps[1].ResumeAt);
+        Assert.IsType<AwayPause.Holding>(steps[1].State);
+        Assert.Equal(Fast, steps[2].ResumeAt);
     }
 
     [Fact]
-    public void A_new_order_after_the_running_one_finished_lets_the_menu_pause_go()
+    public void Leaving_the_menu_while_the_order_runs_ends_it_with_nothing_to_resume()
     {
-        var inMenu = AtTheGame with { Away = AwayReason.Menu };
-        var busyInMenu = inMenu with { IsBusy = true };
-        var steps = Steps(busyInMenu, Paused(inMenu), Paused(busyInMenu));
+        var steps = Steps(InMenu, Paused(OrderGivenInMenu), AtTheGame, InMenu);
 
-        Assert.Equal(Fast, steps[2].ResumeAt);
+        Assert.Equal(AwayPause.Start, steps[2].State);
+        Assert.False(steps[2].IsPausing);
+        Assert.Null(steps[2].ResumeAt);
+        Assert.True(steps[3].IsPausing);
+    }
+
+    [Fact]
+    public void A_speed_change_by_hand_while_the_order_runs_keeps_the_player_speed_when_the_order_ends()
+    {
+        var steps = Steps(InMenu, Paused(OrderGivenInMenu), BusyInMenu with { WasSpeedChangedByHand = true }, InMenu);
+
+        Assert.IsType<AwayPause.Released>(steps[2].State);
+        Assert.False(steps[3].IsPausing);
+    }
+
+    [Fact]
+    public void Going_to_the_background_while_the_order_runs_pauses_the_game()
+    {
+        var steps = Steps(InMenu, Paused(OrderGivenInMenu), InBackground with { IsBusy = true });
+
+        Assert.True(steps[2].IsPausing);
+        Assert.Equal(new AwayPause.Holding(AwayReason.Background, Fast), steps[2].State);
     }
 
     [Fact]
     public void Being_busy_in_the_background_does_not_resume_the_game()
     {
-        var busyInBackground = InBackground with { IsBusy = true };
-        var steps = Steps(InBackground, Paused(busyInBackground));
+        var steps = Steps(InBackground, Paused(InBackground with { IsBusy = true, HasNewOrder = true }));
 
         Assert.Null(steps[1].ResumeAt);
         Assert.IsType<AwayPause.Holding>(steps[1].State);
+    }
+
+    [Fact]
+    public void An_order_queued_behind_a_running_one_is_new()
+    {
+        Assert.True(OrderIds.HasNew(new long[] { 4 }, new long[] { 4, 5 }));
+    }
+
+    [Fact]
+    public void An_order_finishing_as_another_is_given_still_shows_the_new_one()
+    {
+        Assert.True(OrderIds.HasNew(new long[] { 4 }, new long[] { 5 }));
+    }
+
+    [Fact]
+    public void Orders_finishing_or_staying_put_are_not_new()
+    {
+        Assert.False(OrderIds.HasNew(new long[] { 4, 5 }, new long[] { 5 }));
+        Assert.False(OrderIds.HasNew(new long[] { 4 }, new long[] { 4 }));
+        Assert.False(OrderIds.HasNew(new long[] { 4 }, new long[0]));
     }
 
     [Fact]

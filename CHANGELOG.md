@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.3
+
+- With a menu pause on, an order given in that menu now runs the game only until it is done, then the game pauses again. Each new order there runs it again, even one queued behind an order that was already running when the menu opened.
+- The Wait until button is hidden unless `WaitButton` (under Display) is set to `true`.
+- Made for Survival Log 1.1.19611.
+
 ## 0.9.2
 
 - The Slow button keeps the game's own slow on its first press, idle slowdown included. Pressing it again goes on to the slower speeds in `SlowSpeeds` (0.5x, then 0.25x by default), then back to the game's own slow.

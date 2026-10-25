@@ -252,7 +252,7 @@ public sealed partial class ClockTicker
 
     /// <summary>
     /// Sent at the page pace, which also takes the menu's clicks, so a click is carried out within half a second. The
-    /// button shows wherever a wait can run and the page has speed buttons to sit beside.
+    /// button shows, when its setting is on, wherever a wait can run and the page has speed buttons to sit beside.
     /// </summary>
     private void SyncWaitPage(GameTimeManager time, GameTimer timer, ClockReading? reading, long? brewDoneAt, bool canStartWait, float now)
     {
@@ -260,7 +260,7 @@ public sealed partial class ClockTicker
 
         _nextWaitPageAt = now + WaitPageSeconds;
 
-        if (!WaitUntil.CanWait(timer) || reading is not { } read)
+        if (!WaitConfig.IsWaitButtonOn || !WaitUntil.CanWait(timer) || reading is not { } read)
         {
             WaitPage.Sync(null, isRefreshDue: true);
 

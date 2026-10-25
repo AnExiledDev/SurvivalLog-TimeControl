@@ -25,10 +25,10 @@ A comma-separated list, for example `2,4`. Each multiple is kept between 1.1 and
 | `IdleFreeze` | `true` | Pause the game while your character is idle with nothing queued, and resume it on your next order. Works at home, before the disaster and on expeditions. Pick a speed or press the pause key (`Space` by default) while it is paused to let time run until your next order. |
 | `IdleFreezeDelaySeconds` | `3` | How many real seconds your character stands idle before the game pauses, so a short gap between two orders does not pause it. `0` pauses as soon as nothing is queued. |
 | `PauseOnFocusLoss` | `true` | Pause the game when its window goes to the background, for example after Alt+Tab, and bring back your speed when you switch back. Works at home, before the disaster, on expeditions (with `TimeControlOnExpeditions` on) and during sleep fast-forward. A running Wait until carries on when you come back. |
-| `PauseInBag` | `false` | Pause the game while your bag is open, and bring back your speed when you close it. An order given while it is open brings your speed back at once. |
-| `PauseAtWorkbench` | `false` | Pause the game while the workbench window is open, and bring back your speed when you close it. An order given while it is open, such as a craft, brings your speed back at once. |
-| `PauseInPhone` | `false` | Pause the game while the phone is open, and bring back your speed when you close it. An order given while it is open brings your speed back at once. |
-| `PauseInTrade` | `false` | Pause the game while the trade window is open, and bring back your speed when you close it. An order given while it is open brings your speed back at once. |
+| `PauseInBag` | `false` | Pause the game while your bag is open, and bring back your speed when you close it. An order given while it is open runs the game until it is done, then it pauses again. |
+| `PauseAtWorkbench` | `false` | Pause the game while the workbench window is open, and bring back your speed when you close it. An order given while it is open, such as a craft, runs the game until it is done, then it pauses again. |
+| `PauseInPhone` | `false` | Pause the game while the phone is open, and bring back your speed when you close it. An order given while it is open runs the game until it is done, then it pauses again. |
+| `PauseInTrade` | `false` | Pause the game while the trade window is open, and bring back your speed when you close it. An order given while it is open runs the game until it is done, then it pauses again. |
 | `StartPaused` | `false` | Start paused when a save is loaded or a new game begins, at home and before the disaster. The pause key starts time at the speed the game would have run at. A guided start or a story scene is left running. |
 
 If you change the speed yourself while the game is away-paused or a menu is open, your choice is kept and nothing is brought back.
@@ -53,7 +53,7 @@ A time that cannot be read is logged once and counts as empty.
 | `AlarmTime` | empty | A time of day on a 24-hour clock, such as `7` or `21:30`, at which the game pauses once, at home and before the disaster. The pause key carries on at the speed you had. It stays quiet while your character sleeps and rings once they wake. Empty means no alarm. |
 | `AlarmDaily` | `true` | Pause at `AlarmTime` every day. `false` pauses only once, and again only after `AlarmTime` changes or the game restarts. |
 
-The Wait until button (below) can also set a one-time alarm a few hours ahead.
+With `WaitButton` on, the Wait until button (below) can also set a one-time alarm a few hours ahead.
 
 ## Alerts
 
@@ -114,6 +114,7 @@ The game's own speed keys are `1` (normal), `2` (fast), `3` (fastest), `4` (paus
 | `OrderFinishTime` | `true` | Show, under the clock at home, the game time your character's current order will be done. Only the order being carried out counts, not the ones queued after it. |
 | `NightCountdown` | `true` | Show, under the clock at home, how much game time is left until night. It shows during the day only. |
 | `WaveCountdown` | `true` | Show, under the clock at home, how much game time is left until the next wave. It counts the waves the game has planned for today and the wave a lure rig calls in. |
+| `WaitButton` | `false` | Show the Wait until button beside the speed buttons (see below). |
 | `PauseOverlayOpacity` | `0.5` | How visible the game's own paused banner across the lower middle of the screen is, from `0` (hidden) to `1` (as the game draws it). Lower values let you read the phone's reply choices under it. Clicks always pass through the banner. |
 
 Each badge goes away the moment time runs again. A badge is see-through and clicks go straight through it. Where the screen shows no speed buttons, the badge sits at the top centre instead. The one exception is the countdown before the disaster: there a badge only shows beside the mod's speed buttons, so with `SpeedButtons` set to `false`, or where the mod adds no buttons, no badge shows in the countdown.
@@ -122,7 +123,7 @@ Each badge goes away the moment time runs again. A badge is see-through and clic
 
 ## Wait until button
 
-A clock button at the end of the speed buttons (at home, and before the disaster when `SpeedButtons` is on) opens a menu:
+With `WaitButton` set to `true`, a clock button at the end of the speed buttons (at home, and before the disaster when `SpeedButtons` is on) opens a menu:
 
 - **Wait until** morning (07:00), the `AlarmTime`, a brew being done, or the queue being done; or **Wait** 1, 2, 4 or 8 hours. The game runs at the fastest speed and pauses when it gets there; the pause key then brings back the speed from before. Picking a speed yourself ends the wait.
 - **Pause in** 1, 2, 4 or 8 hours sets a one-time alarm.
