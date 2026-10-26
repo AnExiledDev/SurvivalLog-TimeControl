@@ -282,6 +282,24 @@ public class IdlePauseTests
     }
 
     [Fact]
+    public void Idle_freeze_never_pauses_while_the_games_hold_to_speed_up_key_is_held()
+    {
+        Assert.False(IdlePause.CanFreeze(isIdleFreezeOn: true, GameTimer.DayClock, isFastForwarding: false, isHoldingSpeedUp: true));
+        Assert.True(IdlePause.CanFreeze(isIdleFreezeOn: true, GameTimer.DayClock, isFastForwarding: false, isHoldingSpeedUp: false));
+    }
+
+    [Fact]
+    public void Idling_while_the_speed_up_key_is_held_does_not_count_toward_the_freeze()
+    {
+        var held = new IdleSnapshot(IdlePause.CanFreeze(true, GameTimer.DayClock, false, isHoldingSpeedUp: true), IsBusy: false, IsPaused: false, ElapsedSeconds: 10f, RunningLevel: 3, IsLeavingExpedition: false);
+        var afterHold = IdlePause.Next(IdlePause.Start, held, IdlePause.DefaultDelaySeconds);
+        var letGo = held with { CanFreeze = IdlePause.CanFreeze(true, GameTimer.DayClock, false, isHoldingSpeedUp: false), ElapsedSeconds = 1f };
+
+        Assert.Equal(IdleCommand.Nothing, afterHold.Command);
+        Assert.Equal(IdleCommand.Nothing, IdlePause.Next(afterHold.State, letGo, IdlePause.DefaultDelaySeconds).Command);
+    }
+
+    [Fact]
     public void Idle_freeze_switched_off_never_pauses_anywhere()
     {
         Assert.False(IdlePause.CanFreeze(isIdleFreezeOn: false, GameTimer.DayClock, isFastForwarding: false));
@@ -1569,6 +1587,13 @@ public class AlertPauseTests
         Assert.True(AlertPause.CanPause(GameTimer.Expedition, isFastForwarding: false, isLeavingExpedition: false));
         Assert.False(AlertPause.CanPause(GameTimer.Other, isFastForwarding: false, isLeavingExpedition: false));
         Assert.False(AlertPause.CanPause(GameTimer.DayClock, isFastForwarding: true, isLeavingExpedition: false));
+    }
+
+    [Fact]
+    public void Alerts_never_pause_while_the_games_hold_to_speed_up_key_is_held()
+    {
+        Assert.False(AlertPause.CanPause(GameTimer.DayClock, isFastForwarding: false, isLeavingExpedition: false, isHoldingSpeedUp: true));
+        Assert.True(AlertPause.CanPause(GameTimer.DayClock, isFastForwarding: false, isLeavingExpedition: false, isHoldingSpeedUp: false));
     }
 
     [Fact]

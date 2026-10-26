@@ -176,7 +176,7 @@ public sealed partial class ClockTicker
         }
 
         var isPaused = time.IsPausedScale();
-        var canSlow = AlertPause.CanPause(timer, IsFastForwarding(time) || isAsleep, isLeavingExpedition);
+        var canSlow = AlertPause.CanPause(timer, IsFastForwarding(time) || isAsleep, isLeavingExpedition, time.IsHoldBoostActive());
         var seen = new QueueSlowSnapshot(canSlow, isPaused, time.IsLeadingRoleBusy(), SpeedPatches.CurrentSpeed(time, isPaused), elapsed, wasChangedByHand);
         var step = QueueSlow.Next(_queueSlow, seen, settings.TargetSpeed);
 

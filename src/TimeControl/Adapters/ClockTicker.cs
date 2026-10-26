@@ -251,7 +251,7 @@ public sealed partial class ClockTicker : MonoBehaviour
 
         if (!alerts.IsAnyOn) return;
 
-        var canPause = AlertPause.CanPause(timer, (IsFastForwarding(time) || isAsleep) && !CanAlertWakeSleep(isAsleep), isLeavingExpedition);
+        var canPause = AlertPause.CanPause(timer, (IsFastForwarding(time) || isAsleep) && !CanAlertWakeSleep(isAsleep), isLeavingExpedition, time.IsHoldBoostActive());
         var isWaveActive = alerts.IsWaveOn && AlertSignals.IsWaveActive();
         var isBusy = alerts.IsQueueEmptyOn && time.IsLeadingRoleBusy();
         var seen = new AlertSnapshot(canPause, time.IsPausedScale(), isWaveActive, emergenciesFired, dronesLanded, isBusy, elapsed, wasChangedByHand, moreRaised);
@@ -281,7 +281,7 @@ public sealed partial class ClockTicker : MonoBehaviour
     /// </summary>
     private void UpdateIdlePause(GameTimeManager time, bool isPaused, GameTimer timer, float elapsed, bool isAsleep, bool isLeavingExpedition)
     {
-        var canFreeze = IdlePause.CanFreeze(Settings.IsIdleFreezeOn, timer, IsFastForwarding(time) || isAsleep);
+        var canFreeze = IdlePause.CanFreeze(Settings.IsIdleFreezeOn, timer, IsFastForwarding(time) || isAsleep, time.IsHoldBoostActive());
         var isBusy = ((canFreeze && !isPaused) || _idle is not IdlePause.Watching) && IsWorking(time);
         var seen = new IdleSnapshot(canFreeze, isBusy, isPaused, elapsed, SpeedPatches.LastRunningLevel, isLeavingExpedition);
         var before = _idle;

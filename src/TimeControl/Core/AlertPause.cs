@@ -106,10 +106,11 @@ public abstract record AlertPause
 
     /// <summary>
     /// The mod's pauses apply under the timers the player waits out, never in a fast-forward such as sleep, and never
-    /// while an expedition is being finished, as the trip home waits on game time.
+    /// while an expedition is being finished, as the trip home waits on game time, nor while the player holds the game's
+    /// hold-to-speed-up key.
     /// </summary>
-    public static bool CanPause(GameTimer timer, bool isFastForwarding, bool isLeavingExpedition) =>
-        GameTimers.IsWaitedOut(timer) && !isFastForwarding && !isLeavingExpedition;
+    public static bool CanPause(GameTimer timer, bool isFastForwarding, bool isLeavingExpedition, bool isHoldingSpeedUp = false) =>
+        GameTimers.IsWaitedOut(timer) && !isFastForwarding && !isLeavingExpedition && !isHoldingSpeedUp;
 
     /// <summary>
     /// A speed change by hand while held means the pause standing now was made after this one, by the player or the
