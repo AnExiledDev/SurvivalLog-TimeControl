@@ -1405,6 +1405,40 @@ public class AlertPauseTests
 
     private static AlertSnapshot Paused(AlertSnapshot seen) => seen with { IsPaused = true };
 
+    private static AlertSnapshot Holding(AlertSnapshot seen) => seen with { IsHoldingSpeedUp = true };
+
+    [Fact]
+    public void A_danger_alert_still_pauses_while_the_speed_up_key_is_held()
+    {
+        Assert.Equal(Alert.Wave, Run(Defaults, Holding(Quiet), Holding(WaveUnderWay)).PauseFor);
+        Assert.Equal(Alert.Emergency, Run(Defaults, Holding(Quiet), Holding(EmergencyFired)).PauseFor);
+
+        var houseOn = Defaults with { MoreOn = AlertSet.Of(Alert.HouseHit, Alert.LowHealth, Alert.PowerOut) };
+
+        Assert.Equal(Alert.HouseHit, Run(houseOn, Holding(Quiet), Holding(Quiet with { MoreRaised = AlertSet.Of(Alert.HouseHit) })).PauseFor);
+        Assert.Equal(Alert.LowHealth, Run(houseOn, Holding(Quiet), Holding(Quiet with { MoreRaised = AlertSet.Of(Alert.LowHealth) })).PauseFor);
+    }
+
+    [Fact]
+    public void Other_alerts_do_not_pause_while_the_speed_up_key_is_held()
+    {
+        var on = AllOn with { MoreOn = AlertSet.Of(Alert.PowerOut) };
+
+        Assert.Null(Run(on, Holding(Quiet), Holding(DroneLanded)).PauseFor);
+        Assert.Null(Run(on, Holding(Quiet), Holding(Quiet with { MoreRaised = AlertSet.Of(Alert.PowerOut) })).PauseFor);
+        Assert.Equal(Alert.DroneArrival, Run(on, Quiet, DroneLanded).PauseFor);
+    }
+
+    [Fact]
+    public void With_danger_alerts_switched_off_while_holding_nothing_pauses_while_the_key_is_held()
+    {
+        var off = Defaults with { IsDangerWhileHoldingOn = false };
+
+        Assert.Null(Run(off, Holding(Quiet), Holding(WaveUnderWay)).PauseFor);
+        Assert.Null(Run(off, Holding(Quiet), Holding(EmergencyFired)).PauseFor);
+        Assert.Equal(Alert.Wave, Run(off, Quiet, WaveUnderWay).PauseFor);
+    }
+
     [Fact]
     public void A_wave_starting_pauses_the_game_and_holds_it_for_the_wave()
     {
@@ -1590,7 +1624,7 @@ public class AlertPauseTests
     }
 
     [Fact]
-    public void Alerts_never_pause_while_the_games_hold_to_speed_up_key_is_held()
+    public void The_queue_slow_down_never_kicks_in_while_the_games_hold_to_speed_up_key_is_held()
     {
         Assert.False(AlertPause.CanPause(GameTimer.DayClock, isFastForwarding: false, isLeavingExpedition: false, isHoldingSpeedUp: true));
         Assert.True(AlertPause.CanPause(GameTimer.DayClock, isFastForwarding: false, isLeavingExpedition: false, isHoldingSpeedUp: false));

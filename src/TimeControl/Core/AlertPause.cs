@@ -39,9 +39,16 @@ public enum Alert
 
 /// <summary>Which alerts pause the game; fixed for the session.</summary>
 /// <param name="MoreOn">The alerts after <see cref="Alert.QueueEmpty"/> that are switched on.</param>
-public readonly record struct AlertSettings(bool IsWaveOn, bool IsEmergencyOn, bool IsDroneArrivalOn, bool IsQueueEmptyOn, AlertSet MoreOn = default)
+/// <param name="IsDangerWhileHoldingOn">The danger alerts still pause while the game's hold-to-speed-up key is held.</param>
+public readonly record struct AlertSettings(bool IsWaveOn, bool IsEmergencyOn, bool IsDroneArrivalOn, bool IsQueueEmptyOn, AlertSet MoreOn = default, bool IsDangerWhileHoldingOn = true)
 {
+    /// <summary>The alerts that mean the character or the house is in danger now.</summary>
+    public static readonly AlertSet Danger = AlertSet.Of(Alert.Wave, Alert.Emergency, Alert.HouseHit, Alert.TrapHit, Alert.LowHealth);
+
     public bool IsAnyOn => IsWaveOn || IsEmergencyOn || IsDroneArrivalOn || IsQueueEmptyOn || !MoreOn.IsEmpty;
+
+    /// <summary>Whether the alert pauses the game while the player holds the game's hold-to-speed-up key.</summary>
+    public bool PausesWhileHolding(Alert alert) => IsDangerWhileHoldingOn && Danger.Has(alert);
 }
 
 /// <summary>What the ticker saw on one check.</summary>
@@ -54,6 +61,7 @@ public readonly record struct AlertSettings(bool IsWaveOn, bool IsEmergencyOn, b
 /// <param name="ElapsedSeconds">Real seconds since the last check.</param>
 /// <param name="WasSpeedChangedByHand">The player or the game's own buttons changed the speed since the last check, so a pause seen now may be theirs.</param>
 /// <param name="MoreRaised">The alerts after <see cref="Alert.QueueEmpty"/> that started since the last check.</param>
+/// <param name="IsHoldingSpeedUp">The player holds the game's hold-to-speed-up key, where only the danger alerts pause.</param>
 public readonly record struct AlertSnapshot(
     bool CanPause,
     bool IsPaused,
@@ -63,7 +71,8 @@ public readonly record struct AlertSnapshot(
     bool IsBusy,
     float ElapsedSeconds,
     bool WasSpeedChangedByHand,
-    AlertSet MoreRaised = default);
+    AlertSet MoreRaised = default,
+    bool IsHoldingSpeedUp = false);
 
 /// <param name="PauseFor">The alert to pause the game for now, or null to leave its speed alone.</param>
 public readonly record struct AlertStep(AlertPause State, Alert? PauseFor);
@@ -106,8 +115,8 @@ public abstract record AlertPause
 
     /// <summary>
     /// The mod's pauses apply under the timers the player waits out, never in a fast-forward such as sleep, and never
-    /// while an expedition is being finished, as the trip home waits on game time, nor while the player holds the game's
-    /// hold-to-speed-up key.
+    /// while an expedition is being finished, as the trip home waits on game time. The queue slow-down also waits while
+    /// the player holds the game's hold-to-speed-up key.
     /// </summary>
     public static bool CanPause(GameTimer timer, bool isFastForwarding, bool isLeavingExpedition, bool isHoldingSpeedUp = false) =>
         GameTimers.IsWaitedOut(timer) && !isFastForwarding && !isLeavingExpedition && !isHoldingSpeedUp;
@@ -154,13 +163,17 @@ public abstract record AlertPause
         return settings.MoreOn.Within(seen.MoreRaised).First();
     }
 
-    /// <summary>A pause someone else holds is theirs, and an alert where the mod does not pause is let go; either way it is spent.</summary>
+    /// <summary>
+    /// A pause someone else holds is theirs, and an alert where the mod does not pause is let go; either way it is
+    /// spent. While the hold-to-speed-up key is held, only a danger alert pauses; the rest are let go.
+    /// </summary>
     private static AlertStep Watch(bool wasWaveActive, float? queueEmptySeconds, AlertSnapshot seen, AlertSettings settings)
     {
         var queue = TrackQueue(queueEmptySeconds, seen);
         var raised = Raised(wasWaveActive, queue.HasRunOut, seen, settings);
+        var isHeldBack = raised is { } held && seen.IsHoldingSpeedUp && !settings.PausesWhileHolding(held);
 
-        if (raised is not { } alert || seen.IsPaused || !seen.CanPause) return Stay(new Watching(seen.IsWaveActive, queue.EmptySeconds));
+        if (raised is not { } alert || seen.IsPaused || !seen.CanPause || isHeldBack) return Stay(new Watching(seen.IsWaveActive, queue.EmptySeconds));
 
         return new AlertStep(new Holding(alert, seen.IsWaveActive, queue.EmptySeconds), alert);
     }

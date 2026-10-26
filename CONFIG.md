@@ -75,6 +75,7 @@ With `WaitButton` on, the Wait until button (below) can also set a one-time alar
 | `PauseOnCropRipe` | `false` | Pause the game once when a crop is ready to harvest. Several ripening at once pause it once. |
 | `PauseOnDusk` | `false` | Pause the game once at 19:00 game time. |
 | `PauseOnDawn` | `false` | Pause the game once at 7:00 game time. Sleeping through it does not pause the game. |
+| `DangerPausesWhileHolding` | `true` | While you hold the game's hold-to-speed-up key (`Shift` by default), danger alerts still pause the game: a zombie wave starting, an emergency, zombies damaging the house or a trap, and low life. Each one still needs its own setting switched on. `false` means no alert pauses the game while the key is held. Other alerts never pause it while the key is held. |
 
 `OnQueueEmpty` replaces `PauseOnQueueEmpty`. An old `PauseOnQueueEmpty = true` becomes `OnQueueEmpty = Pause` the first time the game starts with this version.
 

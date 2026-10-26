@@ -118,7 +118,11 @@ internal static class AlertsConfig
             "游戏时间到清晨 7:00 时暂停游戏一次。睡觉时经过这个时间不会暂停。" + CarryOnChinese,
             Alert.Dawn);
 
-        var watched = new List<ConfigEntryBase> { isFocusLossOn, isBagOn, isWorkbenchOn, isPhoneOn, isTradeOn, onQueueEmpty, slowSpeed, lowNeedPercent };
+        var isDangerWhileHoldingOn = config.Bind(AlertsSection, "DangerPausesWhileHolding", true,
+            "While you hold the game's hold-to-speed-up key (Shift by default), danger alerts still pause the game: a zombie wave starting, an emergency, zombies damaging the house or a trap, and low life. Each one still needs its own setting switched on. Set this to false and no alert pauses the game while the key is held. Other alerts never pause it while the key is held.\n" +
+            "按住游戏的「按住加速」键（默认 Shift）时，危险提醒仍会暂停游戏：尸潮开始、危机事件、丧尸破坏房屋或陷阱、生命过低。每一项仍需打开各自的设置。设为 false 时，按住这个键期间任何提醒都不会暂停游戏。其他提醒在按住期间从不暂停游戏。");
+
+        var watched = new List<ConfigEntryBase> { isFocusLossOn, isBagOn, isWorkbenchOn, isPhoneOn, isTradeOn, onQueueEmpty, slowSpeed, lowNeedPercent, isDangerWhileHoldingOn };
 
         foreach (var (entry, _) in AlertToggles) watched.Add(entry);
 
@@ -128,13 +132,14 @@ internal static class AlertsConfig
             var away = new AwaySettings(isFocusLossOn.Value, isBagOn.Value, isWorkbenchOn.Value, isPhoneOn.Value, isTradeOn.Value);
             var queueSlowing = new QueueSlowSettings(onQueueEmpty.Value == QueueEmptyAction.Slow, slowSpeed.Value);
 
-            ClockTicker.Settings = ClockTicker.Settings with { Alerts = ClockTicker.Settings.Alerts with { IsQueueEmptyOn = IsQueuePauseOn, MoreOn = moreOn } };
+            ClockTicker.Settings = ClockTicker.Settings with { Alerts = ClockTicker.Settings.Alerts with { IsQueueEmptyOn = IsQueuePauseOn, MoreOn = moreOn, IsDangerWhileHoldingOn = isDangerWhileHoldingOn.Value } };
             ClockTicker.Away = away;
             ClockTicker.QueueSlowing = queueSlowing;
             ClockTicker.LowNeedPercent = AlertMemory.ClampPercent(lowNeedPercent.Value);
             log($"pause on focus loss {OnOff(away.IsFocusLossOn)}, in bag {OnOff(away.IsBagOn)}, at workbench {OnOff(away.IsWorkbenchOn)}, in phone {OnOff(away.IsPhoneOn)}, in trade {OnOff(away.IsTradeOn)}, " +
                 $"on queue empty {onQueueEmpty.Value}{(queueSlowing.IsOn ? $" to {slowSpeed.Value}" : "")}, " +
-                $"more alerts on: {(moreOn.IsEmpty ? "none" : string.Join(", ", Names(moreOn)))}{(isLowNeedOn.Value ? $", low need at {ClockTicker.LowNeedPercent}%" : "")}");
+                $"more alerts on: {(moreOn.IsEmpty ? "none" : string.Join(", ", Names(moreOn)))}{(isLowNeedOn.Value ? $", low need at {ClockTicker.LowNeedPercent}%" : "")}, " +
+                $"danger alerts while holding speed-up {OnOff(isDangerWhileHoldingOn.Value)}");
             MoreAlertSignals.Use(harmony, moreOn, log);
         }, watched.ToArray());
     }
