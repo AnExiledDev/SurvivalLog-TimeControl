@@ -73,6 +73,25 @@ public class PauseBadgePageTests
         Assert.Equal("ok", ui.Send(PauseBadge.Script("", HudPage.Home)));
         Assert.False(ui.Is("badgeOn(home)"));
     }
+
+    [Fact]
+    public void A_badge_taken_off_with_no_hud_page_open_is_confirmed_rather_than_sent_again()
+    {
+        var ui = new FakeWebUi("var speedUp = openSpeedUp();");
+
+        Assert.Equal("ok", ui.Send(PauseBadge.Script("", HudPage.Home)));
+    }
+
+    [Fact]
+    public void Taking_the_badge_off_clears_it_from_the_page_it_sat_on_whichever_page_is_named()
+    {
+        var ui = new FakeWebUi("var countdown = openCountdown(); var home = openHome();");
+
+        ui.Send(PauseBadge.Script("Paused", HudPage.Countdown));
+
+        Assert.Equal("ok", ui.Send(PauseBadge.Script("", HudPage.Home)));
+        Assert.False(ui.Is("badgeOn(countdown)"));
+    }
 }
 
 /// <summary>

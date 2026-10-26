@@ -183,6 +183,35 @@ public class WaitMenuTests
         Assert.Empty(WaitMenu.Clicks("error: ok:1"));
     }
 
+    [Fact]
+    public void A_clock_that_only_ran_on_draws_the_same_menu_so_the_one_built_is_kept()
+    {
+        var waiting = new WaitUntil.Waiting(new WaitGoal.At(Midnight + 9 * H, WaitKind.AlarmHour), Normal, GameTimer.DayClock);
+        var before = Idle with { Wait = waiting, QuickAlarmAt = Midnight + 8 * H };
+        var later = before with { Reading = new ClockReading(SixAm.Total + H / 2, SixAm.SecondOfDay + H / 2) };
+
+        Assert.True(WaitMenu.IsSameMenu(before, later));
+        Assert.Equal(WaitMenu.Script(WaitMenu.View(before)), WaitMenu.Script(WaitMenu.View(later)));
+    }
+
+    [Fact]
+    public void A_clock_reading_that_moved_the_time_of_day_against_the_game_clock_is_a_different_menu()
+    {
+        var before = Idle with { QuickAlarmAt = Midnight + 8 * H };
+        var shifted = before with { Reading = new ClockReading(SixAm.Total, SixAm.SecondOfDay + H) };
+
+        Assert.False(WaitMenu.IsSameMenu(before, shifted));
+        Assert.NotEqual(WaitMenu.Script(WaitMenu.View(before)), WaitMenu.Script(WaitMenu.View(shifted)));
+    }
+
+    [Fact]
+    public void An_alarm_set_or_a_change_of_language_is_a_different_menu()
+    {
+        Assert.False(WaitMenu.IsSameMenu(Idle, Idle with { QuickAlarmAt = Midnight + 8 * H }));
+        Assert.False(WaitMenu.IsSameMenu(Idle, Idle with { IsChinese = true }));
+        Assert.False(WaitMenu.IsSameMenu(Idle, Idle with { IsBrewing = false }));
+    }
+
     private static string Labels(WaitMenuLine line) => string.Join("|", line.Items.Select(item => item.Label));
 
     private static WaitMenuItem Item(WaitMenuView view, int id) => view.Lines.SelectMany(line => line.Items).Single(item => item.Id == id);

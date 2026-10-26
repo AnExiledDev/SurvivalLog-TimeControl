@@ -115,6 +115,28 @@ public class SpeedWheelPageTests
         Assert.Equal("ok:2", ui.Send(On));
     }
 
+    [Fact]
+    public void Between_hookings_the_small_poll_takes_the_turns_on_both_pages_once()
+    {
+        var ui = new FakeWebUi(HomeWithGameButtons + " var countdown = openCountdown();");
+
+        ui.Send(SpeedButtons.Script(new SpeedButtonsView(HudPage.Countdown, PauseToggle.Normal, "")));
+        ui.Send(On);
+        ui.Run($"wheelOver(group, {Up}); wheelOver(group, {Up}); wheelOver(buttonsOn(countdown), {Down}); wheelOver(buttonsOn(countdown), {Up});");
+
+        Assert.Equal("ok:2", ui.Send(SpeedWheel.PollScript));
+        Assert.Equal("ok", ui.Send(SpeedWheel.PollScript));
+        Assert.Equal("ok", ui.Send(On));
+    }
+
+    [Fact]
+    public void The_poll_on_a_page_never_hooked_counts_nothing()
+    {
+        var ui = new FakeWebUi(HomeWithGameButtons);
+
+        Assert.Equal("ok", ui.Send(SpeedWheel.PollScript));
+    }
+
     [Theory]
     [InlineData("ok", true)]
     [InlineData("ok:-3", true)]

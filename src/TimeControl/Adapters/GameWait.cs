@@ -16,6 +16,9 @@ internal static class GameWait
     private const int MaxLoggedFailures = 3;
     private const float BrewReadSeconds = 3f;
 
+    /// <summary>The pieces of furniture one check reads for barrels.</summary>
+    private const int BrewScanSlice = 32;
+
     /// <summary>Game seconds past a brew's last hour before the wait for it ends, so the game has marked it done.</summary>
     private const int BrewDoneMarginSeconds = 60;
 
@@ -25,6 +28,9 @@ internal static class GameWait
     private static IntPtr _worldAtEntry;
     private static long? _brewDoneAt;
     private static float _nextBrewReadAt;
+    private static Il2CppSystem.Collections.Generic.List<Furniture>? _brewScan;
+    private static int _brewScanAt;
+    private static long? _brewScanEarliest;
     private static int _failures;
 
     /// <summary>
@@ -87,23 +93,26 @@ internal static class GameWait
     }
 
     /// <summary>
-    /// When the first brew in a barrel is done, on the day clock; null when none is brewing or under another timer.
-    /// The barrels are read every few seconds, since the game builds a fresh list of every piece of furniture on each read.
+    /// When the first brew in a barrel is done, on the day clock; null when none is brewing, under another timer, or
+    /// while nothing needs it. The game builds a fresh list of every piece of furniture for each read, and each piece
+    /// is asked for its barrel one at a time, so a read is spread over checks, a few pieces each, and a new one starts
+    /// a few seconds after the last finished. The last finished read stands meanwhile; there is none before the first.
     /// </summary>
-    public static long? BrewDoneAt(GameTimer timer, float now)
+    /// <param name="isWanted">The wait button shows or a wait for a brew runs; otherwise nothing is read.</param>
+    public static long? BrewDoneAt(GameTimer timer, float now, bool isWanted)
     {
-        if (timer != GameTimer.DayClock)
+        if (timer != GameTimer.DayClock || !isWanted)
         {
             _brewDoneAt = null;
+            _brewScan = null;
             _nextBrewReadAt = 0f;
 
             return null;
         }
 
-        if (now < _nextBrewReadAt) return _brewDoneAt;
+        if (_brewScan == null && now >= _nextBrewReadAt) StartBrewScan();
 
-        _nextBrewReadAt = now + BrewReadSeconds;
-        _brewDoneAt = ReadBrewDoneAt();
+        if (_brewScan != null && ScanBrews()) _nextBrewReadAt = now + BrewReadSeconds;
 
         return _brewDoneAt;
     }
@@ -167,15 +176,38 @@ internal static class GameWait
         return new ClockReading(elapsed, ClockHour.Wrap((long)countdown.StartTime + elapsed));
     }
 
-    /// <summary>A brew is done once the hours it takes have passed since the hour it started, counted in the game's total hours.</summary>
-    private static long? ReadBrewDoneAt()
+    /// <summary>Takes the furniture list the read goes through; with no world there is nothing brewing.</summary>
+    private static void StartBrewScan()
+    {
+        _brewScanAt = 0;
+        _brewScanEarliest = null;
+
+        try
+        {
+            _brewScan = LiveWorld()?._AgentManager?.GetAllFurnitures();
+        }
+        catch (Exception ex)
+        {
+            _brewScan = null;
+            Fail("reading the brewing barrels", ex);
+        }
+
+        if (_brewScan == null) _brewDoneAt = null;
+    }
+
+    /// <summary>
+    /// Reads the next few pieces of furniture. A brew is done once the hours it takes have passed since the hour it
+    /// started, counted in the game's total hours.
+    /// </summary>
+    /// <returns>Whether the read finished, or failed, on this call.</returns>
+    private static bool ScanBrews()
     {
         try
         {
-            var furnitures = LiveWorld()?._AgentManager?.GetAllFurnitures();
-            long? earliest = null;
+            var furnitures = _brewScan!;
+            var end = Math.Min(furnitures.Count, _brewScanAt + BrewScanSlice);
 
-            for (var i = 0; furnitures != null && i < furnitures.Count; i++)
+            for (var i = _brewScanAt; i < end; i++)
             {
                 var furniture = furnitures[i];
                 var brew = furniture == null || furniture.IsDead ? null : AgentTools.GetAgentComponent<BrewComponent>(furniture);
@@ -184,17 +216,24 @@ internal static class GameWait
 
                 var doneAt = ((long)brew.StartHour + brew.TotalHours) * ClockHour.Hour + BrewDoneMarginSeconds;
 
-                if (earliest == null || doneAt < earliest) earliest = doneAt;
+                if (_brewScanEarliest == null || doneAt < _brewScanEarliest) _brewScanEarliest = doneAt;
             }
 
-            return earliest;
+            _brewScanAt = end;
+
+            if (end < furnitures.Count) return false;
+
+            _brewDoneAt = _brewScanEarliest;
         }
         catch (Exception ex)
         {
+            _brewDoneAt = null;
             Fail("reading the brewing barrels", ex);
-
-            return null;
         }
+
+        _brewScan = null;
+
+        return true;
     }
 
     /// <summary>Marks the entry and the world live as it starts, so the world the save loads into can be told from it.</summary>

@@ -29,7 +29,8 @@ public sealed partial class ClockTicker
         UpdateStartPause(time, timer);
 
         var reading = GameWait.Read(time, timer);
-        var brewDoneAt = GameWait.BrewDoneAt(timer, now);
+        var isBrewWanted = WaitConfig.IsWaitButtonOn || _wait is WaitUntil.Waiting { Goal: WaitGoal.At { Kind: WaitKind.Brew } };
+        var brewDoneAt = GameWait.BrewDoneAt(timer, now, isBrewWanted);
         var canStartWait = !isAsleep && !IsFastForwarding(time) && !isLeavingExpedition;
 
         UpdateWait(time, timer, reading, brewDoneAt, isAsleep, wasChangedByHand, elapsed);
@@ -260,20 +261,22 @@ public sealed partial class ClockTicker
 
         _nextWaitPageAt = now + WaitPageSeconds;
 
+        var generation = Watch?.Generation ?? 0;
+
         if (!WaitConfig.IsWaitButtonOn || !WaitUntil.CanWait(timer) || reading is not { } read)
         {
-            WaitPage.Sync(null, isRefreshDue: true);
+            WaitPage.Sync(null, isRefreshDue: true, generation);
 
             return;
         }
 
         var input = new WaitMenuInput(SpeedButtons.Page(timer), _wait, read, _alarm.QuickAlarmAt, WaitConfig.Alarm.SecondOfDay,
-            brewDoneAt != null, time.IsLeadingRoleBusy(), canStartWait, IsChinese());
+            brewDoneAt != null, time.IsLeadingRoleBusy(), canStartWait, _isChinese);
 
-        WaitPage.Sync(WaitMenu.View(input), isRefreshDue: true);
+        WaitPage.Sync(input, isRefreshDue: true, generation);
     }
 
-    private static void HideWaitPage(bool isRefreshDue) => WaitPage?.Sync(null, isRefreshDue);
+    private static void HideWaitPage(bool isRefreshDue) => WaitPage?.Sync(null, isRefreshDue, Watch?.Generation ?? 0);
 
     /// <summary>A failed check must never leave a wait's fast speed running: the speed from before it is put back.</summary>
     private void ForgetWaits()

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.5
+
+- Smoother play: Time Control now does far less work each frame, so it no longer causes small stutters.
+- Made for Survival Log 1.1.19611.
+
 ## 0.9.4
 
 - The speed keys and buttons now work in every menu: the workbench, bag, phone, trade, shops, stove, heater and the rest. The game stops time on its own when one of these opens (and when a craft finishes at the workbench), and ignores the speed keys until the menu closes; the mod now lifts that stop, so time runs at your speed. Use the PauseIn... and PauseAtWorkbench settings to have a menu open paused. Story, ending, settlement, event choice and settings screens still stop time.

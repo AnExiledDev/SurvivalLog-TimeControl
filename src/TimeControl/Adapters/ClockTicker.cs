@@ -26,8 +26,10 @@ internal sealed record ClockSettings(
 /// </summary>
 public sealed partial class ClockTicker : MonoBehaviour
 {
-    private const float CheckSeconds = 0.1f;
     private const float PageSeconds = 0.5f;
+
+    /// <summary>How often the small scripts that take back clicks on the speed buttons and turns of the wheel go out.</summary>
+    private const float PollSeconds = 0.2f;
     private const float RepeatLogSeconds = 60f;
     private const float SpeedTolerance = 0.001f;
     private const int MaxLoggedFailures = 3;
@@ -37,16 +39,21 @@ public sealed partial class ClockTicker : MonoBehaviour
     internal static Action<string> Log = _ => { };
     internal static Action<string> LogFileOnly = _ => { };
     internal static PageClockLink? Page;
+    internal static PageWatcher? Watch;
     internal static Func<bool> IsChinese = () => false;
+
+    private static bool _isCheckWanted;
 
     private IdlePause _idle = IdlePause.Start;
     private SleepWatch _sleep = SleepWatch.Start;
     private AlertPause _alert = AlertPause.Start;
     private ExpeditionFinish _finish = ExpeditionFinish.Start;
     private IntPtr _timeSeen;
-    private float _nextCheckAt;
-    private float _lastCheckAt = -1f;
+    private CheckPace _pace = CheckPace.Start;
     private float _nextPageAt;
+    private float _nextPollAt;
+    private float _nextLanguageAt;
+    private bool _isChinese;
     private float _nextHealLogAt;
     private float _nextFanOutLogAt;
     private bool _isSingleWorldLogged;
@@ -56,20 +63,32 @@ public sealed partial class ClockTicker : MonoBehaviour
     {
     }
 
-    private void Update()
+    /// <summary>
+    /// Asks for a check on this frame: a hold key or a custom speed key went down, the game's hold key changed, or a
+    /// click or a turn of the wheel came back from the page. Only a flag is set, so the hooks that call it stay cheap.
+    /// </summary>
+    internal static void WantCheck() => _isCheckWanted = true;
+
+    private void Update() => Tick();
+
+    /// <summary>A key or a click seen after this frame's Update, in the game's own key handling or a page answer, still acts on this frame.</summary>
+    private void LateUpdate()
+    {
+        if (_isCheckWanted) Tick();
+    }
+
+    private void Tick()
     {
         var now = Time.unscaledTime;
 
-        if (now < _nextCheckAt) return;
+        if (CheckPace.Take(_pace, now, _isCheckWanted) is not { } due) return;
 
-        var elapsed = _lastCheckAt < 0f ? 0f : now - _lastCheckAt;
-
-        _nextCheckAt = now + CheckSeconds;
-        _lastCheckAt = now;
+        _pace = due.Pace;
+        _isCheckWanted = false;
 
         try
         {
-            Check(now, elapsed);
+            Check(now, due.ElapsedSeconds);
         }
         catch (Exception ex)
         {
@@ -108,6 +127,7 @@ public sealed partial class ClockTicker : MonoBehaviour
         var timer = GameTimers.Controlled(GameClock.Timer(time), Settings.IsExpeditionOn);
         var isLeavingExpedition = GameClock.IsExpeditionEnding(timer);
 
+        ReadLanguage(now);
         GameFreeze.Update(elapsed);
         PressSpeedButtons(time, timer);
         UpdateSpeedKeys(time, timer, isLeavingExpedition);
@@ -122,14 +142,29 @@ public sealed partial class ClockTicker : MonoBehaviour
         var wasChangedByHand = SpeedPatches.TakeSpeedChangedByHand();
         var isAsleep = UpdateSleep(time, isPaused, wasChangedByHand, isLeavingExpedition);
 
-        UpdateAlertPause(time, timer, isAsleep, isLeavingExpedition, elapsed, wasChangedByHand);
+        UpdateAlertPause(time, timer, isAsleep, isLeavingExpedition, elapsed, wasChangedByHand, now);
         UpdateAwayPause(time, timer, isLeavingExpedition, wasChangedByHand, elapsed);
         UpdateWaits(time, timer, isAsleep, isLeavingExpedition, wasChangedByHand, elapsed, now);
         UpdateIdlePause(time, time.IsPausedScale(), timer, elapsed, isAsleep, isLeavingExpedition);
         UpdateQueueSlow(time, timer, isAsleep, isLeavingExpedition, elapsed, wasChangedByHand);
         UpdateExpeditionFinish(time, isLeavingExpedition);
-        SyncPage(time, timer, now);
-        SyncKeysPage(time, timer, now);
+
+        var isPollDue = TakePoll(now);
+        var isRefreshDue = TakePageRefresh(now);
+
+        SyncPage(time, timer, isRefreshDue, isPollDue);
+        SyncKeysPage(time, timer, now, isPollDue);
+
+        if (isRefreshDue) Watch?.Look();
+    }
+
+    /// <summary>The game's language is asked for at the page pace: it only changes on the settings screen.</summary>
+    private void ReadLanguage(float now)
+    {
+        if (now < _nextLanguageAt) return;
+
+        _nextLanguageAt = now + PageSeconds;
+        _isChinese = IsChinese();
     }
 
     /// <summary>
@@ -239,20 +274,28 @@ public sealed partial class ClockTicker : MonoBehaviour
     /// <summary>
     /// Runs before idle freeze, so an alert starting as the player falls idle is the pause that holds the game rather
     /// than one their next order would resume. The counts are taken on every check, so ones from before a world has
-    /// settled, or from while alerts cannot pause, are let go rather than saved up. Every pause but this mod's own goes
-    /// through the game's speed change, which the hand-change flag sees, so a pause seen after one is not the alert's.
+    /// settled, or from while alerts cannot pause, are let go rather than saved up. The wave and the alerts after the
+    /// queue running out are read at the <see cref="DangerWatch"/> pace, and the last wave reading stands between reads.
+    /// Every pause but this mod's own goes through the game's speed change, which the hand-change flag sees, so a pause
+    /// seen after one is not the alert's.
     /// </summary>
-    private void UpdateAlertPause(GameTimeManager time, GameTimer timer, bool isAsleep, bool isLeavingExpedition, float elapsed, bool wasChangedByHand)
+    private void UpdateAlertPause(GameTimeManager time, GameTimer timer, bool isAsleep, bool isLeavingExpedition, float elapsed, bool wasChangedByHand, float now)
     {
         var alerts = Settings.Alerts;
         var emergenciesFired = AlertSignals.TakeEmergenciesFired();
         var dronesLanded = AlertSignals.TakeDronesLanded();
-        var moreRaised = TakeMoreAlerts(time, alerts.MoreOn);
+        var moreRaised = AlertSet.None;
+
+        if (_danger.IsDue(now))
+        {
+            moreRaised = TakeMoreAlerts(time, alerts.MoreOn);
+            _danger = _danger.Read(now, alerts.IsWaveOn && AlertSignals.IsWaveActive());
+        }
 
         if (!alerts.IsAnyOn) return;
 
         var canPause = AlertPause.CanPause(timer, (IsFastForwarding(time) || isAsleep) && !CanAlertWakeSleep(isAsleep), isLeavingExpedition);
-        var isWaveActive = alerts.IsWaveOn && AlertSignals.IsWaveActive();
+        var isWaveActive = alerts.IsWaveOn && _danger.IsWaveActive;
         var isBusy = alerts.IsQueueEmptyOn && time.IsLeadingRoleBusy();
         var seen = new AlertSnapshot(canPause, time.IsPausedScale(), isWaveActive, emergenciesFired, dronesLanded, isBusy, elapsed, wasChangedByHand, moreRaised, SpeedPatches.IsHoldingGameKey(time));
         var step = AlertPause.Next(_alert, seen, alerts);
@@ -369,28 +412,27 @@ public sealed partial class ClockTicker : MonoBehaviour
     }
 
     /// <summary>
-    /// The badge and the speed buttons follow every check, so the badge leaves the moment time runs and a click on a
-    /// button is taken within a check; the drawn clock, and putting a shown badge back after the page reloads, go at
-    /// the slower page pace, as does the style for the game's pause strip. The buttons go first so the badge finds them
-    /// to sit beside.
+    /// Every check works out what the page should show, and each part goes out only when it changed, when the page
+    /// changed under it or until the page confirms it, so the badge leaves the moment time runs; the clicks on the
+    /// buttons are taken at the poll pace. The buttons go first so the badge finds them to sit beside.
     /// </summary>
-    private void SyncPage(GameTimeManager time, GameTimer timer, float now)
+    private void SyncPage(GameTimeManager time, GameTimer timer, bool isRefreshDue, bool isPollDue)
     {
-        var isRefreshDue = TakePageRefresh(now);
+        var generation = Watch?.Generation ?? 0;
         var isPaused = time.IsPausedScale();
-        var isChinese = IsChinese();
-        var slowLabel = SpeedPatches.HeldSlowSpeed(time) is { } held ? SlowGear.Label(held) : "";
+        var isChinese = _isChinese;
+        var heldSlow = SpeedPatches.HeldSlowSpeed(time);
+        var slowLabel = heldSlow is { } held ? SlowGear.Label(held) : "";
         SpeedButtonsView? buttons = AreSpeedButtonsShown(timer) ? SpeedButtons.View(timer, isPaused, time.GetSpeedLevel(), slowLabel, isChinese) : null;
         Alert? alertHolding = _alert is AlertPause.Holding holding ? holding.Reason : null;
         var badge = AwayPause.Badge(_away, Settings.Badges, isPaused, isChinese) ?? PauseBadge.Text(Settings.Badges, isPaused, _idle is IdlePause.Frozen, SpeedPatches.IsPausedByKey, alertHolding, isChinese);
 
-        Page?.SyncSpeedButtons(buttons, isRefreshDue);
-        Page?.SyncBadge(badge, buttons?.Page ?? HudPage.Home, isRefreshDue);
+        Page?.SyncSpeedButtons(buttons, isRefreshDue, isPollDue, generation);
+        Page?.SyncBadge(badge, buttons?.Page ?? HudPage.Home, isRefreshDue, generation);
         var heldFast = SpeedChip.HoldKeyFast(SpeedPatches.IsHoldingGameKey(time), time.ChapterSpeedUp2, SpeedPatches.HoldKeyMultiple) ?? SpeedPatches.HeldFastSpeed(time);
-        Page?.SyncSpeedChip(SpeedChip.View(isPaused, SpeedPatches.HeldSlowSpeed(time), heldFast), buttons?.Page ?? HudPage.Home, isRefreshDue);
-        Page?.SyncPauseOverlay(Settings.PauseOverlayCss, isRefreshDue);
-
-        if (isRefreshDue) Page?.Sync(slowLabel);
+        Page?.SyncSpeedChip(SpeedChip.View(isPaused, heldSlow, heldFast), buttons?.Page ?? HudPage.Home, isRefreshDue, generation);
+        Page?.SyncPauseOverlay(Settings.PauseOverlayCss, isRefreshDue, generation);
+        Page?.Sync(slowLabel, isRefreshDue, generation, Watch?.SlowText);
     }
 
     /// <summary>
@@ -400,12 +442,13 @@ public sealed partial class ClockTicker : MonoBehaviour
     private void HidePage(float now)
     {
         var isRefreshDue = TakePageRefresh(now);
+        var generation = Watch?.Generation ?? 0;
 
-        Page?.SyncSpeedButtons(null, isRefreshDue);
-        Page?.SyncBadge("", HudPage.Home, isRefreshDue);
-        Page?.SyncSpeedChip(null, HudPage.Home, isRefreshDue);
-        Page?.SyncPauseOverlay("", isRefreshDue);
-        HideKeysPage(now);
+        Page?.SyncSpeedButtons(null, isRefreshDue, isPollDue: false, generation);
+        Page?.SyncBadge("", HudPage.Home, isRefreshDue, generation);
+        Page?.SyncSpeedChip(null, HudPage.Home, isRefreshDue, generation);
+        Page?.SyncPauseOverlay("", isRefreshDue, generation);
+        HideKeysPage(now, isRefreshDue);
         HideWaitPage(isRefreshDue);
     }
 
@@ -415,6 +458,16 @@ public sealed partial class ClockTicker : MonoBehaviour
         if (now < _nextPageAt) return false;
 
         _nextPageAt = now + PageSeconds;
+
+        return true;
+    }
+
+    /// <summary>Whether the clicks and the wheel's turns are due to be taken; when they are, the next take is counted from now.</summary>
+    private bool TakePoll(float now)
+    {
+        if (now < _nextPollAt) return false;
+
+        _nextPollAt = now + PollSeconds;
 
         return true;
     }

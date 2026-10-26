@@ -41,7 +41,8 @@ public static class PauseOverlay
 
     /// <summary>
     /// Puts the style on the game's page, or with an empty style takes it off. With the page not open there is nothing
-    /// to change, so that is "ok" too: the page opens again without the style, and the next refresh puts it back.
+    /// to change, so that is "ok" too: the page opens again without the style, and once the page watch sees it open
+    /// the style is sent again.
     /// </summary>
     public static string Script(string css) =>
         "(function(){try{" + HudPages.FindFrame(PageFile, $"'{Ok}'") +

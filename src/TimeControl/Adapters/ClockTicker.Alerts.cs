@@ -22,9 +22,15 @@ public sealed partial class ClockTicker
     private AwayPause _away = AwayPause.Start;
     private QueueSlow _queueSlow = QueueSlow.Start;
     private AlertMemory _readings = AlertMemory.Start;
+    private DangerWatch _danger = DangerWatch.Start;
 
     /// <summary>The work under way at the last check while a menu was open; null outside a menu or after a failed read.</summary>
     private MenuWork? _menuWork;
+
+    /// <summary>The game's types for the menus watched, each looked up the first time it is asked about.</summary>
+    private static Il2CppSystem.Type? _backpackUiType;
+    private static Il2CppSystem.Type? _phoneUiType;
+    private static Il2CppSystem.Type? _tradeUiType;
 
     /// <summary>A new world, or none, starts every watch here afresh; a pause held on the old world went with it.</summary>
     private void ForgetExtraWatches()
@@ -32,12 +38,24 @@ public sealed partial class ClockTicker
         _away = AwayPause.Start;
         _queueSlow = QueueSlow.Start;
         _readings = AlertMemory.Start;
+        _danger = DangerWatch.Start;
         _menuWork = null;
     }
 
-    /// <summary>The alerts after the queue running out that started since the last check, of those in <paramref name="on"/>.</summary>
+    /// <summary>
+    /// The alerts after the queue running out that started since the last read, of those in <paramref name="on"/>. With
+    /// none on, nothing is read off the game and the memory is where a first read would start from.
+    /// </summary>
     private AlertSet TakeMoreAlerts(GameTimeManager time, AlertSet on)
     {
+        if (on.IsEmpty)
+        {
+            MoreAlertSignals.Forget();
+            _readings = AlertMemory.Start;
+
+            return AlertSet.None;
+        }
+
         var step = AlertMemory.Next(_readings, MoreAlertSignals.Read(time, on), LowNeedPercent);
 
         _readings = step.Memory;
@@ -132,10 +150,10 @@ public sealed partial class ClockTicker
 
         if (ui == null) return false;
 
-        return (settings.IsBagOn && ui.IsUIActive(Il2CppType.Of<WebUI_BackpackUI>()))
+        return (settings.IsBagOn && ui.IsUIActive(_backpackUiType ??= Il2CppType.Of<WebUI_BackpackUI>()))
             || (settings.IsWorkbenchOn && Workbench.IsOpen())
-            || (settings.IsPhoneOn && ui.IsUIActive(Il2CppType.Of<WebUI_PhoneSMS>()))
-            || (settings.IsTradeOn && ui.IsUIActive(Il2CppType.Of<WebUI_TradeUI>()));
+            || (settings.IsPhoneOn && ui.IsUIActive(_phoneUiType ??= Il2CppType.Of<WebUI_PhoneSMS>()))
+            || (settings.IsTradeOn && ui.IsUIActive(_tradeUiType ??= Il2CppType.Of<WebUI_TradeUI>()));
     }
 
     private void LogAway(AwayPause from, AwayStep step)

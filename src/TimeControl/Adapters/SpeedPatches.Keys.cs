@@ -236,9 +236,9 @@ internal static partial class SpeedPatches
 
             var now = Time.unscaledTime;
 
-            if (isFastHeld && IsHoldKeyFree(keys.HoldFastKey, "HoldFastKey", ref _isFastKeyTaken, ref _hasLoggedFastKeyTaken)) _fastKeySeenAt = now;
+            if (isFastHeld && IsHoldKeyFree(keys.HoldFastKey, "HoldFastKey", ref _isFastKeyTaken, ref _hasLoggedFastKeyTaken)) _fastKeySeenAt = SeeHoldKey(_fastKeySeenAt, now);
 
-            if (isSlowHeld && IsHoldKeyFree(keys.HoldSlowKey, "HoldSlowKey", ref _isSlowKeyTaken, ref _hasLoggedSlowKeyTaken)) _slowKeySeenAt = now;
+            if (isSlowHeld && IsHoldKeyFree(keys.HoldSlowKey, "HoldSlowKey", ref _isSlowKeyTaken, ref _hasLoggedSlowKeyTaken)) _slowKeySeenAt = SeeHoldKey(_slowKeySeenAt, now);
 
             if (Input.anyKeyDown) NoteCustomSpeedKey(keys.CustomSpeeds);
         }
@@ -249,6 +249,15 @@ internal static partial class SpeedPatches
     }
 
     private static bool IsHeld(KeyCode key) => key != KeyCode.None && Input.GetKey(key);
+
+    /// <summary>A hold key that was not already counted as down asks for a check this frame, so the hold starts at once.</summary>
+    /// <returns>The time the key is seen at now.</returns>
+    private static float SeeHoldKey(float seenAt, float now)
+    {
+        if (now - seenAt > HeldKeyGraceSeconds) ClockTicker.WantCheck();
+
+        return now;
+    }
 
     /// <summary>
     /// Whether one of the game's own actions is bound to the key. The game's check skips the action it is asked about;
@@ -286,6 +295,7 @@ internal static partial class SpeedPatches
             if (customSpeeds[i] is not { } scale || !Input.GetKeyDown(KeyCode.Alpha5 + i)) continue;
 
             _customSpeedPressed = scale;
+            ClockTicker.WantCheck();
 
             return;
         }

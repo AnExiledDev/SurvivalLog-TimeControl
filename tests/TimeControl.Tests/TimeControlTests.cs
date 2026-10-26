@@ -79,6 +79,26 @@ public class SlowGearTests
         Assert.Equal("0.25x", SlowGear.Label(0.25f));
         Assert.Equal("0.5x", SlowGear.Label(0.5f));
     }
+
+    [Fact]
+    public void A_label_kept_from_one_speed_is_never_handed_out_for_another()
+    {
+        Assert.Equal("0.25x", SlowGear.Label(0.25f));
+        Assert.Equal("0.25x", SlowGear.Label(0.25f));
+        Assert.Equal("0.3x", SlowGear.Label(0.3f));
+        Assert.Equal("0.25x", SlowGear.Label(0.25f));
+    }
+
+    [Fact]
+    public void Labels_read_from_several_threads_at_once_each_match_their_own_speed()
+    {
+        Parallel.For(0, 4000, i =>
+        {
+            var speed = (i % 19 + 1) * 0.05f;
+
+            Assert.Equal(speed.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) + "x", SlowGear.Label(speed));
+        });
+    }
 }
 
 public class IdlePauseTests
@@ -657,21 +677,61 @@ public class SpeedChangeFanOutTests
 public class PageClockTests
 {
     [Fact]
-    public void Holding_a_slow_speed_puts_it_on_the_tooltip()
+    public void Holding_a_slow_speed_puts_it_on_the_tooltip_at_once()
     {
-        Assert.Equal(new PageClockUpdate("0.25x"), PageClock.Next("0.25x", wasNeutralLastSent: true));
+        Assert.True(PageClock.ShouldSend("0.25x", lastSent: "", isLastSentConfirmed: true, isRefreshDue: false, hasPageChanged: false, pageText: null));
     }
 
     [Fact]
     public void Nothing_is_sent_while_no_slow_speed_is_held()
     {
-        Assert.Null(PageClock.Next("", wasNeutralLastSent: true));
+        Assert.False(PageClock.ShouldSend("", lastSent: "", isLastSentConfirmed: true, isRefreshDue: true, hasPageChanged: true, pageText: "Slow"));
     }
 
     [Fact]
-    public void Leaving_the_slow_speed_strips_the_label_once()
+    public void Leaving_the_slow_speed_strips_the_label_at_once()
     {
-        Assert.Equal(new PageClockUpdate(""), PageClock.Next("", wasNeutralLastSent: false));
+        Assert.True(PageClock.ShouldSend("", lastSent: "0.25x", isLastSentConfirmed: true, isRefreshDue: false, hasPageChanged: false, pageText: null));
+    }
+
+    [Fact]
+    public void A_held_label_the_page_shows_is_not_sent_again_while_nothing_changes()
+    {
+        Assert.False(PageClock.ShouldSend("0.25x", lastSent: "0.25x", isLastSentConfirmed: true, isRefreshDue: true, hasPageChanged: false, pageText: "Slow 0.25x"));
+    }
+
+    [Fact]
+    public void A_held_label_is_put_back_once_the_page_changed_under_it()
+    {
+        Assert.True(PageClock.ShouldSend("0.25x", lastSent: "0.25x", isLastSentConfirmed: true, isRefreshDue: false, hasPageChanged: true, pageText: null));
+    }
+
+    [Fact]
+    public void A_held_label_the_game_wrote_over_is_put_back_on_the_next_refresh()
+    {
+        Assert.True(PageClock.ShouldSend("0.25x", lastSent: "0.25x", isLastSentConfirmed: true, isRefreshDue: true, hasPageChanged: false, pageText: "Slow"));
+        Assert.False(PageClock.ShouldSend("0.25x", lastSent: "0.25x", isLastSentConfirmed: true, isRefreshDue: false, hasPageChanged: false, pageText: "Slow"));
+    }
+
+    [Fact]
+    public void A_label_the_page_never_confirmed_is_sent_again_on_the_next_refresh()
+    {
+        Assert.True(PageClock.ShouldSend("0.25x", lastSent: "0.25x", isLastSentConfirmed: false, isRefreshDue: true, hasPageChanged: false, pageText: null));
+    }
+
+    [Theory]
+    [InlineData("0.25x", "Slow 0.25x", true)]
+    [InlineData("0.25x", "Slow 0.5x", false)]
+    [InlineData("0.25x", "Slow", false)]
+    [InlineData("0.25x", "Slow 0.25x0", false)]
+    [InlineData("", "Slow", true)]
+    [InlineData("", "Slow 0.5x", false)]
+    [InlineData("0.5x", "", true)]
+    [InlineData("5x", "Slow 5x", true)]
+    [InlineData("0.5x", "Slow .5x 0.5x", true)]
+    public void The_page_shows_the_label_only_where_its_text_reads_as_the_script_leaves_it(string label, string pageText, bool expected)
+    {
+        Assert.Equal(expected, PageClock.IsShown(label, pageText));
     }
 
     [Fact]
@@ -780,28 +840,34 @@ public class PauseBadgeTests
     [Fact]
     public void A_change_goes_out_at_once_without_waiting_for_the_refresh()
     {
-        Assert.True(PauseBadge.ShouldSend("", lastSent: "Paused: idle", isLastSentConfirmed: true, isRefreshDue: false));
-        Assert.True(PauseBadge.ShouldSend("Paused: idle", lastSent: "", isLastSentConfirmed: true, isRefreshDue: false));
+        Assert.True(PauseBadge.ShouldSend("", lastSent: "Paused: idle", isLastSentConfirmed: true, isRefreshDue: false, hasPageChanged: false));
+        Assert.True(PauseBadge.ShouldSend("Paused: idle", lastSent: "", isLastSentConfirmed: true, isRefreshDue: false, hasPageChanged: false));
     }
 
     [Fact]
-    public void A_shown_badge_is_put_back_on_each_refresh_in_case_the_page_reloaded()
+    public void A_shown_badge_the_page_confirmed_is_not_sent_again_while_the_page_stays_the_same()
     {
-        Assert.True(PauseBadge.ShouldSend("Paused", lastSent: "Paused", isLastSentConfirmed: true, isRefreshDue: true));
-        Assert.False(PauseBadge.ShouldSend("Paused", lastSent: "Paused", isLastSentConfirmed: true, isRefreshDue: false));
+        Assert.False(PauseBadge.ShouldSend("Paused", lastSent: "Paused", isLastSentConfirmed: true, isRefreshDue: true, hasPageChanged: false));
+        Assert.False(PauseBadge.ShouldSend("Paused", lastSent: "Paused", isLastSentConfirmed: true, isRefreshDue: false, hasPageChanged: false));
+    }
+
+    [Fact]
+    public void A_shown_badge_is_put_back_once_the_page_changed_under_it()
+    {
+        Assert.True(PauseBadge.ShouldSend("Paused", lastSent: "Paused", isLastSentConfirmed: true, isRefreshDue: false, hasPageChanged: true));
     }
 
     [Fact]
     public void A_hidden_badge_sends_nothing_once_the_page_confirmed_its_removal()
     {
-        Assert.False(PauseBadge.ShouldSend("", lastSent: "", isLastSentConfirmed: true, isRefreshDue: true));
+        Assert.False(PauseBadge.ShouldSend("", lastSent: "", isLastSentConfirmed: true, isRefreshDue: true, hasPageChanged: true));
     }
 
     [Fact]
     public void A_removal_the_page_never_confirmed_is_sent_again_on_the_next_refresh()
     {
-        Assert.True(PauseBadge.ShouldSend("", lastSent: "", isLastSentConfirmed: false, isRefreshDue: true));
-        Assert.False(PauseBadge.ShouldSend("", lastSent: "", isLastSentConfirmed: false, isRefreshDue: false));
+        Assert.True(PauseBadge.ShouldSend("", lastSent: "", isLastSentConfirmed: false, isRefreshDue: true, hasPageChanged: false));
+        Assert.False(PauseBadge.ShouldSend("", lastSent: "", isLastSentConfirmed: false, isRefreshDue: false, hasPageChanged: false));
     }
 
     [Fact]
@@ -812,12 +878,6 @@ public class PauseBadgeTests
         Assert.Contains("className='idle-slow-chip'", script);
         Assert.Contains("querySelector('.speed-controls')", script);
         Assert.Contains("t='Paused: idle';", script);
-    }
-
-    [Fact]
-    public void An_empty_badge_script_carries_the_removal_branch()
-    {
-        Assert.Contains("t='';if(!t.length){if(b&&b.parentNode)b.parentNode.removeChild(b);return 'ok';}", PauseBadge.Script(""));
     }
 
     [Fact]
@@ -953,52 +1013,58 @@ public class ButtonsSyncTests
     [Fact]
     public void Buttons_shown_for_the_first_time_are_drawn_in_full()
     {
-        Assert.Equal(ButtonsScript.Draw, ButtonsSync.Next(Running, ButtonsOnPage.Start, isRefreshDue: false));
+        Assert.Equal(ButtonsScript.Draw, ButtonsSync.Next(Running, ButtonsOnPage.Start, isRefreshDue: false, hasPageChanged: false));
     }
 
     [Fact]
-    public void Between_refreshes_an_unchanged_view_only_collects_the_clicks()
+    public void An_unchanged_view_on_an_unchanged_page_only_collects_the_clicks_even_on_a_refresh()
     {
-        Assert.Equal(ButtonsScript.Collect, ButtonsSync.Next(Running, DrawnRunning, isRefreshDue: false));
+        Assert.Equal(ButtonsScript.Collect, ButtonsSync.Next(Running, DrawnRunning, isRefreshDue: false, hasPageChanged: false));
+        Assert.Equal(ButtonsScript.Collect, ButtonsSync.Next(Running, DrawnRunning, isRefreshDue: true, hasPageChanged: false));
     }
 
     [Fact]
     public void A_changed_view_is_drawn_at_once_without_waiting_for_a_refresh()
     {
-        Assert.Equal(ButtonsScript.Draw, ButtonsSync.Next(Paused, DrawnRunning, isRefreshDue: false));
-        Assert.Equal(ButtonsScript.Draw, ButtonsSync.Next(Running with { Page = HudPage.Home }, DrawnRunning, isRefreshDue: false));
+        Assert.Equal(ButtonsScript.Draw, ButtonsSync.Next(Paused, DrawnRunning, isRefreshDue: false, hasPageChanged: false));
+        Assert.Equal(ButtonsScript.Draw, ButtonsSync.Next(Running with { Page = HudPage.Home }, DrawnRunning, isRefreshDue: false, hasPageChanged: false));
     }
 
     [Fact]
-    public void Each_refresh_draws_in_full_to_follow_the_pages_layout_and_texts()
+    public void A_page_that_changed_under_the_buttons_has_them_drawn_in_full_to_follow_its_layout_and_texts()
     {
-        Assert.Equal(ButtonsScript.Draw, ButtonsSync.Next(Running, DrawnRunning, isRefreshDue: true));
+        Assert.Equal(ButtonsScript.Draw, ButtonsSync.Next(Running, DrawnRunning, isRefreshDue: false, hasPageChanged: true));
     }
 
     [Fact]
-    public void Buttons_the_page_may_have_lost_are_drawn_again_on_the_next_check()
+    public void Buttons_the_page_may_have_lost_are_drawn_again_on_the_next_refresh_not_on_every_check()
     {
-        Assert.Equal(ButtonsScript.Draw, ButtonsSync.Next(Running, new ButtonsOnPage.Drawn(Running, NeedsRedraw: true), isRefreshDue: false));
+        var lost = new ButtonsOnPage.Drawn(Running, NeedsRedraw: true);
+
+        Assert.Equal(ButtonsScript.None, ButtonsSync.Next(Running, lost, isRefreshDue: false, hasPageChanged: false));
+        Assert.Equal(ButtonsScript.Draw, ButtonsSync.Next(Running, lost, isRefreshDue: true, hasPageChanged: false));
+        Assert.Equal(ButtonsScript.Draw, ButtonsSync.Next(Running, lost, isRefreshDue: false, hasPageChanged: true));
+        Assert.Equal(ButtonsScript.Draw, ButtonsSync.Next(Paused, lost, isRefreshDue: false, hasPageChanged: false));
     }
 
     [Fact]
     public void Buttons_that_just_hid_are_taken_off_at_once()
     {
-        Assert.Equal(ButtonsScript.Remove, ButtonsSync.Next(null, DrawnRunning, isRefreshDue: false));
+        Assert.Equal(ButtonsScript.Remove, ButtonsSync.Next(null, DrawnRunning, isRefreshDue: false, hasPageChanged: false));
     }
 
     [Fact]
     public void Hidden_buttons_send_nothing_once_the_page_confirmed_their_removal()
     {
-        Assert.Equal(ButtonsScript.None, ButtonsSync.Next(null, ButtonsOnPage.Start, isRefreshDue: true));
-        Assert.Equal(ButtonsScript.None, ButtonsSync.Next(null, new ButtonsOnPage.Removed(IsConfirmed: true), isRefreshDue: true));
+        Assert.Equal(ButtonsScript.None, ButtonsSync.Next(null, ButtonsOnPage.Start, isRefreshDue: true, hasPageChanged: true));
+        Assert.Equal(ButtonsScript.None, ButtonsSync.Next(null, new ButtonsOnPage.Removed(IsConfirmed: true), isRefreshDue: true, hasPageChanged: true));
     }
 
     [Fact]
     public void A_removal_the_page_never_confirmed_is_sent_again_on_the_next_refresh()
     {
-        Assert.Equal(ButtonsScript.Remove, ButtonsSync.Next(null, Unconfirmed, isRefreshDue: true));
-        Assert.Equal(ButtonsScript.None, ButtonsSync.Next(null, Unconfirmed, isRefreshDue: false));
+        Assert.Equal(ButtonsScript.Remove, ButtonsSync.Next(null, Unconfirmed, isRefreshDue: true, hasPageChanged: false));
+        Assert.Equal(ButtonsScript.None, ButtonsSync.Next(null, Unconfirmed, isRefreshDue: false, hasPageChanged: false));
     }
 
     [Fact]
@@ -1034,14 +1100,24 @@ public class ButtonsSyncTests
     }
 
     [Fact]
-    public void Any_answer_but_ok_to_a_draw_or_collect_has_the_buttons_drawn_in_full_next()
+    public void A_closed_hud_page_has_the_buttons_drawn_when_the_page_watch_sees_it_open_not_on_every_refresh()
     {
-        foreach (var reply in new string?[] { SpeedButtons.NotOnPage, "no CoreUI0 frame", "error: TypeError", null })
+        var taken = ButtonsSync.TakeReply(DrawnRunning, wasShownWhenSent: true, "no CoreUI0 frame");
+
+        Assert.Empty(taken.Clicks);
+        Assert.Equal(ButtonsScript.Collect, ButtonsSync.Next(Running, taken.OnPage, isRefreshDue: true, hasPageChanged: false));
+        Assert.Equal(ButtonsScript.Draw, ButtonsSync.Next(Running, taken.OnPage, isRefreshDue: false, hasPageChanged: true));
+    }
+
+    [Fact]
+    public void Any_other_answer_but_ok_to_a_draw_or_collect_has_the_buttons_drawn_in_full_on_the_next_refresh()
+    {
+        foreach (var reply in new string?[] { SpeedButtons.NotOnPage, "error: TypeError", null })
         {
             var taken = ButtonsSync.TakeReply(DrawnRunning, wasShownWhenSent: true, reply);
 
             Assert.Empty(taken.Clicks);
-            Assert.Equal(ButtonsScript.Draw, ButtonsSync.Next(Running, taken.OnPage, isRefreshDue: false));
+            Assert.Equal(ButtonsScript.Draw, ButtonsSync.Next(Running, taken.OnPage, isRefreshDue: true, hasPageChanged: false));
         }
     }
 

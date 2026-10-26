@@ -26,7 +26,23 @@ public static class SpeedWheel
     /// the notches turned since the last call.
     /// </summary>
     /// <returns>A script replying "ok", or "ok:" and the sum of the notches when any were turned.</returns>
-    public static string Script(bool isOn) =>
+    public static string Script(bool isOn) => isOn ? OnScript : OffScript;
+
+    /// <summary>
+    /// Only takes the notches turned since the last take, on both HUD pages; the small script sent on the checks
+    /// between the ones that hook buttons.
+    /// </summary>
+    /// <returns>A script replying "ok", or "ok:" and the sum of the notches when any were turned.</returns>
+    public static readonly string PollScript =
+        "(function(){try{var fs=document.querySelectorAll('iframe'),sum=0;" +
+        "for(var i=0;i<fs.length;i++){var c=fs[i].contentWindow;if(!c)continue;" +
+        $"try{{if(!c.{StepsQueue})continue;sum+=c.{StepsQueue};c.{StepsQueue}=0;}}catch(e){{continue;}}}}" +
+        $"return sum?'{StepsPrefix}'+sum:'{Ok}';}}catch(e){{return 'error: '+e;}}}})()";
+
+    private static readonly string OnScript = Build(isOn: true);
+    private static readonly string OffScript = Build(isOn: false);
+
+    private static string Build(bool isOn) =>
         "(function(){try{var fs=document.querySelectorAll('iframe'),sum=0;" +
         $"var hook=function(c){{return function(e){{if(!c.{IsOnFlag})return;" +
         "if(e.preventDefault)e.preventDefault();if(e.stopPropagation)e.stopPropagation();" +

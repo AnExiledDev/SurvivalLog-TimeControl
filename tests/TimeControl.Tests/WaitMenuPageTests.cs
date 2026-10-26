@@ -203,4 +203,51 @@ public class WaitMenuPageTests
         Assert.Equal(WaitTexts.WaitButton.Zh, ui.Text("waitOn(home).querySelector('.tc-wait-tip').textContent"));
         Assert.Equal(WaitTexts.Morning.Zh, ui.Text($"waitItem(home, {WaitMenu.Morning}).textContent"));
     }
+
+    [Fact]
+    public void Between_draws_the_small_script_hands_back_a_click_once()
+    {
+        var ui = new FakeWebUi(Home);
+        var collect = WaitMenu.CollectScript(HudPage.Home);
+
+        ui.Send(Draw);
+        ui.Run($"waitOn(home).querySelector('.tc-wait-btn').click(); waitItem(home, {WaitMenu.Morning}).click();");
+
+        Assert.Equal($"ok:{WaitMenu.Morning}", ui.Send(collect));
+        Assert.Equal("ok", ui.Send(collect));
+    }
+
+    [Fact]
+    public void A_page_that_lost_the_wait_button_answers_so_and_drops_its_clicks()
+    {
+        var ui = new FakeWebUi(Home);
+        var collect = WaitMenu.CollectScript(HudPage.Home);
+
+        ui.Send(Draw);
+        ui.Run($"waitOn(home).querySelector('.tc-wait-btn').click(); waitItem(home, {WaitMenu.Morning}).click();" +
+               "waitOn(home).parentNode.removeChild(waitOn(home));");
+
+        var reply = ui.Send(collect);
+
+        Assert.Equal(WaitMenu.NotOnPage, reply);
+        Assert.False(WaitMenu.IsOk(reply));
+        Assert.Equal("ok", ui.Send(Draw));
+        Assert.True(ui.Is("waitOn(home)"));
+    }
+
+    [Fact]
+    public void A_page_with_no_speed_buttons_has_no_wait_button_to_miss()
+    {
+        var ui = new FakeWebUi(Helpers + "var home = openHome();");
+
+        Assert.Equal("ok", ui.Send(WaitMenu.CollectScript(HudPage.Home)));
+    }
+
+    [Fact]
+    public void Collecting_with_the_page_closed_answers_that_it_is_not_open()
+    {
+        var ui = new FakeWebUi(Helpers);
+
+        Assert.True(HudPages.IsClosedReply(ui.Send(WaitMenu.CollectScript(HudPage.Home))));
+    }
 }

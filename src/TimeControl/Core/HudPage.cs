@@ -28,6 +28,21 @@ public static class HudPages
     internal static string FindFrame(HudPage page) => FindFrame(FileName(page), $"'no {FileName(page)} frame'");
 
     /// <summary>
+    /// Whether a script's answer says its HUD page is not open, as <see cref="FindFrame(HudPage)"/> answers. Nothing was
+    /// lost then: the page watch sees the page open, which sends what goes on it again.
+    /// </summary>
+    public static bool IsClosedReply(string? reply) => reply == ClosedCountdown || reply == ClosedHome;
+
+    /// <summary>
+    /// Whether an answer settles what was sent, so it is not sent again on the next refresh: the page answered "ok", or
+    /// the HUD page it goes on is not open.
+    /// </summary>
+    public static bool IsSettled(string? reply) => reply == "ok" || IsClosedReply(reply);
+
+    private static readonly string ClosedCountdown = $"no {FileName(HudPage.Countdown)} frame";
+    private static readonly string ClosedHome = $"no {FileName(HudPage.Home)} frame";
+
+    /// <summary>
     /// Finds any web UI page's frame by its file name as <c>w</c>, and returns the given reply when the page is not
     /// open. The name must follow a slash, so a page whose name only ends in it is not taken for it.
     /// </summary>

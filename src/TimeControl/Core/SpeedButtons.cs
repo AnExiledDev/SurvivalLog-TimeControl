@@ -120,14 +120,20 @@ public static class SpeedButtons
     /// reloaded) answer <see cref="NotOnPage"/> so the next check draws them again, and their clicks are dropped. Where
     /// the copy stepped aside for the game's own buttons, there is nothing to draw and the answer is "ok".
     /// </summary>
-    public static string CollectScript(HudPage page) =>
+    /// <remarks>Built once per page, as it is sent on most checks while the buttons show.</remarks>
+    public static string CollectScript(HudPage page) => page == HudPage.Countdown ? CollectOnCountdown : CollectAtHome;
+
+    private static readonly string CollectOnCountdown = BuildCollect(HudPage.Countdown);
+    private static readonly string CollectAtHome = BuildCollect(HudPage.Home);
+    private static readonly string Removal = "(function(){try{" + HudPages.RemoveFromFrames(ElementId) + $"return '{Ok}';}}catch(e){{return 'error: '+e;}}}})()";
+
+    private static string BuildCollect(HudPage page) =>
         "(function(){try{" + HudPages.FindFrame(page) +
         $"var d=w.document;if(!d.getElementById('{ElementId}')){{w.{ClicksQueue}=[];return d.querySelector('.speed-controls')?'{Ok}':'{NotOnPage}';}}" +
         DefineTakeClicks + "return take();}catch(e){return 'error: '+e;}})()";
 
     /// <summary>Takes the buttons off every page.</summary>
-    public static string RemovalScript() =>
-        "(function(){try{" + HudPages.RemoveFromFrames(ElementId) + $"return '{Ok}';}}catch(e){{return 'error: '+e;}}}})()";
+    public static string RemovalScript() => Removal;
 
     /// <summary>
     /// On the main page the copy goes where the game's own buttons sit, beside the order queue. The countdown page

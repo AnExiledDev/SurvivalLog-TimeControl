@@ -1,6 +1,4 @@
 using System;
-using GameCore.HotUpdate;
-using GameCore.HotUpdate.ReduxUI;
 using TimeControl.Core;
 
 namespace TimeControl.Adapters;
@@ -11,40 +9,63 @@ namespace TimeControl.Adapters;
 /// </summary>
 internal sealed class KeysPage
 {
-    private const string Ok = "ok";
-
     private readonly PageReply _wheelReply;
     private readonly PageReply _orderReply;
     private readonly PageReply _countdownReply;
+    private readonly Il2CppSystem.Action<string> _onWheelOnReply;
+    private readonly Il2CppSystem.Action<string> _onWheelOffReply;
     private int _wheelSteps;
     private bool _isLastWheelSentOn;
     private bool _isWheelOffConfirmed = true;
+    private bool _isWheelOnConfirmed;
+    private int _wheelGeneration;
     private string _lastOrderSent = "";
     private bool _isLastOrderConfirmed = true;
+    private int _orderGeneration;
     private string _lastCountdownSent = "";
     private bool _isLastCountdownConfirmed = true;
+    private int _countdownGeneration;
 
     public KeysPage(Action<string> log)
     {
         _wheelReply = new PageReply("speed wheel", log);
         _orderReply = new PageReply("order finish time", log);
         _countdownReply = new PageReply("countdowns", log);
+        _onWheelOnReply = (Action<string>)(reply => TakeWheelReply(wasOn: true, reply));
+        _onWheelOffReply = (Action<string>)(reply => TakeWheelReply(wasOn: false, reply));
     }
 
     /// <summary>
-    /// Switches the wheel on or off over the speed buttons. While on it is sent on every check, which also takes the
-    /// notches and hooks buttons drawn since; an off is sent until the page confirms it.
+    /// Switches the wheel on or off over the speed buttons, at once. While on, the full script goes again once the page
+    /// changed, which hooks the buttons it drew since, or until the page confirms it; otherwise only the small script
+    /// that takes the notches goes out, when a poll is due. An off goes again at the poll pace until the page confirms it.
     /// </summary>
-    public void SyncWheel(bool isOn)
+    /// <param name="isPollDue">Whether the notches are due to be taken.</param>
+    /// <param name="generation">The page generation now.</param>
+    public void SyncWheel(bool isOn, bool isPollDue, int generation)
     {
         _wheelReply.Report();
 
         if (!isOn && _isWheelOffConfirmed) return;
 
-        if (!Run(() => SpeedWheel.Script(isOn), reply => TakeWheelReply(isOn, reply), _wheelReply)) return;
+        var isSwitching = isOn != _isLastWheelSentOn;
+
+        if (!isSwitching && !isPollDue) return;
+
+        var isHooking = isSwitching || !isOn || !_isWheelOnConfirmed || generation != _wheelGeneration;
+
+        if (WebUi.View(_wheelReply) is not { } view) return;
+
+        var script = !isHooking ? SpeedWheel.PollScript : SpeedWheel.Script(isOn);
+
+        if (!WebUi.Send(view, script, isOn ? _onWheelOnReply : _onWheelOffReply, _wheelReply)) return;
+
+        if (!isHooking) return;
 
         _isLastWheelSentOn = isOn;
         _isWheelOffConfirmed = false;
+        _isWheelOnConfirmed = false;
+        _wheelGeneration = generation;
     }
 
     /// <summary>The notches the page handed back since the last call, up positive.</summary>
@@ -57,105 +78,71 @@ internal sealed class KeysPage
         return steps;
     }
 
+    /// <summary>Notches handed back ask for a check on the frame they arrive, so the turn acts at once.</summary>
     private void TakeWheelReply(bool wasOn, string? reply)
     {
         var isOk = SpeedWheel.IsOk(reply);
+        var steps = SpeedWheel.Steps(reply);
 
-        _wheelReply.Take(isOk ? Ok : reply);
-        _wheelSteps += SpeedWheel.Steps(reply);
+        _wheelReply.Take(isOk ? PageReply.Ok : reply);
+
+        if (isOk && wasOn && _isLastWheelSentOn) _isWheelOnConfirmed = true;
 
         if (isOk && !wasOn && !_isLastWheelSentOn) _isWheelOffConfirmed = true;
+
+        if (steps == 0) return;
+
+        _wheelSteps += steps;
+        ClockTicker.WantCheck();
     }
 
     /// <param name="label">The order's finish time; empty takes it off.</param>
-    /// <param name="isRefreshDue">Whether a shown note, or an unconfirmed removal, is due to be sent again.</param>
-    public void SyncOrderFinish(string label, bool isRefreshDue)
+    /// <param name="isRefreshDue">Whether an unconfirmed note or removal is due to be sent again.</param>
+    /// <param name="generation">The page generation now; a note sent at an older one is sent again.</param>
+    public void SyncOrderFinish(string label, bool isRefreshDue, int generation)
     {
         _orderReply.Report();
 
-        if (!PauseBadge.ShouldSend(label, _lastOrderSent, _isLastOrderConfirmed, isRefreshDue)) return;
+        if (!PauseBadge.ShouldSend(label, _lastOrderSent, _isLastOrderConfirmed, isRefreshDue, generation != _orderGeneration)) return;
 
-        if (!Run(() => OrderFinish.Script(label), reply => ConfirmOrder(label, reply), _orderReply)) return;
+        if (WebUi.View(_orderReply) is not { } view) return;
+
+        if (!WebUi.Send(view, OrderFinish.Script(label), (Action<string>)(reply => ConfirmOrder(label, reply)), _orderReply)) return;
 
         _lastOrderSent = label;
         _isLastOrderConfirmed = false;
+        _orderGeneration = generation;
     }
 
     private void ConfirmOrder(string sent, string? reply)
     {
         _orderReply.Take(reply);
 
-        if (reply == Ok && sent == _lastOrderSent) _isLastOrderConfirmed = true;
+        if (HudPages.IsSettled(reply) && sent == _lastOrderSent) _isLastOrderConfirmed = true;
     }
 
     /// <param name="text">The countdowns, one per line; empty takes them off.</param>
-    /// <param name="isRefreshDue">Whether shown countdowns, or an unconfirmed removal, are due to be sent again.</param>
-    public void SyncCountdown(string text, bool isRefreshDue)
+    /// <param name="isRefreshDue">Whether unconfirmed countdowns or a removal are due to be sent again.</param>
+    /// <param name="generation">The page generation now; countdowns sent at an older one are sent again.</param>
+    public void SyncCountdown(string text, bool isRefreshDue, int generation)
     {
         _countdownReply.Report();
 
-        if (!PauseBadge.ShouldSend(text, _lastCountdownSent, _isLastCountdownConfirmed, isRefreshDue)) return;
+        if (!PauseBadge.ShouldSend(text, _lastCountdownSent, _isLastCountdownConfirmed, isRefreshDue, generation != _countdownGeneration)) return;
 
-        if (!Run(() => Countdowns.Script(text), reply => ConfirmCountdown(text, reply), _countdownReply)) return;
+        if (WebUi.View(_countdownReply) is not { } view) return;
+
+        if (!WebUi.Send(view, Countdowns.Script(text), (Action<string>)(reply => ConfirmCountdown(text, reply)), _countdownReply)) return;
 
         _lastCountdownSent = text;
         _isLastCountdownConfirmed = false;
+        _countdownGeneration = generation;
     }
 
     private void ConfirmCountdown(string sent, string? reply)
     {
         _countdownReply.Take(reply);
 
-        if (reply == Ok && sent == _lastCountdownSent) _isLastCountdownConfirmed = true;
-    }
-
-    /// <summary>
-    /// Never throws: a page that cannot be reached costs the wheel or a note, never the ticker's pause handling. The
-    /// script is only built once there is a page to run it in.
-    /// </summary>
-    private static bool Run(Func<string> script, Action<string> onReply, PageReply reply)
-    {
-        try
-        {
-            var ui = BaseSingleton<ReduxUISystem>.IsInstanceCreated ? BaseSingleton<ReduxUISystem>.Instance : null;
-            var webView = ui?.GetWebUILayer()?.canvasWebViewPrefab?.WebView;
-
-            if (webView == null) return false;
-
-            webView.ExecuteJavaScript(script(), onReply);
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            reply.Take("could not run script: " + ex.Message);
-
-            return false;
-        }
-    }
-
-    /// <summary>The page's last answer to one kind of script, logged once each time it changes.</summary>
-    private sealed class PageReply
-    {
-        private readonly string _name;
-        private readonly Action<string> _log;
-        private string _reply = Ok;
-        private string _lastLogged = Ok;
-
-        public PageReply(string name, Action<string> log)
-        {
-            _name = name;
-            _log = log;
-        }
-
-        public void Take(string? reply) => _reply = reply ?? "no reply";
-
-        public void Report()
-        {
-            if (_reply == _lastLogged) return;
-
-            _lastLogged = _reply;
-            _log(_reply == Ok ? $"{_name}: reachable again" : $"{_name}: {_reply}");
-        }
+        if (HudPages.IsSettled(reply) && sent == _lastCountdownSent) _isLastCountdownConfirmed = true;
     }
 }

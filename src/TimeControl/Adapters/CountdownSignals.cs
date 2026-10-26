@@ -27,16 +27,16 @@ internal static class CountdownSignals
     internal static Action<string> Log = _ => { };
 
     /// <summary>The game clock in seconds since the world began, or null when it cannot be read.</summary>
-    public static long? TotalSeconds(GameTimeManager time) => Read("the game clock", () => (long?)time.GetTotalSeconds(), null);
+    public static long? TotalSeconds(GameTimeManager time) => Read("the game clock", time, static t => (long?)t.GetTotalSeconds(), null);
 
     /// <summary>Game seconds until the character's current order is done; 0 when idle or unknown.</summary>
-    public static int OrderSecondsLeft() => Read("the current order's time left", ReadOrderSecondsLeft, 0);
+    public static int OrderSecondsLeft() => Read("the current order's time left", 0, static _ => ReadOrderSecondsLeft(), 0);
 
     /// <summary>The hours of the day the game has a zombie wave planned for; none when unknown.</summary>
-    public static IReadOnlyList<int> WaveHours() => Read("the planned waves", ReadWaveHours, Array.Empty<int>());
+    public static IReadOnlyList<int> WaveHours() => Read("the planned waves", 0, static _ => ReadWaveHours(), Array.Empty<int>());
 
     /// <summary>Game seconds until a thrown lure rig's wave; 0 when none is coming or unknown.</summary>
-    public static int LureSecondsLeft(long totalSeconds) => Read("the lure rig's wave", () => ReadLureSecondsLeft(totalSeconds), 0);
+    public static int LureSecondsLeft(long totalSeconds) => Read("the lure rig's wave", totalSeconds, static s => ReadLureSecondsLeft(s), 0);
 
     private static BattleLogicWorld? World() => BaseSingleton<BattleLogicWorld>.IsInstanceCreated ? BaseSingleton<BattleLogicWorld>.Instance : null;
 
@@ -86,11 +86,12 @@ internal static class CountdownSignals
         return left > 0 && left <= int.MaxValue ? (int)left : 0;
     }
 
-    private static T Read<T>(string what, Func<T> read, T unknown)
+    /// <summary>The read takes what it reads from as an argument, so a static lambda serves and no closure is made per read.</summary>
+    private static T Read<TState, T>(string what, TState state, Func<TState, T> read, T unknown)
     {
         try
         {
-            return read();
+            return read(state);
         }
         catch (Exception ex)
         {

@@ -225,8 +225,34 @@ public static class WaitMenu
         "return take();}catch(e){return 'error: '+e;}})()";
 
     /// <summary>Takes the wait button off every page.</summary>
-    public static string RemovalScript() =>
-        "(function(){try{" + HudPages.RemoveFromFrames(ElementId) + $"return '{Ok}';}}catch(e){{return 'error: '+e;}}}})()";
+    public static string RemovalScript() => Removal;
+
+    /// <summary>The answer to <see cref="CollectScript"/> when the page has speed buttons but lost the wait button.</summary>
+    public const string NotOnPage = "wait button not on the page";
+
+    /// <summary>
+    /// The small script sent between full draws: it only hands back the clicks. A page that lost the wait button (it
+    /// reloaded) answers <see cref="NotOnPage"/> so the next refresh draws it again, and its clicks are dropped. A page
+    /// with no speed buttons has no wait button to draw, so that is "ok".
+    /// </summary>
+    /// <remarks>Built once per page, as it is sent on every refresh while the menu shows.</remarks>
+    public static string CollectScript(HudPage page) => page == HudPage.Countdown ? CollectOnCountdown : CollectAtHome;
+
+    /// <summary>
+    /// Whether two inputs draw the same menu. The running clock only shows in the menu as times of day for points on
+    /// it, so a clock that only ran on draws the same menu; anything else that differs may not.
+    /// </summary>
+    public static bool IsSameMenu(WaitMenuInput a, WaitMenuInput b) =>
+        a with { Reading = default } == b with { Reading = default } && a.Reading.SecondOfDayAt(0) == b.Reading.SecondOfDayAt(0);
+
+    private static readonly string Removal = "(function(){try{" + HudPages.RemoveFromFrames(ElementId) + $"return '{Ok}';}}catch(e){{return 'error: '+e;}}}})()";
+    private static readonly string CollectOnCountdown = BuildCollect(HudPage.Countdown);
+    private static readonly string CollectAtHome = BuildCollect(HudPage.Home);
+
+    private static string BuildCollect(HudPage page) =>
+        "(function(){try{" + HudPages.FindFrame(page) +
+        $"var d=w.document;if(!d.getElementById('{ElementId}')){{w.{ClicksQueue}=[];return d.querySelector('.speed-controls')?'{NotOnPage}':'{Ok}';}}" +
+        DefineTakeClicks + "return take();}catch(e){return 'error: '+e;}})()";
 
     /// <summary>The menu's rows as a JavaScript array: [text, [[id, label, enabled], ...]] per row.</summary>
     private static string Lines(IReadOnlyList<WaitMenuLine> lines)

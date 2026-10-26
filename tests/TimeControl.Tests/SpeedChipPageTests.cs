@@ -136,14 +136,23 @@ public class SpeedChipViewTests
     }
 
     [Fact]
-    public void A_shown_chip_is_resent_on_refresh_and_an_unconfirmed_removal_until_confirmed()
+    public void A_shown_chip_is_resent_once_the_page_changed_and_an_unconfirmed_removal_until_confirmed()
     {
         var fast = new SpeedChipView(PauseToggle.Triple, "6x");
 
-        Assert.True(SpeedChip.ShouldSend(fast, null, isLastSentConfirmed: true, isRefreshDue: false));
-        Assert.False(SpeedChip.ShouldSend(fast, fast, isLastSentConfirmed: true, isRefreshDue: false));
-        Assert.True(SpeedChip.ShouldSend(fast, fast, isLastSentConfirmed: true, isRefreshDue: true));
-        Assert.True(SpeedChip.ShouldSend(null, null, isLastSentConfirmed: false, isRefreshDue: true));
-        Assert.False(SpeedChip.ShouldSend(null, null, isLastSentConfirmed: true, isRefreshDue: true));
+        Assert.True(SpeedChip.ShouldSend(fast, null, isLastSentConfirmed: true, isRefreshDue: false, hasPageChanged: false));
+        Assert.False(SpeedChip.ShouldSend(fast, fast, isLastSentConfirmed: true, isRefreshDue: false, hasPageChanged: false));
+        Assert.False(SpeedChip.ShouldSend(fast, fast, isLastSentConfirmed: true, isRefreshDue: true, hasPageChanged: false));
+        Assert.True(SpeedChip.ShouldSend(fast, fast, isLastSentConfirmed: true, isRefreshDue: false, hasPageChanged: true));
+        Assert.True(SpeedChip.ShouldSend(null, null, isLastSentConfirmed: false, isRefreshDue: true, hasPageChanged: false));
+        Assert.False(SpeedChip.ShouldSend(null, null, isLastSentConfirmed: true, isRefreshDue: true, hasPageChanged: true));
+    }
+
+    [Fact]
+    public void A_chip_taken_off_with_no_hud_page_open_is_confirmed_rather_than_sent_again()
+    {
+        var ui = new FakeWebUi("var speedUp = openSpeedUp();");
+
+        Assert.Equal("ok", ui.Send(SpeedChip.Script(null, HudPage.Countdown)));
     }
 }

@@ -60,19 +60,22 @@ internal static class MoreAlertSignals
 
         var isDayWatched = on.Has(Alert.Dusk) || on.Has(Alert.Dawn);
         var isPhoneWatched = on.Has(Alert.PhoneMessage) || on.Has(Alert.TradeMessage);
-        var unread = isPhoneWatched ? Try("reading the phone's unread messages", () => UnreadCounts(world)) : null;
+        var unread = isPhoneWatched ? Try("reading the phone's unread messages", world, static w => UnreadCounts(w)) : null;
 
         return new AlertReadings(
-            isDayWatched ? Try("reading the hour", () => (int?)time.GetHour24()) : null,
-            IsAnyNeedWatched(on) ? Try("reading the character's needs", () => ReadNeeds(world)) ?? default : default,
-            on.Has(Alert.Sick) ? Try("reading illnesses", () => Ailments(world)) : null,
-            on.Has(Alert.HouseHit) ? Try("reading the wave's damage to the house", () => (int?)world._TowerWaveManager?.waveStructureDamage) : null,
-            on.Has(Alert.TrapHit) ? Try("reading the wave's damage to traps", () => (int?)world._TowerWaveManager?.waveDeviceDamage) : null,
-            on.Has(Alert.PowerOut) ? Try("reading the power", () => world._PowerManager?.IsPowerOff()) : null,
+            isDayWatched ? Try("reading the hour", time, static t => (int?)t.GetHour24()) : null,
+            IsAnyNeedWatched(on) ? Try("reading the character's needs", world, static w => ReadNeeds(w)) ?? default : default,
+            on.Has(Alert.Sick) ? Try("reading illnesses", world, static w => Ailments(w)) : null,
+            on.Has(Alert.HouseHit) ? Try("reading the wave's damage to the house", world, static w => (int?)w._TowerWaveManager?.waveStructureDamage) : null,
+            on.Has(Alert.TrapHit) ? Try("reading the wave's damage to traps", world, static w => (int?)w._TowerWaveManager?.waveDeviceDamage) : null,
+            on.Has(Alert.PowerOut) ? Try("reading the power", world, static w => w._PowerManager?.IsPowerOff()) : null,
             on.Has(Alert.PhoneMessage) ? unread?.Messages : null,
             on.Has(Alert.TradeMessage) ? unread?.Trades : null,
             on.Has(Alert.PlantRipe) ? plantsRipened : 0);
     }
+
+    /// <summary>With no alert after the queue running out on, nothing is read; the crops counted are let go so none are saved up.</summary>
+    public static void Forget() => TakePlantsRipened();
 
     private static int TakePlantsRipened()
     {
@@ -178,11 +181,12 @@ internal static class MoreAlertSignals
     private static BattleLogicWorld? LiveWorld() =>
         BaseSingleton<BattleLogicWorld>.IsInstanceCreated ? BaseSingleton<BattleLogicWorld>.Instance : null;
 
-    private static T? Try<T>(string doing, Func<T?> read) where T : struct
+    /// <summary>The read takes what it reads from as an argument, so a static lambda serves and no closure is made per read.</summary>
+    private static T? Try<TState, T>(string doing, TState state, Func<TState, T?> read) where T : struct
     {
         try
         {
-            return read();
+            return read(state);
         }
         catch (Exception ex)
         {

@@ -21,6 +21,8 @@ public static class SpeedChip
     /// <summary>How far in from the corner the chip's centre sits, so it overlaps the button rather than floating off it.</summary>
     private const int CornerInset = 3;
 
+    private static readonly string Removal = "(function(){try{" + HudPages.RemoveFromFrames(ElementId) + "return 'ok';}catch(e){return 'error: '+e;}})()";
+
     /// <summary>
     /// The chip to show now, or null for none. Only a speed the mod holds gets one: a slow speed, or a fast speed above
     /// the game's own high speed. Paused, the game lights its pause button and the chip goes.
@@ -44,11 +46,13 @@ public static class SpeedChip
         isHoldKeyRunning ? FastGear.HoldKeyScale(gameFastSpeed, multiple) : null;
 
     /// <summary>
-    /// A change goes out at once; a shown chip is sent again on every refresh, which puts it back after the page
-    /// redraws its buttons, and a removal is sent again until the page confirms it.
+    /// A change goes out at once; a shown chip is sent again once the page changed under it, which puts it back after
+    /// the page redraws its buttons, and anything the page has not confirmed is sent again on each refresh until it
+    /// does. While nothing changes, nothing is sent.
     /// </summary>
-    public static bool ShouldSend(SpeedChipView? view, SpeedChipView? lastSent, bool isLastSentConfirmed, bool isRefreshDue) =>
-        view != lastSent || (isRefreshDue && (view is not null || !isLastSentConfirmed));
+    /// <param name="hasPageChanged">The page watch saw the page change since the last chip was sent.</param>
+    public static bool ShouldSend(SpeedChipView? view, SpeedChipView? lastSent, bool isLastSentConfirmed, bool isRefreshDue, bool hasPageChanged) =>
+        view != lastSent || (isRefreshDue && !isLastSentConfirmed) || (hasPageChanged && view is not null);
 
     /// <summary>
     /// Puts the chip on the button for the view's level on the given page, or takes it off when there is no view or
@@ -57,10 +61,16 @@ public static class SpeedChip
     /// one first of five.
     /// </summary>
     /// <param name="page">The page showing the speed buttons. The chip is taken off every other page.</param>
+    /// <remarks>
+    /// With no view the chip is taken off every page, answering "ok" even with no HUD page open, so a removal sent
+    /// from a menu is confirmed rather than sent again on every refresh.
+    /// </remarks>
     public static string Script(SpeedChipView? view, HudPage page = HudPage.Home)
     {
-        var level = view?.Level ?? PauseToggle.Paused;
-        var label = PauseBadge.Quote(PageClock.Sanitize(view?.Label ?? ""));
+        if (view is not { } shown) return Removal;
+
+        var level = shown.Level;
+        var label = PauseBadge.Quote(PageClock.Sanitize(shown.Label));
 
         return "(function(){try{" + HudPages.RemoveFromFrames(ElementId, keepOn: page) + HudPages.FindFrame(page) +
                $"var d=w.document,c=d.getElementById('{ElementId}'),t={label},L={level},a=d.querySelector('.speed-controls'),b=null;" +

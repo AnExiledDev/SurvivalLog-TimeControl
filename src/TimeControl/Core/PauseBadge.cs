@@ -29,6 +29,8 @@ public static class PauseBadge
 
     private const string TopCentre = "position:fixed;top:12px;left:50%;right:auto;bottom:auto;transform:translateX(-50%);z-index:9999;" + SeeThrough;
 
+    private static readonly string Removal = "(function(){try{" + HudPages.RemoveFromFrames(ElementId) + "return 'ok';}catch(e){return 'error: '+e;}})()";
+
     /// <summary>
     /// What the badge says now; empty hides it. Only a pause still holding the game gets one, and the idle pause and
     /// an alert pause name themselves because a pause the player did not make looks like a bug; any other pause keeps
@@ -73,17 +75,24 @@ public static class PauseBadge
     };
 
     /// <summary>
-    /// A change goes out at once, so the badge leaves the moment time runs. A shown badge is also sent again on every
-    /// page refresh, which puts it back after the page reloads or the speed buttons are redrawn. A removal is sent
-    /// again on each refresh until the page confirms it, so a lost one cannot leave a stale badge up.
+    /// A change goes out at once, so the badge leaves the moment time runs. A shown badge is sent again once the page
+    /// changed under it, which puts it back after the page reloads or the speed buttons are redrawn; while nothing
+    /// changes, nothing is sent. A text the page has not confirmed is sent again on each refresh until it does, so a
+    /// lost one cannot leave a stale badge up or keep a new one off.
     /// </summary>
     /// <param name="isLastSentConfirmed">The page answered "ok" to the last text sent.</param>
-    public static bool ShouldSend(string text, string lastSent, bool isLastSentConfirmed, bool isRefreshDue) =>
-        text != lastSent || (isRefreshDue && (text.Length > 0 || !isLastSentConfirmed));
+    /// <param name="hasPageChanged">The page watch saw the page change since the last text was sent.</param>
+    public static bool ShouldSend(string text, string lastSent, bool isLastSentConfirmed, bool isRefreshDue, bool hasPageChanged) =>
+        text != lastSent || (isRefreshDue && !isLastSentConfirmed) || (hasPageChanged && text.Length > 0);
 
     /// <param name="page">The page the badge goes on: the one showing the speed buttons. It is taken off every other page.</param>
-    public static string Script(string text, HudPage page = HudPage.Home) =>
-        "(function(){try{" + HudPages.RemoveFromFrames(ElementId, keepOn: page) + HudPages.FindFrame(page) +
+    /// <remarks>
+    /// An empty text takes the badge off every page and answers "ok" even with no HUD page open, so a removal sent
+    /// from a menu is confirmed rather than sent again on every refresh.
+    /// </remarks>
+    public static string Script(string text, HudPage page = HudPage.Home) => text.Length == 0
+        ? Removal
+        : "(function(){try{" + HudPages.RemoveFromFrames(ElementId, keepOn: page) + HudPages.FindFrame(page) +
         $"var d=w.document,b=d.getElementById('{ElementId}'),t={Quote(text)};" +
         "if(!t.length){if(b&&b.parentNode)b.parentNode.removeChild(b);return 'ok';}" +
         $"if(!b){{b=d.createElement('div');b.id='{ElementId}';b.className='{NativeChipClass}';}}" +

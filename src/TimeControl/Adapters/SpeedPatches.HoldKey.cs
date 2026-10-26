@@ -38,8 +38,11 @@ internal static partial class SpeedPatches
     /// <summary>The game's hold-to-speed-up key is running time now, by the game's own boost or by the hold keys from a pause.</summary>
     public static bool IsHoldingGameKey(GameTimeManager time) => time.IsHoldBoostActive() || IsGameKeyHeldFromPause;
 
+    /// <summary>The key's press and release each ask for a check this frame, so the ticker follows the key at once.</summary>
     private static void RaiseGameHoldTarget(GameTimeManager __instance, bool held, out int __state)
     {
+        ClockTicker.WantCheck();
+
         try
         {
             if (!held) IsGameKeyHeldFromPause = false;

@@ -15,7 +15,7 @@ namespace TimeControl;
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.timecontrol";
-    private const string Version = "0.9.4";
+    private const string Version = "0.9.5";
 
     public override void Load()
     {
@@ -130,6 +130,7 @@ public sealed class Plugin : BasePlugin
         GameClock.Log = log.Write;
         ClockTicker.LogFileOnly = log.WriteFileOnly;
         ClockTicker.Page = new PageClockLink(log.Write);
+        ClockTicker.Watch = new PageWatcher(log.Write);
         ClockTicker.IsChinese = GameLanguage.IsChinese;
         AddComponent<ClockTicker>();
     }

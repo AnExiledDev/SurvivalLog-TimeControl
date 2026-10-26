@@ -209,18 +209,19 @@ public sealed partial class ClockTicker
     }
 
     /// <summary>
-    /// The wheel follows every check, so a turn is taken within one; the notes under the clock go at the page pace,
-    /// and only at home.
+    /// The wheel switches on or off within a check and has its turns taken at the poll pace; the notes under the clock
+    /// are worked out at the page pace, and only at home.
     /// </summary>
-    private void SyncKeysPage(GameTimeManager time, GameTimer timer, float now)
+    private void SyncKeysPage(GameTimeManager time, GameTimer timer, float now, bool isPollDue)
     {
         var keys = SpeedPatches.KeySettings;
+        var generation = Watch?.Generation ?? 0;
 
-        SpeedKeysPage?.SyncWheel(keys.IsWheelOn);
+        SpeedKeysPage?.SyncWheel(keys.IsWheelOn, isPollDue, generation);
 
         if (!TakeKeysPageRefresh(now)) return;
 
-        var isChinese = IsChinese();
+        var isChinese = _isChinese;
         var orderFinish = "";
         var countdowns = "";
 
@@ -231,8 +232,8 @@ public sealed partial class ClockTicker
             countdowns = CountdownText(keys.Countdowns, clock, isChinese);
         }
 
-        SpeedKeysPage?.SyncOrderFinish(orderFinish, isRefreshDue: true);
-        SpeedKeysPage?.SyncCountdown(countdowns, isRefreshDue: true);
+        SpeedKeysPage?.SyncOrderFinish(orderFinish, isRefreshDue: true, generation);
+        SpeedKeysPage?.SyncCountdown(countdowns, isRefreshDue: true, generation);
     }
 
     private static string CountdownText(CountdownSettings settings, long clock, bool isChinese)
@@ -246,14 +247,16 @@ public sealed partial class ClockTicker
     }
 
     /// <summary>Takes the wheel and the notes off the page, sending a removal the page never confirmed again at the page pace.</summary>
-    private void HideKeysPage(float now)
+    private void HideKeysPage(float now, bool isRefreshDue)
     {
-        SpeedKeysPage?.SyncWheel(false);
+        var generation = Watch?.Generation ?? 0;
+
+        SpeedKeysPage?.SyncWheel(false, isPollDue: isRefreshDue, generation);
 
         if (!TakeKeysPageRefresh(now)) return;
 
-        SpeedKeysPage?.SyncOrderFinish("", isRefreshDue: true);
-        SpeedKeysPage?.SyncCountdown("", isRefreshDue: true);
+        SpeedKeysPage?.SyncOrderFinish("", isRefreshDue: true, generation);
+        SpeedKeysPage?.SyncCountdown("", isRefreshDue: true, generation);
     }
 
     private bool TakeKeysPageRefresh(float now)

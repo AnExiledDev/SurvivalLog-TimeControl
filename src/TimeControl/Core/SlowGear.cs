@@ -75,5 +75,22 @@ public static class SlowGear
         };
     }
 
-    public static string Label(float speed) => speed.ToString("0.##", CultureInfo.InvariantCulture) + "x";
+    /// <summary>
+    /// The speed as the buttons and the chip show it. The last one is kept, so a speed held for a while is written out
+    /// once rather than on every check; the kept pair is swapped whole, so a read from another thread never mixes two.
+    /// </summary>
+    public static string Label(float speed)
+    {
+        if (_lastLabel is { } last && BitConverter.SingleToInt32Bits(last.Speed) == BitConverter.SingleToInt32Bits(speed)) return last.Text;
+
+        var text = speed.ToString("0.##", CultureInfo.InvariantCulture) + "x";
+
+        _lastLabel = new SpeedLabel(speed, text);
+
+        return text;
+    }
+
+    private static SpeedLabel? _lastLabel;
+
+    private sealed record SpeedLabel(float Speed, string Text);
 }
