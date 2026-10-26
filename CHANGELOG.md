@@ -44,16 +44,16 @@
 ## 0.8.1
 
 - A small chip on the top right corner of the slow or fastest speed button shows the speed the game really runs at while the mod holds a slow speed or a speed above Fastest, such as 0.25x or 6x. It never takes a click.
-- After a game update, a hook that can no longer be placed is logged as an error, so the Mod Manager can mark the mod as maybe needing an update.
+- After a game update, Mod Manager can tell you if this mod may need an update.
 - Made for Survival Log 1.1.19131.
 
 ## 0.8.0
 
-- The Mods screen links this changelog.
-- On the Mods screen, settings that only matter while another setting is on stay hidden until it is.
+- Mod Manager's Mods screen links to this changelog.
+- On the Mods screen, a setting that only matters while another one is on stays hidden until that one is on.
 - Settings changed on the Mod Manager's Mods screen take effect at once, except SlowSpeeds, FastSpeeds, FastForwardSleep, PauseToggleKey, CenterCameraKey and TimeControlOnExpeditions, which take effect at the next game start.
-- The Mods screen shows the mod's name, description, category and links.
-- Exiled's Toolkit 0.4.0 or newer is optional. With it, settings changed on the Mods screen take effect without a restart; without it, at the next game start.
+- Mod Manager's Mods screen shows the mod's name, description, category and links.
+- Exiled's Toolkit 0.4.0 or newer is optional. With it, settings you change on the Mods screen take effect right away. Without it, they take effect the next time you start the game.
 
 ## 0.7.0
 
@@ -61,4 +61,8 @@
 
 ## 0.6.3
 
-First public release. A true slow speed, a super speed, a pause while you stand idle or when a wave or emergency starts, fast sleep with a pause on waking, and a pause key that works before the disaster and on expeditions.
+- First release.
+- A true slow speed and a super speed.
+- The game can pause while you stand idle, or when a wave or emergency starts.
+- Fast sleep, with a pause on waking.
+- A pause key that works before the disaster and on expeditions.
