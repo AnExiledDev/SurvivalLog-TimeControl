@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.6
+
+- Fixed: waking your character with `WakeAtHour` or `WakeOnAlert` cost you Vim and Vigor. Your character now wakes the way the game wakes them after a full sleep, and gets Vim and Vigor if they slept at least 3 hours.
+- Made for Survival Log 1.1.19611.
+
 ## 0.9.5
 
 - Smoother play: Time Control now does far less work each frame, so it no longer causes small stutters.

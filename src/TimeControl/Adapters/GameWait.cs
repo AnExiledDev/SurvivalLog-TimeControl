@@ -8,7 +8,8 @@ namespace TimeControl.Adapters;
 
 /// <summary>
 /// What waits, alarms, sleep until and start paused read off the game, and the one thing they ask of it besides a
-/// speed change: waking the character. One hook marks the game entering a save. Every read is read only once the game
+/// speed change: waking the character. One hook marks the game entering a save; another holds back the buff of a
+/// sleep woken before its minimum hours. Every read is read only once the game
 /// has created the world, and one that fails counts as nothing to read, logged at most a few times.
 /// </summary>
 internal static class GameWait
@@ -32,6 +33,11 @@ internal static class GameWait
     private static int _brewScanAt;
     private static long? _brewScanEarliest;
     private static int _failures;
+    private static bool _isBuffHookTried;
+    private static bool _isBuffHooked;
+
+    /// <summary>The sleep WakeLeadingRole ended before the minimum hours, whose Vim and Vigor is held back.</summary>
+    internal static readonly BuffHold BuffHeld = new();
 
     /// <summary>
     /// Watches the game entering a save: loading one, starting a new game, and the game's own moves to the next
@@ -142,27 +148,72 @@ internal static class GameWait
         }
     }
 
-    /// <summary>Wakes the character the way the player cancelling the sleep does.</summary>
-    /// <returns>Whether the wake was asked for.</returns>
-    public static bool WakeLeadingRole()
+    /// <summary>
+    /// Wakes the character the way the game ends a finished sleep, never as a cancel: the game's own
+    /// ActionManager.CompleteCurrentAction, which closes the sleep with no break, so the game gives what a finished sleep
+    /// gives. A sleep shorter than the minimum hours of the game's own early wake has its Vim and Vigor held back.
+    /// With nothing to end the game's way, nothing is done; the mod never falls back to a cancel.
+    /// </summary>
+    /// <returns>What happened, for the log; null when the character could not be woken.</returns>
+    public static string? WakeLeadingRole()
     {
         try
         {
             var world = LiveWorld();
             var actions = world?._ActionManager;
+            var trees = world?._BTEffectManager;
             var role = world?._AgentManager?.GetLeadingRole();
 
-            if (actions == null || role == null) return false;
+            if (actions == null || trees == null || role == null) return null;
 
-            actions.BreakCurrentParent(role.InstanceId, true);
+            var run = actions.GetActionSource(role.InstanceId)?.CurrentTaskBt ?? 0;
+            var sleep = run > 0 ? trees.GetBtArgsById(run) : null;
 
-            return true;
+            if (sleep == null) return null;
+
+            var slept = sleep.MaxLifeDuration - sleep.CurLifeDuration;
+            var needed = Toolset.GetGameTime_Float(SleepRest.MinHours * ClockHour.Hour);
+            var earnsBuff = SleepRest.EarnsBuff(slept, needed);
+            var hours = needed > 0f ? slept / needed * SleepRest.MinHours : 0f;
+
+            if (earnsBuff) BuffHeld.Clear();
+            else BuffHeld.Hold(sleep.InstanceId);
+
+            actions.CompleteCurrentAction(role.InstanceId);
+
+            return earnsBuff
+                ? $"ended the sleep after {hours:0.0} h, Vim and Vigor given"
+                : _isBuffHooked
+                    ? $"ended the sleep after {hours:0.0} h, under {SleepRest.MinHours:0} h so Vim and Vigor held back"
+                    : $"ended the sleep after {hours:0.0} h, under {SleepRest.MinHours:0} h, but Vim and Vigor could not be held back";
         }
         catch (Exception ex)
         {
             Fail("waking the character", ex);
 
-            return false;
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Watches the game granting a buff from a sleep or another action (AE_AddAttackerBuff.Run), so the one sleep
+    /// WakeLeadingRole ended short goes without Vim and Vigor. Hooked once.
+    /// </summary>
+    public static void HookSleepBuff(Harmony harmony, Action<string> log)
+    {
+        if (_isBuffHookTried) return;
+
+        _isBuffHookTried = true;
+
+        try
+        {
+            harmony.Patch(AccessTools.Method(typeof(AE_AddAttackerBuff), nameof(AE_AddAttackerBuff.Run)), prefix: new HarmonyMethod(typeof(GameWait), nameof(BeforeAddBuff)));
+            _isBuffHooked = true;
+            log("sleep buff watched");
+        }
+        catch (Exception ex)
+        {
+            log($"could not hook AE_AddAttackerBuff.Run, a sleep woken early keeps Vim and Vigor: {ex.Message}");
         }
     }
 
@@ -248,6 +299,28 @@ internal static class GameWait
         {
             _worldAtEntry = IntPtr.Zero;
             Fail("marking a save being entered", ex);
+        }
+    }
+
+    /// <summary>Skips the buff of the one sleep held back; every other buff, and every other sleep, goes as usual.</summary>
+    private static bool BeforeAddBuff(EffectBtArgs args, ref bool __result)
+    {
+        if (!BuffHeld.IsAny) return true;
+
+        try
+        {
+            if (args == null || !BuffHeld.Take(args.InstanceId)) return true;
+
+            __result = true;
+
+            return false;
+        }
+        catch (Exception ex)
+        {
+            BuffHeld.Clear();
+            Fail("holding back the sleep buff", ex);
+
+            return true;
         }
     }
 

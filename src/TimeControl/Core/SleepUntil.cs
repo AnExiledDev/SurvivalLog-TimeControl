@@ -30,7 +30,7 @@ public enum SleepUntilCommand
 {
     None,
 
-    /// <summary>Wake the character, the way the player cancelling the sleep does.</summary>
+    /// <summary>Wake the character the way the game ends a finished sleep, never as a cancel.</summary>
     Wake,
 
     /// <summary>The character woke for an alert and the game runs: pause it, as the alert would have.</summary>
@@ -40,8 +40,9 @@ public enum SleepUntilCommand
 public readonly record struct SleepUntilStep(SleepUntil State, SleepUntilCommand Command);
 
 /// <summary>
-/// Sleep until: a real sleep ends at a set time of day, or when an alert pauses the game. Waking goes the way the
-/// player's own cancel does, so the game's wake, the sleep fast-forward and the pause on waking all follow as usual.
+/// Sleep until: a real sleep ends at a set time of day, or when an alert pauses the game. Waking ends the sleep the way
+/// the game ends a finished one, never as a cancel, so the game's wake, the sleep fast-forward and the pause on waking
+/// all follow as usual, and Vim and Vigor comes once the minimum hours are slept (SleepRest).
 /// Naps are never cut short. The game decides when a sleep may end on its own, so a wake time can only end it early.
 /// </summary>
 public abstract record SleepUntil

@@ -17,7 +17,7 @@ Survival Log's slow button only slows the game once you stand idle, the clock ke
 - **Hold to speed up or slow down**: hold `X` for the fastest speed or `K` for the slowest slow speed. Let go and the speed you had comes back, pause included. Keys `5` to `9` can each hold a speed of your own (`SpeedKeys5To9`), and the mouse wheel over the speed buttons steps through every speed.
 - **Wait until** (off by default, `WaitButton`): a clock button beside the speed buttons runs the game at top speed until morning, your alarm time, a brew being done, the queue being done or a few hours on, then pauses. The same menu sets a one-time "Pause in" alarm.
 - **An alarm clock**: `AlarmTime` pauses the game at a time of day, every day or once.
-- **Sleep until**: `WakeAtHour` wakes your character from sleep at a time you pick, and `WakeOnAlert` wakes them when an alert pauses the game. Naps are never cut short.
+- **Sleep until**: `WakeAtHour` wakes your character from sleep at a time you pick, and `WakeOnAlert` wakes them when an alert pauses the game. Naps are never cut short. If your character slept at least 3 hours, they still get Vim and Vigor when they wake.
 - **Start paused**: `StartPaused` holds the game paused when a save loads.
 - **Clock notes**: at home, under the clock, the time your current order is done and how long until night and the next wave.
 - **A pause key**: `Space` pauses, and pressing it again resumes the speed you had. It works at home, in the countdown before the disaster and on expeditions. The game had `Space` on centering the camera on your character, so that moves to `G`.
@@ -121,7 +121,7 @@ Settings live in `BepInEx\config\com.dev.survivallog.timecontrol.cfg`, created t
 
 Built against BepInEx `6.0.0-be.788`.
 
-Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.9.5 started`. It says whether sleep fast-forward and expeditions are on, and the line after it lists the other features; that line is written again when a setting changes on the Mods screen. The next lines say which game hooks are in place and what the game's own pause key is; a line starting `could not hook` names a feature that will not work.
+Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.9.6 started`. It says whether sleep fast-forward and expeditions are on, and the line after it lists the other features; that line is written again when a setting changes on the Mods screen. The next lines say which game hooks are in place and what the game's own pause key is; a line starting `could not hook` names a feature that will not work.
 
 The same lines, plus every idle pause, alert pause, sleep and wake, are in `BepInEx\time-control.log`, which survives restarts and trims itself past 1 MB.
 

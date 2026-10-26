@@ -41,8 +41,8 @@ If you change the speed yourself while the game is away-paused or a menu is open
 | --- | --- | --- |
 | `FastForwardSleep` | `true` | Run sleep and naps at the fastest `FastSpeeds` speed (or at Fastest if `FastSpeeds` is empty), instead of the game's own sleep speed-up. A speed you pick while asleep is kept until you wake. `false` keeps the game's own sleep speed-up. |
 | `PauseOnWake` | `true` | Pause the game when your character wakes from sleep or a nap, however it ends. Your next order or the pause key brings back the speed you had before the sleep. |
-| `WakeAtHour` | empty | A time of day on a 24-hour clock, such as `6` or `6:30`, at which your character wakes from sleep if the game has not woken them yet. It only ends a sleep early, never makes it longer. Naps are never cut short. Empty lets the game decide. |
-| `WakeOnAlert` | `false` | Wake your character from sleep when an alert switched on under Alerts pauses the game, and keep the game paused once they are up. `false` lets a sleeping character sleep through alerts. Naps are never cut short. |
+| `WakeAtHour` | empty | A time of day on a 24-hour clock, such as `6` or `6:30`, at which your character wakes from sleep if the game has not woken them yet. It only ends a sleep early, never makes it longer. Naps are never cut short. Empty lets the game decide. If your character slept at least 3 hours, they still get Vim and Vigor when they wake. |
+| `WakeOnAlert` | `false` | Wake your character from sleep when an alert switched on under Alerts pauses the game, and keep the game paused once they are up. `false` lets a sleeping character sleep through alerts. Naps are never cut short. If your character slept at least 3 hours, they still get Vim and Vigor when they wake. |
 
 A time that cannot be read is logged once and counts as empty.
 

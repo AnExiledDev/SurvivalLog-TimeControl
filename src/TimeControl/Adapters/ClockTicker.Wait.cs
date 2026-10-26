@@ -231,10 +231,10 @@ public sealed partial class ClockTicker
         switch (step.Command)
         {
             case SleepUntilCommand.Wake:
-                var isWoken = GameWait.WakeLeadingRole();
+                var woke = GameWait.WakeLeadingRole();
 
-                LogFileOnly(isWoken
-                    ? $"sleep until: {(_sleepUntil is SleepUntil.Woken { ByAlert: true } ? "an alert paused the game" : "the wake time came")}, woke the character"
+                LogFileOnly(woke != null
+                    ? $"sleep until: {(_sleepUntil is SleepUntil.Woken { ByAlert: true } ? "an alert paused the game" : "the wake time came")}, {woke}"
                     : "sleep until: could not wake the character");
                 break;
             case SleepUntilCommand.Pause:
