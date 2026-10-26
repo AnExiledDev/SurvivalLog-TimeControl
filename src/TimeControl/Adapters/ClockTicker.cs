@@ -251,7 +251,7 @@ public sealed partial class ClockTicker : MonoBehaviour
 
         if (!alerts.IsAnyOn) return;
 
-        var canPause = AlertPause.CanPause(timer, (IsFastForwarding(time) || isAsleep) && !CanAlertWakeSleep(isAsleep), isLeavingExpedition, time.IsHoldBoostActive());
+        var canPause = AlertPause.CanPause(timer, (IsFastForwarding(time) || isAsleep) && !CanAlertWakeSleep(isAsleep), isLeavingExpedition, SpeedPatches.IsHoldingGameKey(time));
         var isWaveActive = alerts.IsWaveOn && AlertSignals.IsWaveActive();
         var isBusy = alerts.IsQueueEmptyOn && time.IsLeadingRoleBusy();
         var seen = new AlertSnapshot(canPause, time.IsPausedScale(), isWaveActive, emergenciesFired, dronesLanded, isBusy, elapsed, wasChangedByHand, moreRaised);
@@ -281,7 +281,7 @@ public sealed partial class ClockTicker : MonoBehaviour
     /// </summary>
     private void UpdateIdlePause(GameTimeManager time, bool isPaused, GameTimer timer, float elapsed, bool isAsleep, bool isLeavingExpedition)
     {
-        var canFreeze = IdlePause.CanFreeze(Settings.IsIdleFreezeOn, timer, IsFastForwarding(time) || isAsleep, time.IsHoldBoostActive());
+        var canFreeze = IdlePause.CanFreeze(Settings.IsIdleFreezeOn, timer, IsFastForwarding(time) || isAsleep, SpeedPatches.IsHoldingGameKey(time));
         var isBusy = ((canFreeze && !isPaused) || _idle is not IdlePause.Watching) && IsWorking(time);
         var seen = new IdleSnapshot(canFreeze, isBusy, isPaused, elapsed, SpeedPatches.LastRunningLevel, isLeavingExpedition);
         var before = _idle;
@@ -386,7 +386,8 @@ public sealed partial class ClockTicker : MonoBehaviour
 
         Page?.SyncSpeedButtons(buttons, isRefreshDue);
         Page?.SyncBadge(badge, buttons?.Page ?? HudPage.Home, isRefreshDue);
-        Page?.SyncSpeedChip(SpeedChip.View(isPaused, SpeedPatches.HeldSlowSpeed(time), SpeedPatches.HeldFastSpeed(time)), buttons?.Page ?? HudPage.Home, isRefreshDue);
+        var heldFast = SpeedChip.HoldKeyFast(SpeedPatches.IsHoldingGameKey(time), time.ChapterSpeedUp2, SpeedPatches.HoldKeyMultiple) ?? SpeedPatches.HeldFastSpeed(time);
+        Page?.SyncSpeedChip(SpeedChip.View(isPaused, SpeedPatches.HeldSlowSpeed(time), heldFast), buttons?.Page ?? HudPage.Home, isRefreshDue);
         Page?.SyncPauseOverlay(Settings.PauseOverlayCss, isRefreshDue);
 
         if (isRefreshDue) Page?.Sync(slowLabel);

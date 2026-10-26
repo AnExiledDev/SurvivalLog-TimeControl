@@ -38,14 +38,15 @@ public sealed partial class ClockTicker
 
         var isFastDown = SpeedPatches.IsHoldKeyDown(HoldKind.Fast, now);
         var isSlowDown = IsSlowHoldDown(now);
+        var isGameKeyDown = SpeedPatches.IsGameKeyHeldFromPause;
 
-        if (_hold is HoldKeys.Idle && !isFastDown && !isSlowDown && customPressed == null && wheelSteps == 0) return;
+        if (_hold is HoldKeys.Idle && !isFastDown && !isSlowDown && !isGameKeyDown && customPressed == null && wheelSteps == 0) return;
 
         var canChange = GameTimers.IsWaitedOut(timer) && !isLeavingExpedition && !IsFastForwarding(time) && !time.IsHoldBoostActive() &&
                         !GameClock.IsLeadingRoleAsleep();
 
         UpdateHold(time, new HoldSnapshot(isFastDown, isSlowDown, canChange, wasChangedByOthers,
-            new HeldFrom(isPaused, SpeedPatches.IsPausedByKey, SpeedPatches.CurrentTarget(time, isPaused, _custom))));
+            new HeldFrom(isPaused, SpeedPatches.IsPausedByKey, SpeedPatches.CurrentTarget(time, isPaused, _custom)), isGameKeyDown));
 
         if (_hold is HoldKeys.Holding)
         {
@@ -116,7 +117,14 @@ public sealed partial class ClockTicker
 
     private void StartHold(GameTimeManager time, HoldKind kind)
     {
-        if ((kind == HoldKind.Fast ? SpeedPatches.FastestTarget : SpeedPatches.SlowestTarget) is not { } target) return;
+        var wanted = kind switch
+        {
+            HoldKind.Fast => SpeedPatches.FastestTarget,
+            HoldKind.GameKey => SpeedPatches.GameKeyTarget(time),
+            _ => SpeedPatches.SlowestTarget,
+        };
+
+        if (wanted is not { } target) return;
 
         SpeedPatches.ApplyTarget(time, target);
         _custom = CustomHold.Start;

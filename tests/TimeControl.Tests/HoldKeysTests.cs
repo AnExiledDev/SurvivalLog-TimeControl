@@ -10,8 +10,8 @@ public class HoldKeysTests
     private static readonly HeldFrom PausedByKey = new(true, true, new SpeedTarget.Custom(1.5f));
     private static readonly HeldFrom RunningFast = new(false, false, new SpeedTarget.Level(new GameSpeed(PauseToggle.Triple, 1)));
 
-    private static HoldSnapshot Seen(bool fast = false, bool slow = false, bool canHold = true, bool changed = false, HeldFrom? now = null) =>
-        new(fast, slow, canHold, changed, now ?? RunningNormal);
+    private static HoldSnapshot Seen(bool fast = false, bool slow = false, bool canHold = true, bool changed = false, HeldFrom? now = null, bool gameKey = false) =>
+        new(fast, slow, canHold, changed, now ?? RunningNormal, gameKey);
 
     private static HoldStep Run(HoldKeys state, params HoldSnapshot[] checks)
     {
@@ -38,6 +38,25 @@ public class HoldKeysTests
 
         Assert.Equal(new HoldCommand.Release(PausedByKey), step.Command);
         Assert.Equal(HoldKeys.Start, step.State);
+    }
+
+    [Fact]
+    public void Holding_the_games_speed_up_key_while_paused_runs_time_and_letting_go_pauses_again()
+    {
+        var started = HoldKeys.Next(HoldKeys.Start, Seen(gameKey: true, now: PausedByKey));
+
+        Assert.Equal(new HoldCommand.Start(HoldKind.GameKey), started.Command);
+
+        var released = Run(started.State, Seen(gameKey: true, now: RunningFast), Seen(now: RunningFast));
+
+        Assert.Equal(new HoldCommand.Release(PausedByKey), released.Command);
+        Assert.Equal(HoldKeys.Start, released.State);
+    }
+
+    [Fact]
+    public void The_mods_own_fast_key_wins_over_the_games_speed_up_key()
+    {
+        Assert.Equal(new HoldCommand.Start(HoldKind.Fast), HoldKeys.Next(HoldKeys.Start, Seen(fast: true, gameKey: true)).Command);
     }
 
     [Fact]

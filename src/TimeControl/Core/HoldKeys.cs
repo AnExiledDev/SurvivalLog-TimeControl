@@ -9,6 +9,12 @@ public enum HoldKind
 
     /// <summary>The slowest of the slow button's speeds.</summary>
     Slow,
+
+    /// <summary>
+    /// The game's own hold-to-speed-up key, pressed while paused: the game will not speed up a paused clock, so the mod
+    /// runs it at that key's speed and pauses again on letting go.
+    /// </summary>
+    GameKey,
 }
 
 /// <summary>Where the game was when a hold started, which letting go puts back.</summary>
@@ -26,7 +32,8 @@ public readonly record struct HeldFrom(bool WasPaused, bool WasPausedByKey, Spee
 /// </param>
 /// <param name="WasChangedByOthers">Anything but the speed keys changed the game's speed since the last check.</param>
 /// <param name="Now">Where the game is now, kept if a hold starts.</param>
-public readonly record struct HoldSnapshot(bool IsFastDown, bool IsSlowDown, bool CanHold, bool WasChangedByOthers, HeldFrom Now);
+/// <param name="IsGameKeyDown">The game's hold-to-speed-up key is down, and was pressed while paused.</param>
+public readonly record struct HoldSnapshot(bool IsFastDown, bool IsSlowDown, bool CanHold, bool WasChangedByOthers, HeldFrom Now, bool IsGameKeyDown = false);
 
 public abstract record HoldCommand
 {
@@ -103,10 +110,12 @@ public abstract record HoldKeys
     {
         if (seen.IsFastDown) return HoldKind.Fast;
 
+        if (seen.IsGameKeyDown) return HoldKind.GameKey;
+
         return seen.IsSlowDown ? HoldKind.Slow : null;
     }
 
-    private static bool IsAnyDown(HoldSnapshot seen) => seen.IsFastDown || seen.IsSlowDown;
+    private static bool IsAnyDown(HoldSnapshot seen) => seen.IsFastDown || seen.IsSlowDown || seen.IsGameKeyDown;
 
     private static HoldStep Stay(HoldKeys state) => new(state, HoldCommand.Nothing);
 }

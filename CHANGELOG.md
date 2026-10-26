@@ -6,6 +6,8 @@
 - `PauseAtWorkbench` is now on by default, so the workbench still opens paused, now with the speed under your control. A saved setting keeps its value.
 - A craft at the workbench now counts as work: with a menu pause on, starting one runs the game until it is done, then the game pauses again, and the next craft of a batch or queue starting within a second keeps it running. Idle freeze no longer pauses the game while a workbench is crafting.
 - Idle freeze, alert pauses and the queue slow-down no longer kick in while you hold the game's hold-to-speed-up key.
+- Holding the game's hold-to-speed-up key while paused now runs time, and letting go pauses again.
+- With `GameHoldKeySpeed` above 1, the fastest speed button shows the speed you run at while the key is held.
 - New setting `GameHoldKeySpeed` sets how fast the game's own hold-to-speed-up key (`Shift` by default) runs, as a multiple of Fastest. The default, 1, keeps the game's own speed.
 - Made for Survival Log 1.1.19611.
 

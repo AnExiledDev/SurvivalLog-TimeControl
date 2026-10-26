@@ -22,8 +22,35 @@ internal static partial class SpeedPatches
     /// ours, with the game's own checks (not paused, no sleep speed-up, not on a frozen timer) still deciding; the
     /// postfix puts the number back and sets the exact speed.
     /// </summary>
+    /// <summary>
+    /// Set while the game's hold-to-speed-up key is held after being pressed with the game paused. The game ignores
+    /// that press, so the hold keys run time at the key's speed instead. The game sends one event on press and one on
+    /// release, so this follows the key exactly.
+    /// </summary>
+    public static bool IsGameKeyHeldFromPause { get; private set; }
+
+    /// <summary>What the game's hold-to-speed-up key runs at: its multiple of the game's high speed, or that high speed.</summary>
+    public static SpeedTarget GameKeyTarget(GameTimeManager time) =>
+        FastGear.HoldKeyScale(time.ChapterSpeedUp2, HoldKeyMultiple) is { } scale
+            ? new SpeedTarget.Custom(scale)
+            : new SpeedTarget.Level(new GameSpeed(PauseToggle.Triple, FastGear.GamesOwn));
+
+    /// <summary>The game's hold-to-speed-up key is running time now, by the game's own boost or by the hold keys from a pause.</summary>
+    public static bool IsHoldingGameKey(GameTimeManager time) => time.IsHoldBoostActive() || IsGameKeyHeldFromPause;
+
     private static void RaiseGameHoldTarget(GameTimeManager __instance, bool held, out int __state)
     {
+        try
+        {
+            if (!held) IsGameKeyHeldFromPause = false;
+            else if (GameClock.IsLive(__instance) && __instance.IsPausedScale()) IsGameKeyHeldFromPause = true;
+        }
+        catch (Exception ex)
+        {
+            IsGameKeyHeldFromPause = false;
+            Fail("reading the game's hold-to-speed-up key", ex);
+        }
+
         __state = -1;
 
         if (!held || FastGear.HoldKeyScale(__instance.ChapterSpeedUp2, HoldKeyMultiple) is not { } target) return;

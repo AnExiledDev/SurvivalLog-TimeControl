@@ -37,6 +37,13 @@ public static class SpeedChip
     }
 
     /// <summary>
+    /// The speed the game's hold-to-speed-up key runs at while it is held, for the chip on the fastest button, or null
+    /// when it is not held or runs at the game's own speed.
+    /// </summary>
+    public static float? HoldKeyFast(bool isHoldKeyRunning, float gameFastSpeed, float multiple) =>
+        isHoldKeyRunning ? FastGear.HoldKeyScale(gameFastSpeed, multiple) : null;
+
+    /// <summary>
     /// A change goes out at once; a shown chip is sent again on every refresh, which puts it back after the page
     /// redraws its buttons, and a removal is sent again until the page confirms it.
     /// </summary>

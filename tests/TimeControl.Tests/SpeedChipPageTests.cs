@@ -106,6 +106,22 @@ public class SpeedChipViewTests
     }
 
     [Fact]
+    public void Holding_the_games_speed_up_key_above_its_own_speed_shows_the_speed_on_the_fastest_button()
+    {
+        var fast = SpeedChip.HoldKeyFast(isHoldKeyRunning: true, gameFastSpeed: 3, multiple: 2f);
+
+        Assert.Equal(6f, fast);
+        Assert.Equal(new SpeedChipView(PauseToggle.Triple, "6x"), SpeedChip.View(isPaused: false, heldSlow: null, heldFast: fast));
+    }
+
+    [Fact]
+    public void The_games_speed_up_key_at_its_own_speed_or_let_go_gets_no_chip()
+    {
+        Assert.Null(SpeedChip.HoldKeyFast(isHoldKeyRunning: true, gameFastSpeed: 3, multiple: 1f));
+        Assert.Null(SpeedChip.HoldKeyFast(isHoldKeyRunning: false, gameFastSpeed: 3, multiple: 2f));
+    }
+
+    [Fact]
     public void A_held_slow_speed_shows_on_the_slow_button()
     {
         Assert.Equal(new SpeedChipView(PauseToggle.Slow, "0.25x"), SpeedChip.View(isPaused: false, heldSlow: 0.25f, heldFast: null));
