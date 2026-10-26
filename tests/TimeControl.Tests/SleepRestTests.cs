@@ -33,6 +33,27 @@ public class SleepRestTests
     }
 
     [Fact]
+    public void A_bed_with_a_finish_step_gives_the_buff_after_the_minimum_and_holds_it_back_before()
+    {
+        Assert.Equal(WakeReward.Finished, SleepRest.Plan(earnsBuff: true, hasFinishStep: true, rewardPending: true));
+        Assert.Equal(WakeReward.BuffHeldBack, SleepRest.Plan(earnsBuff: false, hasFinishStep: true, rewardPending: true));
+    }
+
+    /// <summary>The bed that gives its reward on a 6 hour timer instead of a finish step.</summary>
+    [Fact]
+    public void A_bed_with_a_timed_reward_gets_it_once_the_minimum_is_slept()
+    {
+        Assert.Equal(WakeReward.TimedRewardFired, SleepRest.Plan(earnsBuff: true, hasFinishStep: false, rewardPending: true));
+    }
+
+    [Fact]
+    public void A_bed_with_a_timed_reward_gets_nothing_before_the_minimum_or_twice()
+    {
+        Assert.Equal(WakeReward.NothingMore, SleepRest.Plan(earnsBuff: false, hasFinishStep: false, rewardPending: true));
+        Assert.Equal(WakeReward.NothingMore, SleepRest.Plan(earnsBuff: true, hasFinishStep: false, rewardPending: false));
+    }
+
+    [Fact]
     public void Only_the_held_sleep_loses_its_buff_and_only_once()
     {
         var hold = new BuffHold();

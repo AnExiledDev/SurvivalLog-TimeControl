@@ -23,6 +23,12 @@ internal static class GameWait
     /// <summary>Game seconds past a brew's last hour before the wait for it ends, so the game has marked it done.</summary>
     private const int BrewDoneMarginSeconds = 60;
 
+    /// <summary>The game's event for the step it runs when a sleep finishes (BtEffectEventMsg.System_Completed).</summary>
+    private const int FinishStepEvent = 3;
+
+    /// <summary>The game's event for a behaviour tree's first timer (BtEffectEventMsg.Delay_Trigger0).</summary>
+    private const int TimedRewardEvent = 10;
+
     private static Action<string> _log = _ => { };
     private static bool _isEnterHooked;
     private static bool _isEntered;
@@ -169,23 +175,30 @@ internal static class GameWait
             var run = actions.GetActionSource(role.InstanceId)?.CurrentTaskBt ?? 0;
             var sleep = run > 0 ? trees.GetBtArgsById(run) : null;
 
-            if (sleep == null) return null;
+            // The game is already ending this sleep; a second end could run its finish step twice.
+            if (sleep == null || trees.IsBtEnding(run)) return null;
 
             var slept = sleep.MaxLifeDuration - sleep.CurLifeDuration;
             var needed = Toolset.GetGameTime_Float(SleepRest.MinHours * ClockHour.Hour);
-            var earnsBuff = SleepRest.EarnsBuff(slept, needed);
             var hours = needed > 0f ? slept / needed * SleepRest.MinHours : 0f;
+            var plan = SleepRest.Plan(SleepRest.EarnsBuff(slept, needed), HasFinishStep(trees, sleep), IsRewardPending(sleep));
 
-            if (earnsBuff) BuffHeld.Clear();
-            else BuffHeld.Hold(sleep.InstanceId);
+            BuffHeld.Clear();
+
+            if (plan == WakeReward.BuffHeldBack) BuffHeld.Hold(sleep.InstanceId);
+            // Queued ahead of the end the wake queues next, so it runs first, as it would at the 6 hour mark.
+            if (plan == WakeReward.TimedRewardFired) trees.AddCacheEvent(sleep, TimedRewardEvent);
 
             actions.CompleteCurrentAction(role.InstanceId);
 
-            return earnsBuff
-                ? $"ended the sleep after {hours:0.0} h, Vim and Vigor given"
-                : _isBuffHooked
-                    ? $"ended the sleep after {hours:0.0} h, under {SleepRest.MinHours:0} h so Vim and Vigor held back"
-                    : $"ended the sleep after {hours:0.0} h, under {SleepRest.MinHours:0} h, but Vim and Vigor could not be held back";
+            return plan switch
+            {
+                WakeReward.Finished => $"ended the sleep after {hours:0.0} h as a finished sleep",
+                WakeReward.TimedRewardFired => $"ended the sleep after {hours:0.0} h and gave this bed's 6 h reward",
+                WakeReward.NothingMore => $"ended the sleep after {hours:0.0} h, this bed gives nothing more",
+                _ when _isBuffHooked => $"ended the sleep after {hours:0.0} h, under {SleepRest.MinHours:0} h so Vim and Vigor held back",
+                _ => $"ended the sleep after {hours:0.0} h, under {SleepRest.MinHours:0} h, but Vim and Vigor could not be held back",
+            };
         }
         catch (Exception ex)
         {
@@ -293,6 +306,7 @@ internal static class GameWait
         try
         {
             _isEntered = true;
+            BuffHeld.Clear();
             _worldAtEntry = GameClock.Find()?.Pointer ?? IntPtr.Zero;
         }
         catch (Exception ex)
@@ -300,6 +314,29 @@ internal static class GameWait
             _worldAtEntry = IntPtr.Zero;
             Fail("marking a save being entered", ex);
         }
+    }
+
+    /// <summary>Whether the sleep has the step the game runs when a sleep finishes; unknown counts as having it.</summary>
+    private static bool HasFinishStep(BTEffectManager trees, EffectBtArgs sleep)
+    {
+        var name = sleep.ConfigName;
+
+        if (name == null || trees.ConfigDict == null || !trees.ConfigDict.TryGetValue(name, out var config)) return true;
+
+        return config?.SearchEventMap?.ContainsKey(FinishStepEvent) != false;
+    }
+
+    /// <summary>Whether the sleep's first timer, the one that gives the 6 hour reward, is still waiting to fire.</summary>
+    private static bool IsRewardPending(EffectBtArgs sleep)
+    {
+        var timers = sleep.DelayArgsList;
+
+        if (timers == null) return false;
+
+        for (var i = 0; i < timers.Count; i++)
+            if (timers[i]?.EventMsg == TimedRewardEvent) return true;
+
+        return false;
     }
 
     /// <summary>Skips the buff of the one sleep held back; every other buff, and every other sleep, goes as usual.</summary>
