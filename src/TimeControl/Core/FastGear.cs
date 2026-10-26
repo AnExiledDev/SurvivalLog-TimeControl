@@ -114,5 +114,23 @@ public static class FastGear
         return Math.Min(gameFastSpeed * multiple, Math.Max(gameFastSpeed, FastestScale));
     }
 
+    /// <summary>The game's hold-to-speed-up key at its own speed: the game's high speed, with nothing on top.</summary>
+    public const float GamesOwnHold = 1f;
+
+    /// <summary>An unreadable setting keeps the game's own hold speed; the rest is kept between it and the largest multiple.</summary>
+    public static float ClampHoldMultiple(float multiple) =>
+        float.IsFinite(multiple) ? Math.Clamp(multiple, GamesOwnHold, MostMultiple) : GamesOwnHold;
+
+    /// <summary>
+    /// The scale the game's hold-to-speed-up key runs at: its multiple of the game's high speed, capped like a fast
+    /// gear. Null leaves the game's own speed-up alone, at a multiple of 1 or before the game's high speed is known.
+    /// </summary>
+    public static float? HoldKeyScale(float gameFastSpeed, float multiple)
+    {
+        var clamped = ClampHoldMultiple(multiple);
+
+        return clamped <= GamesOwnHold ? null : HeldScale(gameFastSpeed, clamped);
+    }
+
     public static string Label(float multiple) => SlowGear.Label(multiple);
 }

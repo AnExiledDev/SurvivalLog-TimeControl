@@ -22,6 +22,9 @@ internal static class KeysConfig
         var customSpeedsText = config.Bind("Keys", "SpeedKeys5To9", "",
             "Custom speeds for the keys 5, 6, 7, 8 and 9, separated by commas in that order, each from 0.05 to 40 (for example 0.75,1.5,6). Leave a place empty to skip that key. Pressing the key runs the game at that speed, and also resumes a pause. The speed is kept until you pick another, and pausing and resuming brings it back; any other speed change, sleep included, lets it go. Works where HoldFastKey does. The game keeps 5 to 9 for its quick actions, which it has switched off for now; if a game update turns them back on, a key set here does both. Empty turns them all off.\n" +
             "数字键 5、6、7、8、9 的自定义速度，按这个顺序用逗号分隔，每个在 0.05 到 40 之间（例如 0.75,1.5,6）。某个位置留空则跳过对应的键。按下该键时游戏以这个速度运行，暂停中按下也会恢复运行。这个速度会一直保持到你选别的速度，暂停后再恢复也会回到这个速度；任何其他速度变化（包括睡觉）都会取消它。生效范围与 HoldFastKey 相同。游戏把 5 到 9 留给「常用行为」，目前游戏已关闭这个功能；如果游戏更新后重新启用，这里设置的键会同时触发两者。留空则全部关闭。");
+        var gameHoldSpeed = config.Bind("Keys", "GameHoldKeySpeed", FastGear.GamesOwnHold,
+            "How fast the game runs while you hold the game's own hold-to-speed-up key (Shift by default), as a multiple of the game's Fastest speed, from 1 to 10. 1 keeps the game's own speed-up, which runs at Fastest. Holding the key does nothing while the game already runs at that speed or faster. Speeds are capped at 40x.\n" +
+            "按住游戏自带的「按住加速」键（默认 Shift）时的速度，按游戏极速的倍数填写，在 1 到 10 之间。1 保持游戏原本的加速，即极速。游戏已经以这个速度或更快运行时，按住无效。速度上限为 40 倍。");
         var isWheelOn = config.Bind("Keys", "SpeedWheel", true,
             "Turn the mouse wheel over the speed buttons to step through every speed, slowest to fastest: the SlowSpeeds speeds, the game's own speeds, the FastSpeeds speeds and the SpeedKeys5To9 speeds. Wheel up is faster. Turning it over the buttons does not zoom the camera. Does nothing while paused.\n" +
             "在速度按钮上滚动鼠标滚轮，可以按从慢到快的顺序逐档切换所有速度：SlowSpeeds 的速度、游戏自带的速度、FastSpeeds 的速度和 SpeedKeys5To9 的速度。向上滚动加快。在按钮上滚动时镜头不会缩放。暂停时无效。");
@@ -37,6 +40,7 @@ internal static class KeysConfig
 
         CountdownSignals.Log = log;
         SpeedPatches.ApplyKeys(harmony);
+        SpeedPatches.ApplyHoldKey(harmony);
         ClockTicker.SpeedKeysPage = new KeysPage(log);
 
         OptionalLive.Watch(() =>
@@ -53,7 +57,9 @@ internal static class KeysConfig
                 $"speed wheel {OnOff(settings.IsWheelOn)}, order finish time {OnOff(settings.IsOrderFinishOn)}, " +
                 $"night countdown {OnOff(settings.Countdowns.IsNightOn)}, wave countdown {OnOff(settings.Countdowns.IsWaveOn)}");
             SpeedPatches.KeySettings = settings;
-        }, holdFastKeyText, holdSlowKeyText, customSpeedsText, isWheelOn, isOrderFinishOn, isNightCountdownOn, isWaveCountdownOn);
+            SpeedPatches.HoldKeyMultiple = FastGear.ClampHoldMultiple(gameHoldSpeed.Value);
+            log($"game's hold-to-speed-up key at {(SpeedPatches.HoldKeyMultiple <= FastGear.GamesOwnHold ? "the game's own speed" : $"{FastGear.Label(SpeedPatches.HoldKeyMultiple)} of Fastest")}");
+        }, gameHoldSpeed, holdFastKeyText, holdSlowKeyText, customSpeedsText, isWheelOn, isOrderFinishOn, isNightCountdownOn, isWaveCountdownOn);
     }
 
     private static string DescribeCustom(KeysSettings settings) => settings.CustomSpeeds.Any(speed => speed != null)

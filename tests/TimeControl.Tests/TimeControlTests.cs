@@ -1126,6 +1126,33 @@ public class FastGearTests
     }
 
     [Fact]
+    public void The_games_hold_key_runs_at_its_multiple_of_the_games_high_speed()
+    {
+        Assert.Equal(7.5f, FastGear.HoldKeyScale(gameFastSpeed: 3f, multiple: 2.5f));
+    }
+
+    [Fact]
+    public void The_default_hold_key_speed_leaves_the_games_own_speed_up_alone()
+    {
+        Assert.Null(FastGear.HoldKeyScale(gameFastSpeed: 3f, multiple: FastGear.GamesOwnHold));
+        Assert.Null(FastGear.HoldKeyScale(gameFastSpeed: 3f, multiple: 0.5f));
+        Assert.Null(FastGear.HoldKeyScale(gameFastSpeed: 3f, multiple: float.NaN));
+    }
+
+    [Fact]
+    public void The_hold_key_speed_is_kept_to_the_largest_multiple_and_the_speed_cap()
+    {
+        Assert.Equal(FastGear.MostMultiple, FastGear.ClampHoldMultiple(50f));
+        Assert.Equal(FastGear.FastestScale, FastGear.HoldKeyScale(gameFastSpeed: 5f, multiple: 10f));
+    }
+
+    [Fact]
+    public void The_hold_key_waits_for_the_games_high_speed_to_be_known()
+    {
+        Assert.Null(FastGear.HoldKeyScale(gameFastSpeed: 0f, multiple: 2f));
+    }
+
+    [Fact]
     public void Super_speed_never_passes_the_ceiling_and_never_drops_below_the_games_high_speed()
     {
         Assert.Equal(FastGear.FastestScale, FastGear.HeldScale(gameFastSpeed: 5f, multiple: 10f));

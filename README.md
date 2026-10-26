@@ -37,6 +37,7 @@ Time Control adds no data of its own to your save and does not edit game files. 
 | `G` | Camera follow: centers the camera on your character. The game has this on `Space`, so the mod moves it to `G`, which the game does not use by default. Change it with `CenterCameraKey`. |
 | `1`, `2`, `3` | The game's own speed keys. Press `3` again at Fastest for super speed. In the countdown before the disaster and on expeditions the mod answers them, since the game does not. |
 | `X` | Hold for the fastest speed; let go to get your speed back. Change it with `HoldFastKey`. |
+| `Shift` | The game's own hold to speed up. Set how fast it runs with `GameHoldKeySpeed` (the game's Fastest by default). |
 | `K` | Hold for the slowest slow speed; let go to get your speed back. Change it with `HoldSlowKey`. |
 | `5` to `9` | Off by default. Each runs at a speed you set in `SpeedKeys5To9`. |
 | Mouse wheel | Over the speed buttons, steps through every speed. Turn it off with `SpeedWheel`. |
