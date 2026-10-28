@@ -8,16 +8,17 @@ public enum AwayReason
     /// <summary>The game's window lost focus, as after Alt+Tab.</summary>
     Background,
 
-    /// <summary>One of the game's menus that leave time running is open: the bag, the workbench, the phone or trade.</summary>
+    /// <summary>One of the game's menus is open, such as the bag, the workbench, the phone, trade, a stove or a shop.</summary>
     Menu,
 }
 
 /// <summary>Which ways of being away pause the game; swapped whole when one changes.</summary>
-public readonly record struct AwaySettings(bool IsFocusLossOn, bool IsBagOn, bool IsWorkbenchOn, bool IsPhoneOn, bool IsTradeOn)
+/// <param name="IsOtherMenusOn">Every other menu the player opens to use something: stoves, machines, shops, the codex, the map and the like.</param>
+public readonly record struct AwaySettings(bool IsFocusLossOn, bool IsBagOn, bool IsWorkbenchOn, bool IsPhoneOn, bool IsTradeOn, bool IsOtherMenusOn)
 {
     public bool IsAnyOn => IsFocusLossOn || IsAnyMenuOn;
 
-    public bool IsAnyMenuOn => IsBagOn || IsWorkbenchOn || IsPhoneOn || IsTradeOn;
+    public bool IsAnyMenuOn => IsBagOn || IsWorkbenchOn || IsPhoneOn || IsTradeOn || IsOtherMenusOn;
 
     /// <summary>The window being in the background wins over a menu, as a menu cannot be used from there.</summary>
     /// <param name="isWatchedMenuOpen">A menu whose setting is on is open.</param>
@@ -38,7 +39,11 @@ public readonly record struct AwaySettings(bool IsFocusLossOn, bool IsBagOn, boo
 /// <param name="IsBusy">The player's character has an order queued or a workbench is crafting, read only while a menu is open.</param>
 /// <param name="HasNewOrder">An order was given or a craft started since the last check, read only while a menu is open.</param>
 /// <param name="Elapsed">Real seconds since the last check.</param>
-public readonly record struct AwaySnapshot(AwayReason? Away, bool CanPause, bool IsPaused, GameSpeed Running, bool WasSpeedChangedByHand, bool IsBusy = false, bool HasNewOrder = false, float Elapsed = 0f);
+/// <param name="HasNewJob">
+/// A machine started a job since the last check, such as a stove cooking or a barrel brewing, read only while a menu is
+/// open. Such a job runs on the machine's own timer for game hours, so it is not waited out like an order.
+/// </param>
+public readonly record struct AwaySnapshot(AwayReason? Away, bool CanPause, bool IsPaused, GameSpeed Running, bool WasSpeedChangedByHand, bool IsBusy = false, bool HasNewOrder = false, float Elapsed = 0f, bool HasNewJob = false);
 
 /// <param name="IsPausing">Pause the game now.</param>
 /// <param name="ResumeAt">Resume the game at this speed now, if it is still paused.</param>
@@ -51,7 +56,8 @@ public readonly record struct AwayStep(AwayPause State, bool IsPausing, GameSpee
 /// resuming, makes the speed the player's again, and nothing is resumed on their return. An order given from a menu,
 /// such as a craft at the workbench, runs the game until the character has no orders left and no craft is running, then
 /// the menu pauses again once that has held for <see cref="SettleSeconds"/>, so the next craft of a batch or a queue
-/// starting right after one ends keeps the game running.
+/// starting right after one ends keeps the game running. A machine job started from a menu, such as a stove cooking,
+/// runs the game until the menu closes, as the job itself runs for game hours.
 /// </summary>
 public abstract record AwayPause
 {
@@ -76,7 +82,7 @@ public abstract record AwayPause
     /// </summary>
     public sealed record RunningOrder(float IdleFor = 0f) : AwayPause;
 
-    /// <summary>The player is away, but the speed is theirs; nothing happens until they are back.</summary>
+    /// <summary>The player is away, but the speed is theirs or a machine job started in the menu runs; nothing happens until they are back.</summary>
     public sealed record Released : AwayPause;
 
     public static AwayStep Next(AwayPause state, AwaySnapshot seen) => state switch
@@ -125,6 +131,8 @@ public abstract record AwayPause
 
         if (seen.Away is not { } reason) return new AwayStep(Start, IsPausing: false, holding.ResumeAt);
 
+        if (reason == AwayReason.Menu && seen.HasNewJob) return new AwayStep(new Released(), IsPausing: false, holding.ResumeAt);
+
         if (reason == AwayReason.Menu && seen.HasNewOrder) return new AwayStep(new RunningOrder(), IsPausing: false, holding.ResumeAt);
 
         return Stay(holding with { Reason = reason });
@@ -141,6 +149,8 @@ public abstract record AwayPause
         if (seen.WasSpeedChangedByHand || seen.IsPaused || !seen.CanPause) return Stay(new Released());
 
         if (reason == AwayReason.Background) return new AwayStep(new Holding(reason, seen.Running), IsPausing: true, ResumeAt: null);
+
+        if (seen.HasNewJob) return Stay(new Released());
 
         if (seen.IsBusy || seen.HasNewOrder) return Stay(new RunningOrder());
 

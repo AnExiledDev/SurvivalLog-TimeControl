@@ -9,7 +9,7 @@ public class AwayPauseTests
     private static readonly GameSpeed SecondFastGear = new(PauseToggle.Triple, 2);
     private static readonly AwaySnapshot AtTheGame = new(Away: null, CanPause: true, IsPaused: false, Running: Fast, WasSpeedChangedByHand: false);
     private static readonly AwaySnapshot InBackground = AtTheGame with { Away = AwayReason.Background };
-    private static readonly AwaySettings AllOn = new(IsFocusLossOn: true, IsBagOn: true, IsWorkbenchOn: true, IsPhoneOn: true, IsTradeOn: true);
+    private static readonly AwaySettings AllOn = new(IsFocusLossOn: true, IsBagOn: true, IsWorkbenchOn: true, IsPhoneOn: true, IsTradeOn: true, IsOtherMenusOn: true);
     private static readonly BadgeSettings Badges = new(IsIdleBadgeOn: true, IsPauseKeyBadgeOn: true, IsAlertBadgeOn: true);
 
     private static List<AwayStep> Steps(params AwaySnapshot[] checks)
@@ -236,6 +236,48 @@ public class AwayPauseTests
     }
 
     [Fact]
+    public void A_machine_job_started_in_a_paused_menu_runs_the_game_until_the_menu_closes()
+    {
+        var steps = Steps(InMenu, Paused(InMenu), Paused(InMenu with { HasNewJob = true }), DoneInMenu, DoneInMenu, AtTheGame);
+
+        Assert.Equal(Fast, steps[2].ResumeAt);
+        Assert.IsType<AwayPause.Released>(steps[2].State);
+        Assert.False(steps[3].IsPausing);
+        Assert.False(steps[4].IsPausing);
+        Assert.Null(steps[5].ResumeAt);
+        Assert.Equal(AwayPause.Start, steps[5].State);
+    }
+
+    [Fact]
+    public void A_machine_job_started_while_an_order_runs_keeps_the_game_running_after_the_order()
+    {
+        var steps = Steps(InMenu, Paused(OrderGivenInMenu), BusyInMenu with { HasNewJob = true }, DoneInMenu, DoneInMenu);
+
+        Assert.IsType<AwayPause.Released>(steps[2].State);
+        Assert.False(steps[3].IsPausing);
+        Assert.False(steps[4].IsPausing);
+    }
+
+    [Fact]
+    public void A_machine_job_is_not_a_reason_to_resume_in_the_background()
+    {
+        var steps = Steps(InBackground, Paused(InBackground with { HasNewJob = true }));
+
+        Assert.Null(steps[1].ResumeAt);
+        Assert.IsType<AwayPause.Holding>(steps[1].State);
+    }
+
+    [Fact]
+    public void A_machine_job_in_a_menu_the_player_paused_leaves_it_paused()
+    {
+        var steps = Steps(Paused(InMenu), Paused(InMenu with { HasNewJob = true }));
+
+        Assert.IsType<AwayPause.Released>(steps[1].State);
+        Assert.Null(steps[1].ResumeAt);
+        Assert.False(steps[1].IsPausing);
+    }
+
+    [Fact]
     public void An_order_queued_behind_a_running_one_is_new()
     {
         Assert.True(OrderIds.HasNew(new long[] { 4 }, new long[] { 4, 5 }));
@@ -296,10 +338,11 @@ public class AwayPauseTests
     [Fact]
     public void Any_menu_setting_turns_the_watch_on_and_focus_loss_is_not_a_menu()
     {
-        var none = new AwaySettings(false, false, false, false, false);
+        var none = new AwaySettings(false, false, false, false, false, false);
 
         Assert.False(none.IsAnyOn);
         Assert.True((none with { IsTradeOn = true }).IsAnyMenuOn);
+        Assert.True((none with { IsOtherMenusOn = true }).IsAnyMenuOn);
         Assert.True((none with { IsFocusLossOn = true }).IsAnyOn);
         Assert.False((none with { IsFocusLossOn = true }).IsAnyMenuOn);
     }

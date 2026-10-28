@@ -39,12 +39,14 @@ internal static class GameFreeze
 
             var isFrozen = world.IsPause;
 
-            // Menus are read only while frozen, so a running game pays for one field read a check.
-            var ui = isFrozen && BaseSingleton<ReduxUISystem>.IsInstanceCreated ? BaseSingleton<ReduxUISystem>.Instance : null;
+            // Menus are read only while frozen, so a running game pays for one field read a check. A freeze that is the
+            // game's needs no reads, and the held screens matter only over a player menu.
+            var ui = isFrozen && _state is not MenuFreeze.Games && BaseSingleton<ReduxUISystem>.IsInstanceCreated ? BaseSingleton<ReduxUISystem>.Instance : null;
+            var isPlayerMenuOpen = ui != null && IsAnyActive(ui, _playerMenus ??= PlayerMenus());
             var seen = new FreezeSnapshot(
                 isFrozen,
-                ui != null && IsAnyActive(ui, _playerMenus ??= PlayerMenus()),
-                ui != null && IsAnyActive(ui, _heldScreens ??= HeldScreens()),
+                isPlayerMenuOpen,
+                isPlayerMenuOpen && IsAnyActive(ui!, _heldScreens ??= HeldScreens()),
                 elapsed);
             var step = MenuFreeze.Next(_state, seen);
 
@@ -64,7 +66,7 @@ internal static class GameFreeze
         }
     }
 
-    private static bool IsAnyActive(ReduxUISystem ui, Il2CppSystem.Type[] types)
+    public static bool IsAnyActive(ReduxUISystem ui, Il2CppSystem.Type[] types)
     {
         foreach (var type in types)
         {
@@ -78,6 +80,12 @@ internal static class GameFreeze
     private static Il2CppSystem.Type[] PlayerMenus() =>
     [
         Il2CppType.Of<WebUI_ToolTable>(), Il2CppType.Of<WebUI_BackpackUI>(), Il2CppType.Of<WebUI_PhoneSMS>(), Il2CppType.Of<WebUI_TradeUI>(),
+        .. OtherMenus(),
+    ];
+
+    /// <summary>The player menus apart from the workbench, the bag, the phone and trade, which each have a setting of their own.</summary>
+    public static Il2CppSystem.Type[] OtherMenus() =>
+    [
         Il2CppType.Of<WebUI_Heater>(), Il2CppType.Of<WebUI_Compressor>(), Il2CppType.Of<WebUI_Shredder>(), Il2CppType.Of<WebUI_Cooking>(),
         Il2CppType.Of<WebUI_Brew>(), Il2CppType.Of<WebUI_MaterialRack>(), Il2CppType.Of<WebUI_AidDepot>(), Il2CppType.Of<WebUI_AddFertilizer>(),
         Il2CppType.Of<WebUI_RatCage>(), Il2CppType.Of<WebUI_RobotPanel>(), Il2CppType.Of<WebUI_GreenhouseBuild>(), Il2CppType.Of<WebUI_DroneHub>(),

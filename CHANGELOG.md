@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.0
+
+- Every menu now opens paused: the bag, phone and trade window as well as the workbench, and with the new setting `PauseInOtherMenus` also cooking, brewing, the heater, the machines, shops, the drones, the codex, the map and the rest. Your speed comes back when you close it. `PauseInBag`, `PauseInPhone` and `PauseInTrade` are now on by default; a saved setting keeps its value.
+- Starting a machine from its menu, such as cooking, brewing, dyeing, shredding or compressing, runs the game until you close the menu. An order or a craft started in a menu still runs until it is done, then the game pauses again.
+- Made for Survival Log 1.1.19611.
+
 ## 0.9.6
 
 - Fixed: waking your character with `WakeAtHour` or `WakeOnAlert` cost you Vim and Vigor. Your character now wakes the way the game wakes them after a full sleep, and gets Vim and Vigor if they slept at least 3 hours.

@@ -21,8 +21,8 @@ internal static class AlertsConfig
 
     private const string CarryOn = " Pick a speed or press the pause key (Space by default) to carry on.\n";
     private const string CarryOnChinese = "选一个速度或按暂停键（默认 Space）继续。";
-    private const string MenuKept = ", and bring back your speed when you close it. Giving an order while it is open, such as a craft, runs the game until the order is done, then it pauses again. If you change the speed yourself while it is open, your choice is kept.\n";
-    private const string MenuKeptChinese = "时暂停游戏，关闭时恢复原来的速度。打开期间下达指令（例如制作）会让游戏运行到指令完成，然后再次暂停。如果打开期间你自己改了速度，则保留你的选择。";
+    private const string MenuKept = ", and bring back your speed when you close it. Giving an order while it is open, such as a craft, runs the game until the order is done, then it pauses again. Starting a machine there, such as a stove cooking, runs the game until you close it. If you change the speed yourself while it is open, your choice is kept.\n";
+    private const string MenuKeptChinese = "时暂停游戏，关闭时恢复原来的速度。打开期间下达指令（例如制作）会让游戏运行到指令完成，然后再次暂停。在其中启动设备（例如开始烹饪）会让游戏一直运行到你关闭界面。如果打开期间你自己改了速度，则保留你的选择。";
 
     private static readonly List<(ConfigEntry<bool> Entry, Alert[] Alerts)> AlertToggles = new();
 
@@ -54,14 +54,17 @@ internal static class AlertsConfig
         var isFocusLossOn = config.Bind(ClockSection, "PauseOnFocusLoss", true,
             "Pause the game when its window goes to the background, for example after Alt+Tab, and bring back your speed when you switch back. If you change the speed yourself in the meantime, your choice is kept. Works at home, before the disaster, on expeditions (with TimeControlOnExpeditions on) and during sleep fast-forward.\n" +
             "游戏窗口切到后台时（例如按 Alt+Tab 后）暂停游戏，切回来时恢复原来的速度。如果期间你自己改了速度，则保留你的选择。在安全屋、灾前筹备、外出探索（需开启 TimeControlOnExpeditions）和睡眠快进时都有效。");
-        var isBagOn = config.Bind(ClockSection, "PauseInBag", false,
+        var isBagOn = config.Bind(ClockSection, "PauseInBag", true,
             "Pause the game while your bag is open" + MenuKept + "打开背包" + MenuKeptChinese);
         var isWorkbenchOn = config.Bind(ClockSection, "PauseAtWorkbench", true,
             "Pause the game while the workbench window is open" + MenuKept + "打开工作台界面" + MenuKeptChinese);
-        var isPhoneOn = config.Bind(ClockSection, "PauseInPhone", false,
+        var isPhoneOn = config.Bind(ClockSection, "PauseInPhone", true,
             "Pause the game while the phone is open" + MenuKept + "打开手机" + MenuKeptChinese);
-        var isTradeOn = config.Bind(ClockSection, "PauseInTrade", false,
+        var isTradeOn = config.Bind(ClockSection, "PauseInTrade", true,
             "Pause the game while the trade window is open" + MenuKept + "打开交易界面" + MenuKeptChinese);
+        var isOtherMenusOn = config.Bind(ClockSection, "PauseInOtherMenus", true,
+            "Pause the game while any other menu you open to use something is open: cooking, a brewing barrel, a heater, a machine, a shop, the drones, the codex, the map and the like" + MenuKept +
+            "打开其他使用类界面（烹饪、酿酒桶、电暖器、各种设备、商店、无人机、图鉴、地图等）" + MenuKeptChinese);
 
         var onQueueEmpty = config.Bind(AlertsSection, "OnQueueEmpty", QueueEmptyAction.Off,
             "What happens when your character finishes the last order in their queue. Off does nothing. Slow drops the game to QueueEmptySlowSpeed if it runs faster, and brings your speed back on your next order unless you change the speed yourself in between. Pause pauses the game once; unlike IdleFreeze, it pauses right away and stays paused until you pick a speed or press the pause key (Space by default).\n" +
@@ -122,21 +125,22 @@ internal static class AlertsConfig
             "While you hold the game's hold-to-speed-up key (Shift by default), danger alerts still pause the game: a zombie wave starting, an emergency, zombies damaging the house or a trap, and low life. Each one still needs its own setting switched on. Set this to false and no alert pauses the game while the key is held. Other alerts never pause it while the key is held.\n" +
             "按住游戏的「按住加速」键（默认 Shift）时，危险提醒仍会暂停游戏：尸潮开始、危机事件、丧尸破坏房屋或陷阱、生命过低。每一项仍需打开各自的设置。设为 false 时，按住这个键期间任何提醒都不会暂停游戏。其他提醒在按住期间从不暂停游戏。");
 
-        var watched = new List<ConfigEntryBase> { isFocusLossOn, isBagOn, isWorkbenchOn, isPhoneOn, isTradeOn, onQueueEmpty, slowSpeed, lowNeedPercent, isDangerWhileHoldingOn };
+        var watched = new List<ConfigEntryBase> { isFocusLossOn, isBagOn, isWorkbenchOn, isPhoneOn, isTradeOn, isOtherMenusOn, onQueueEmpty, slowSpeed, lowNeedPercent, isDangerWhileHoldingOn };
 
         foreach (var (entry, _) in AlertToggles) watched.Add(entry);
 
+        MachineJobs.Apply(harmony, log);
         OptionalLive.Watch(() =>
         {
             var moreOn = MoreOn;
-            var away = new AwaySettings(isFocusLossOn.Value, isBagOn.Value, isWorkbenchOn.Value, isPhoneOn.Value, isTradeOn.Value);
+            var away = new AwaySettings(isFocusLossOn.Value, isBagOn.Value, isWorkbenchOn.Value, isPhoneOn.Value, isTradeOn.Value, isOtherMenusOn.Value);
             var queueSlowing = new QueueSlowSettings(onQueueEmpty.Value == QueueEmptyAction.Slow, slowSpeed.Value);
 
             ClockTicker.Settings = ClockTicker.Settings with { Alerts = ClockTicker.Settings.Alerts with { IsQueueEmptyOn = IsQueuePauseOn, MoreOn = moreOn, IsDangerWhileHoldingOn = isDangerWhileHoldingOn.Value } };
             ClockTicker.Away = away;
             ClockTicker.QueueSlowing = queueSlowing;
             ClockTicker.LowNeedPercent = AlertMemory.ClampPercent(lowNeedPercent.Value);
-            log($"pause on focus loss {OnOff(away.IsFocusLossOn)}, in bag {OnOff(away.IsBagOn)}, at workbench {OnOff(away.IsWorkbenchOn)}, in phone {OnOff(away.IsPhoneOn)}, in trade {OnOff(away.IsTradeOn)}, " +
+            log($"pause on focus loss {OnOff(away.IsFocusLossOn)}, in bag {OnOff(away.IsBagOn)}, at workbench {OnOff(away.IsWorkbenchOn)}, in phone {OnOff(away.IsPhoneOn)}, in trade {OnOff(away.IsTradeOn)}, in other menus {OnOff(away.IsOtherMenusOn)}, " +
                 $"on queue empty {onQueueEmpty.Value}{(queueSlowing.IsOn ? $" to {slowSpeed.Value}" : "")}, " +
                 $"more alerts on: {(moreOn.IsEmpty ? "none" : string.Join(", ", Names(moreOn)))}{(isLowNeedOn.Value ? $", low need at {ClockTicker.LowNeedPercent}%" : "")}, " +
                 $"danger alerts while holding speed-up {OnOff(isDangerWhileHoldingOn.Value)}");

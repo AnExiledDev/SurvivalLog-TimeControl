@@ -15,7 +15,7 @@ namespace TimeControl.Adapters;
 /// </summary>
 public sealed partial class ClockTicker
 {
-    internal static AwaySettings Away = new(false, false, false, false, false);
+    internal static AwaySettings Away = new(false, false, false, false, false, false);
     internal static QueueSlowSettings QueueSlowing = new(false, QueueSlowTarget.Normal);
     internal static int LowNeedPercent = AlertMemory.DefaultLowNeedPercent;
 
@@ -27,10 +27,14 @@ public sealed partial class ClockTicker
     /// <summary>The work under way at the last check while a menu was open; null outside a menu or after a failed read.</summary>
     private MenuWork? _menuWork;
 
+    /// <summary>The count of machine jobs started, as of the last check.</summary>
+    private int _machineJobsSeen;
+
     /// <summary>The game's types for the menus watched, each looked up the first time it is asked about.</summary>
     private static Il2CppSystem.Type? _backpackUiType;
     private static Il2CppSystem.Type? _phoneUiType;
     private static Il2CppSystem.Type? _tradeUiType;
+    private static Il2CppSystem.Type[]? _otherMenuTypes;
 
     /// <summary>A new world, or none, starts every watch here afresh; a pause held on the old world went with it.</summary>
     private void ForgetExtraWatches()
@@ -40,6 +44,7 @@ public sealed partial class ClockTicker
         _readings = AlertMemory.Start;
         _danger = DangerWatch.Start;
         _menuWork = null;
+        _machineJobsSeen = MachineJobs.Started;
     }
 
     /// <summary>
@@ -73,14 +78,20 @@ public sealed partial class ClockTicker
     {
         var settings = Away;
 
-        if (!settings.IsAnyOn && _away is AwayPause.Watching) return;
+        if (!settings.IsAnyOn && _away is AwayPause.Watching)
+        {
+            _machineJobsSeen = MachineJobs.Started;
+
+            return;
+        }
 
         var isPaused = time.IsPausedScale();
         var away = settings.Reason(!Application.isFocused, settings.IsAnyMenuOn && IsWatchedMenuOpen(settings));
         var canPause = AlertPause.CanPause(timer, IsFastForwarding(time), isLeavingExpedition);
         var isBusy = away == AwayReason.Menu && IsWorking(time);
         var hasNewOrder = TakeNewMenuWork(away == AwayReason.Menu);
-        var seen = new AwaySnapshot(away, canPause, isPaused, SpeedPatches.CurrentSpeed(time, isPaused), wasChangedByHand, isBusy, hasNewOrder, elapsed);
+        var hasNewJob = TakeNewMachineJob(away == AwayReason.Menu);
+        var seen = new AwaySnapshot(away, canPause, isPaused, SpeedPatches.CurrentSpeed(time, isPaused), wasChangedByHand, isBusy, hasNewOrder, elapsed, hasNewJob);
         var before = _away;
         var step = AwayPause.Next(before, seen);
 
@@ -110,6 +121,17 @@ public sealed partial class ClockTicker
         _menuWork = isInMenu ? ReadMenuWork() : null;
 
         return before is { } was && _menuWork is { } now && MenuWork.HasNew(was, now);
+    }
+
+    /// <summary>Whether a machine started a job since the last check while a menu is open, such as a stove starting to cook.</summary>
+    private bool TakeNewMachineJob(bool isInMenu)
+    {
+        var started = MachineJobs.Started;
+        var isNew = isInMenu && started != _machineJobsSeen;
+
+        _machineJobsSeen = started;
+
+        return isNew;
     }
 
     private static MenuWork? ReadMenuWork() =>
@@ -153,7 +175,8 @@ public sealed partial class ClockTicker
         return (settings.IsBagOn && ui.IsUIActive(_backpackUiType ??= Il2CppType.Of<WebUI_BackpackUI>()))
             || (settings.IsWorkbenchOn && Workbench.IsOpen())
             || (settings.IsPhoneOn && ui.IsUIActive(_phoneUiType ??= Il2CppType.Of<WebUI_PhoneSMS>()))
-            || (settings.IsTradeOn && ui.IsUIActive(_tradeUiType ??= Il2CppType.Of<WebUI_TradeUI>()));
+            || (settings.IsTradeOn && ui.IsUIActive(_tradeUiType ??= Il2CppType.Of<WebUI_TradeUI>()))
+            || (settings.IsOtherMenusOn && GameFreeze.IsAnyActive(ui, _otherMenuTypes ??= GameFreeze.OtherMenus()));
     }
 
     private void LogAway(AwayPause from, AwayStep step)
