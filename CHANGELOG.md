@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.1
+
+- Fixed: Time Control no longer puts an error and a list of warnings from Il2CppInterop in the game log when the game starts.
+- Made for Survival Log 1.1.19611.
+
 ## 0.10.0
 
 - Every menu now opens paused: the bag, phone and trade window as well as the workbench, and with the new setting `PauseInOtherMenus` also cooking, brewing, the heater, the machines, shops, the drones, the codex, the map and the rest. Your speed comes back when you close it. `PauseInBag`, `PauseInPhone` and `PauseInTrade` are now on by default; a saved setting keeps its value.

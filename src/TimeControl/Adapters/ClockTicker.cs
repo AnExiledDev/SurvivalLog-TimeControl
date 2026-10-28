@@ -1,5 +1,6 @@
 using System;
 using GameCore.HotUpdate.Battle.Logic;
+using Il2CppInterop.Runtime.Attributes;
 using TimeControl.Core;
 using UnityEngine;
 
@@ -77,6 +78,7 @@ public sealed partial class ClockTicker : MonoBehaviour
         if (_isCheckWanted) Tick();
     }
 
+    [HideFromIl2Cpp]
     private void Tick()
     {
         var now = Time.unscaledTime;
@@ -96,6 +98,7 @@ public sealed partial class ClockTicker : MonoBehaviour
         }
     }
 
+    [HideFromIl2Cpp]
     private void Check(float now, float elapsed)
     {
         ReportFanOut(now);
@@ -159,6 +162,7 @@ public sealed partial class ClockTicker : MonoBehaviour
     }
 
     /// <summary>The game's language is asked for at the page pace: it only changes on the settings screen.</summary>
+    [HideFromIl2Cpp]
     private void ReadLanguage(float now)
     {
         if (now < _nextLanguageAt) return;
@@ -182,6 +186,7 @@ public sealed partial class ClockTicker : MonoBehaviour
         SpeedButtons.ShouldShow(Settings.AreSpeedButtonsOn, SpeedPatches.IsNormalMode, timer);
 
     /// <summary>A load replaces the world, and a pause or a sleep this mod was watching on the old one went with it.</summary>
+    [HideFromIl2Cpp]
     private void ForgetPauseOnNewWorld(GameTimeManager time)
     {
         if (time.Pointer == _timeSeen) return;
@@ -201,6 +206,7 @@ public sealed partial class ClockTicker : MonoBehaviour
     /// Whether the player is busy only matters once the character is asleep or the game is paused on waking.
     /// </summary>
     /// <returns>Whether the character is asleep, which idle freeze leaves alone.</returns>
+    [HideFromIl2Cpp]
     private bool UpdateSleep(GameTimeManager time, bool isPaused, bool wasChangedByHand, bool isLeavingExpedition)
     {
         var isAsleep = GameClock.IsLeadingRoleAsleep();
@@ -220,6 +226,7 @@ public sealed partial class ClockTicker : MonoBehaviour
         return isAsleep;
     }
 
+    [HideFromIl2Cpp]
     private void CarrySleep(GameTimeManager time, SleepCommand command)
     {
         switch (command)
@@ -279,6 +286,7 @@ public sealed partial class ClockTicker : MonoBehaviour
     /// Every pause but this mod's own goes through the game's speed change, which the hand-change flag sees, so a pause
     /// seen after one is not the alert's.
     /// </summary>
+    [HideFromIl2Cpp]
     private void UpdateAlertPause(GameTimeManager time, GameTimer timer, bool isAsleep, bool isLeavingExpedition, float elapsed, bool wasChangedByHand, float now)
     {
         var alerts = Settings.Alerts;
@@ -322,6 +330,7 @@ public sealed partial class ClockTicker : MonoBehaviour
     /// is kept after, so one that fails is tried again by it. Whether the player is busy, with an order queued or a
     /// workbench crafting, only matters while time runs where idle freeze applies or the game is held by this mod.
     /// </summary>
+    [HideFromIl2Cpp]
     private void UpdateIdlePause(GameTimeManager time, bool isPaused, GameTimer timer, float elapsed, bool isAsleep, bool isLeavingExpedition)
     {
         var canFreeze = IdlePause.CanFreeze(Settings.IsIdleFreezeOn, timer, IsFastForwarding(time) || isAsleep, SpeedPatches.IsHoldingGameKey(time));
@@ -356,6 +365,7 @@ public sealed partial class ClockTicker : MonoBehaviour
     /// one that fails is tried again. The pauses refused during the finish are taken on every check, so none is told
     /// of in a later finish.
     /// </summary>
+    [HideFromIl2Cpp]
     private void UpdateExpeditionFinish(GameTimeManager time, bool isLeavingExpedition)
     {
         var seen = new FinishSnapshot(isLeavingExpedition, time.IsPausedScale(), SpeedPatches.LastRunningLevel, SpeedPatches.TakePauseRefused());
@@ -392,6 +402,7 @@ public sealed partial class ClockTicker : MonoBehaviour
     /// button, so a held slow or fast speed is checked and restored here; the game's own fast-forwards and its own speed
     /// boost are left alone.
     /// </summary>
+    [HideFromIl2Cpp]
     private void KeepGearSpeedHeld(GameTimeManager time, bool isPaused, float now)
     {
         if (isPaused || IsFastForwarding(time) || time.IsHoldBoostActive()) return;
@@ -416,6 +427,7 @@ public sealed partial class ClockTicker : MonoBehaviour
     /// changed under it or until the page confirms it, so the badge leaves the moment time runs; the clicks on the
     /// buttons are taken at the poll pace. The buttons go first so the badge finds them to sit beside.
     /// </summary>
+    [HideFromIl2Cpp]
     private void SyncPage(GameTimeManager time, GameTimer timer, bool isRefreshDue, bool isPollDue)
     {
         var generation = Watch?.Generation ?? 0;
@@ -439,6 +451,7 @@ public sealed partial class ClockTicker : MonoBehaviour
     /// Takes the speed buttons, the badge and the pause strip's style off the page, sending a removal the page never
     /// confirmed again on each refresh.
     /// </summary>
+    [HideFromIl2Cpp]
     private void HidePage(float now)
     {
         var isRefreshDue = TakePageRefresh(now);
@@ -453,6 +466,7 @@ public sealed partial class ClockTicker : MonoBehaviour
     }
 
     /// <summary>Whether the slower page pace is due a refresh; when it is, the next one is counted from now.</summary>
+    [HideFromIl2Cpp]
     private bool TakePageRefresh(float now)
     {
         if (now < _nextPageAt) return false;
@@ -463,6 +477,7 @@ public sealed partial class ClockTicker : MonoBehaviour
     }
 
     /// <summary>Whether the clicks and the wheel's turns are due to be taken; when they are, the next take is counted from now.</summary>
+    [HideFromIl2Cpp]
     private bool TakePoll(float now)
     {
         if (now < _nextPollAt) return false;
@@ -476,6 +491,7 @@ public sealed partial class ClockTicker : MonoBehaviour
     /// One speed change reaching several time managers means worlds the game replaced are still answering its events,
     /// and each of them acts on a trade or an order as well. Logged so a session's health can be read off the log.
     /// </summary>
+    [HideFromIl2Cpp]
     private void ReportFanOut(float now)
     {
         var reached = SpeedPatches.TakeLargestFanOut();
@@ -497,6 +513,7 @@ public sealed partial class ClockTicker : MonoBehaviour
     /// as it is: it holds the game until the player resumes it in any case, and only its badge goes. The speed buttons
     /// go too, so none stay up that no check would answer.
     /// </summary>
+    [HideFromIl2Cpp]
     private void RecoverFromFailure(Exception ex, float now)
     {
         if (_idle is IdlePause.Frozen frozen) TryResume(time => SpeedPatches.ChangeSpeed(time, frozen.ResumeLevel));
@@ -515,6 +532,7 @@ public sealed partial class ClockTicker : MonoBehaviour
         if (_failures <= MaxLoggedFailures) Log($"clock check failed (logged {_failures} of {MaxLoggedFailures}): {ex}");
     }
 
+    [HideFromIl2Cpp]
     private void TryHidePage(float now)
     {
         try

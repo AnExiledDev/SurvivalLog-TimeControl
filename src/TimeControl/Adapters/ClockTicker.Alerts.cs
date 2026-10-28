@@ -4,6 +4,7 @@ using GameCore.HotUpdate;
 using GameCore.HotUpdate.Battle.Logic;
 using GameCore.HotUpdate.ReduxUI;
 using Il2CppInterop.Runtime;
+using Il2CppInterop.Runtime.Attributes;
 using TimeControl.Core;
 using UnityEngine;
 
@@ -37,6 +38,7 @@ public sealed partial class ClockTicker
     private static Il2CppSystem.Type[]? _otherMenuTypes;
 
     /// <summary>A new world, or none, starts every watch here afresh; a pause held on the old world went with it.</summary>
+    [HideFromIl2Cpp]
     private void ForgetExtraWatches()
     {
         _away = AwayPause.Start;
@@ -51,6 +53,7 @@ public sealed partial class ClockTicker
     /// The alerts after the queue running out that started since the last read, of those in <paramref name="on"/>. With
     /// none on, nothing is read off the game and the memory is where a first read would start from.
     /// </summary>
+    [HideFromIl2Cpp]
     private AlertSet TakeMoreAlerts(GameTimeManager time, AlertSet on)
     {
         if (on.IsEmpty)
@@ -74,6 +77,7 @@ public sealed partial class ClockTicker
     /// the game's own sleep speed-up is left alone, as pausing it would have the game undo the pause. Like idle freeze's,
     /// the pause is kept before it is made and the resume after.
     /// </summary>
+    [HideFromIl2Cpp]
     private void UpdateAwayPause(GameTimeManager time, GameTimer timer, bool isLeavingExpedition, bool wasChangedByHand, float elapsed)
     {
         var settings = Away;
@@ -114,6 +118,7 @@ public sealed partial class ClockTicker
     /// Whether the player gave an order or started a craft since the last check in the same open menu: an order or a
     /// crafting bench not seen before, so a craft queued behind an order already running counts too.
     /// </summary>
+    [HideFromIl2Cpp]
     private bool TakeNewMenuWork(bool isInMenu)
     {
         var before = _menuWork;
@@ -124,6 +129,7 @@ public sealed partial class ClockTicker
     }
 
     /// <summary>Whether a machine started a job since the last check while a menu is open, such as a stove starting to cook.</summary>
+    [HideFromIl2Cpp]
     private bool TakeNewMachineJob(bool isInMenu)
     {
         var started = MachineJobs.Started;
@@ -179,6 +185,7 @@ public sealed partial class ClockTicker
             || (settings.IsOtherMenusOn && GameFreeze.IsAnyActive(ui, _otherMenuTypes ??= GameFreeze.OtherMenus()));
     }
 
+    [HideFromIl2Cpp]
     private void LogAway(AwayPause from, AwayStep step)
     {
         var line = (from, step.State) switch
@@ -205,6 +212,7 @@ public sealed partial class ClockTicker
     /// Runs after idle freeze, so a resume it makes on the next order comes first and the old speed is put back on top
     /// of it. It slows the game where the alerts pause it, and never during sleep.
     /// </summary>
+    [HideFromIl2Cpp]
     private void UpdateQueueSlow(GameTimeManager time, GameTimer timer, bool isAsleep, bool isLeavingExpedition, float elapsed, bool wasChangedByHand)
     {
         var settings = QueueSlowing;
@@ -257,6 +265,7 @@ public sealed partial class ClockTicker
     };
 
     /// <summary>A failed check must never leave the game paused by this mod, so a pause held while away is undone.</summary>
+    [HideFromIl2Cpp]
     private void RecoverExtraWatches()
     {
         if (_away is AwayPause.Holding holding) TryResume(time => SpeedPatches.ChangeSpeed(time, holding.ResumeAt));

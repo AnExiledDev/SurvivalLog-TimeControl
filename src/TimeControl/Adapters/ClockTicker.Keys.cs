@@ -1,5 +1,6 @@
 using System;
 using GameCore.HotUpdate.Battle.Logic;
+using Il2CppInterop.Runtime.Attributes;
 using TimeControl.Core;
 using UnityEngine;
 
@@ -25,6 +26,7 @@ public sealed partial class ClockTicker
     /// Runs before anything else reads the speed, so a hold, a custom speed key or a turn of the wheel is the speed the
     /// rest of the check sees. Nothing is asked of the game unless a key is down or was pressed, or the wheel turned.
     /// </summary>
+    [HideFromIl2Cpp]
     private void UpdateSpeedKeys(GameTimeManager time, GameTimer timer, bool isLeavingExpedition)
     {
         var keys = SpeedPatches.KeySettings;
@@ -63,6 +65,7 @@ public sealed partial class ClockTicker
     }
 
     /// <summary>A slow hold needs the mod's slow speeds; asking for one without them is logged once.</summary>
+    [HideFromIl2Cpp]
     private bool IsSlowHoldDown(float now)
     {
         if (!SpeedPatches.IsHoldKeyDown(HoldKind.Slow, now)) return false;
@@ -78,6 +81,7 @@ public sealed partial class ClockTicker
         return false;
     }
 
+    [HideFromIl2Cpp]
     private void UpdateHold(GameTimeManager time, HoldSnapshot seen)
     {
         var wasIdle = _hold is HoldKeys.Idle;
@@ -89,6 +93,7 @@ public sealed partial class ClockTicker
         CarryHold(time, step.Command);
     }
 
+    [HideFromIl2Cpp]
     private void CarryHold(GameTimeManager time, HoldCommand command)
     {
         switch (command)
@@ -115,6 +120,7 @@ public sealed partial class ClockTicker
         }
     }
 
+    [HideFromIl2Cpp]
     private void StartHold(GameTimeManager time, HoldKind kind)
     {
         var wanted = kind switch
@@ -135,6 +141,7 @@ public sealed partial class ClockTicker
     /// Something else changed the speed during the hold, or it stopped being the player's to change: the speed is left
     /// as it is, but a pause made now resumes to where the game was before the hold rather than the held speed.
     /// </summary>
+    [HideFromIl2Cpp]
     private void CancelHold(GameTimeManager time, HeldFrom from)
     {
         var isPaused = time.IsPausedScale();
@@ -165,9 +172,11 @@ public sealed partial class ClockTicker
     /// Idle freeze picks up where it was before the hold: a pause it made is its own again, so the next order resumes
     /// it, and time the player let run while idle keeps running. Otherwise it starts counting idle time afresh.
     /// </summary>
+    [HideFromIl2Cpp]
     private IdlePause IdleAfterHold() => _idleBeforeHold is IdlePause.Frozen or IdlePause.Released ? _idleBeforeHold : IdlePause.Start;
 
     /// <summary>A custom speed key also resumes a pause, as the game's own speed keys do.</summary>
+    [HideFromIl2Cpp]
     private void PressCustomSpeed(GameTimeManager time, float scale)
     {
         SpeedPatches.ApplyTarget(time, new SpeedTarget.Custom(scale));
@@ -176,6 +185,7 @@ public sealed partial class ClockTicker
     }
 
     /// <summary>The wheel steps through every speed the mod has, slowest to fastest, from the speed the game runs at now.</summary>
+    [HideFromIl2Cpp]
     private void TurnWheel(GameTimeManager time, KeysSettings keys, int steps)
     {
         var ladder = SpeedPatches.Ladder(time, keys.CustomSpeeds);
@@ -191,6 +201,7 @@ public sealed partial class ClockTicker
     /// The game puts one of its own speeds back after saves, menus and resumes, so a custom speed is checked and
     /// restored here; the game's own fast-forwards and its own speed boost are left alone.
     /// </summary>
+    [HideFromIl2Cpp]
     private void KeepCustomSpeedHeld(GameTimeManager time, bool isPaused)
     {
         if (isPaused || CustomHold.HeldScale(_custom) is not { } held) return;
@@ -212,6 +223,7 @@ public sealed partial class ClockTicker
     /// The wheel switches on or off within a check and has its turns taken at the poll pace; the notes under the clock
     /// are worked out at the page pace, and only at home.
     /// </summary>
+    [HideFromIl2Cpp]
     private void SyncKeysPage(GameTimeManager time, GameTimer timer, float now, bool isPollDue)
     {
         var keys = SpeedPatches.KeySettings;
@@ -247,6 +259,7 @@ public sealed partial class ClockTicker
     }
 
     /// <summary>Takes the wheel and the notes off the page, sending a removal the page never confirmed again at the page pace.</summary>
+    [HideFromIl2Cpp]
     private void HideKeysPage(float now, bool isRefreshDue)
     {
         var generation = Watch?.Generation ?? 0;
@@ -259,6 +272,7 @@ public sealed partial class ClockTicker
         SpeedKeysPage?.SyncCountdown("", isRefreshDue: true, generation);
     }
 
+    [HideFromIl2Cpp]
     private bool TakeKeysPageRefresh(float now)
     {
         if (now < _nextKeysPageAt) return false;
@@ -269,6 +283,7 @@ public sealed partial class ClockTicker
     }
 
     /// <summary>A hold or a custom speed on the old world went with it.</summary>
+    [HideFromIl2Cpp]
     private void ForgetSpeedKeysOnNewWorld()
     {
         _hold = HoldKeys.Start;

@@ -1,5 +1,6 @@
 using System;
 using GameCore.HotUpdate.Battle.Logic;
+using Il2CppInterop.Runtime.Attributes;
 using TimeControl.Core;
 
 namespace TimeControl.Adapters;
@@ -23,6 +24,7 @@ public sealed partial class ClockTicker
     private bool _wasAlertHolding;
     private float _nextWaitPageAt;
 
+    [HideFromIl2Cpp]
     private void UpdateWaits(GameTimeManager time, GameTimer timer, bool isAsleep, bool isLeavingExpedition, bool wasChangedByHand, float elapsed, float now)
     {
         ForgetWaitsOnNewWorld(time);
@@ -41,6 +43,7 @@ public sealed partial class ClockTicker
     }
 
     /// <summary>A wait, an alarm from the menu and a sleep being cut short all count on the old world's clock, so a new world drops them.</summary>
+    [HideFromIl2Cpp]
     private void ForgetWaitsOnNewWorld(GameTimeManager time)
     {
         if (time.Pointer == _waitWorld) return;
@@ -54,6 +57,7 @@ public sealed partial class ClockTicker
     }
 
     /// <summary>The speed the world starts at is kept for play and the pause key, as if the player had paused it.</summary>
+    [HideFromIl2Cpp]
     private void UpdateStartPause(GameTimeManager time, GameTimer timer)
     {
         var step = StartPause.Next(_startPause, new StartSnapshot(WaitConfig.IsStartPausedOn, timer, SpeedPatches.IsNormalMode));
@@ -73,6 +77,7 @@ public sealed partial class ClockTicker
     /// Stepped before the menu's clicks, so a wait started on this check is first looked at on the next, once the speed
     /// it set has been seen. A running wait keeps idle freeze released, so being idle never pauses it.
     /// </summary>
+    [HideFromIl2Cpp]
     private void UpdateWait(GameTimeManager time, GameTimer timer, ClockReading? reading, long? brewDoneAt, bool isAsleep, bool wasChangedByHand, float elapsed)
     {
         if (reading is { } read) _wait = WaitUntil.FollowBrew(_wait, brewDoneAt, read);
@@ -89,6 +94,7 @@ public sealed partial class ClockTicker
         if (WaitUntil.IsWaiting(_wait)) _idle = new IdlePause.Released();
     }
 
+    [HideFromIl2Cpp]
     private void CarryWait(GameTimeManager time, WaitCommand command)
     {
         switch (command)
@@ -134,6 +140,7 @@ public sealed partial class ClockTicker
     }
 
     /// <summary>Clicks go through only while the menu is meant to show: on a clock a wait can run on, read this check.</summary>
+    [HideFromIl2Cpp]
     private void PressWaitMenu(GameTimeManager time, GameTimer timer, ClockReading? reading, long? brewDoneAt, bool canStartWait)
     {
         if (WaitPage?.TakeClicks() is not { Count: > 0 } clicks || !WaitUntil.CanWait(timer) || reading is not { } read) return;
@@ -164,6 +171,7 @@ public sealed partial class ClockTicker
         }
     }
 
+    [HideFromIl2Cpp]
     private void StartWait(GameTimeManager time, GameTimer timer, ClockReading reading, WaitChoice.WaitFor choice, long? brewDoneAt, bool canStartWait)
     {
         var isBusy = choice.Kind == WaitKind.Queue && time.IsLeadingRoleBusy();
@@ -185,6 +193,7 @@ public sealed partial class ClockTicker
     }
 
     /// <summary>The alarm stays quiet while the character sleeps, while the game fast-forwards on its own and while an expedition is being finished.</summary>
+    [HideFromIl2Cpp]
     private void UpdateAlarm(GameTimeManager time, GameTimer timer, ClockReading? reading, bool canRing)
     {
         var step = AlarmClock.Next(_alarm, new AlarmSnapshot(timer, reading, canRing), WaitConfig.Alarm);
@@ -212,6 +221,7 @@ public sealed partial class ClockTicker
     };
 
     /// <summary>Whether the sleep is a real one is only read while the character is asleep and a setting could cut it short.</summary>
+    [HideFromIl2Cpp]
     private void UpdateSleepUntil(GameTimeManager time, bool isAsleep, ClockReading? reading)
     {
         var settings = WaitConfig.SleepUntil;
@@ -255,6 +265,7 @@ public sealed partial class ClockTicker
     /// Sent at the page pace, which also takes the menu's clicks, so a click is carried out within half a second. The
     /// button shows, when its setting is on, wherever a wait can run and the page has speed buttons to sit beside.
     /// </summary>
+    [HideFromIl2Cpp]
     private void SyncWaitPage(GameTimeManager time, GameTimer timer, ClockReading? reading, long? brewDoneAt, bool canStartWait, float now)
     {
         if (WaitPage == null || now < _nextWaitPageAt) return;
@@ -279,6 +290,7 @@ public sealed partial class ClockTicker
     private static void HideWaitPage(bool isRefreshDue) => WaitPage?.Sync(null, isRefreshDue, Watch?.Generation ?? 0);
 
     /// <summary>A failed check must never leave a wait's fast speed running: the speed from before it is put back.</summary>
+    [HideFromIl2Cpp]
     private void ForgetWaits()
     {
         GameSpeed? before = _wait switch

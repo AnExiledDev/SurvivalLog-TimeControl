@@ -18,6 +18,11 @@
     <EmbeddedResource Include="FakePage.js" LogicalName="TimeControl.Tests.FakePage.js" />
   </ItemGroup>
 
+  <!-- The injected MonoBehaviour's source is read as text to check which methods the game is given. -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\src\TimeControl\Adapters\ClockTicker*.cs" LogicalName="TimeControl.Tests.Ticker.%(Filename)%(Extension)" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Jint" Version="4.17.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
