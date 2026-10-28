@@ -2,6 +2,8 @@ Name: Time Control
 Summary: A real pause and a real slow speed, before the disaster and on expeditions too. Space pauses anywhere, the game pauses itself when you go idle, Alt+Tab or a wave hits, and an optional Wait until button skips to morning. Hold X to fast-forward, set an alarm, and sleep until the hour you pick. Slow adds 0.5x and 0.25x and super speed doubles Fastest.
 
 Description (BBCode):
+[center][img]https://sldb.core-directive.com/media/save/1-save-safe.png[/img][/center]
+
 The game's slow button only slows once you stand idle, and there is no way to pause before the disaster or on an expedition. Time Control gives you slower speeds, a faster speed, and a pause that waits while your character has nothing to do.
 
 [size=5]Main features[/size]
