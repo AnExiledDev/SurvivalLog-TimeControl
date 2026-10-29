@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.2
+
+- Fixed: typing in the item search on Survival Log 1.1.20151 no longer pauses the game or changes its speed when you type a space or a number.
+- Made for Survival Log 1.1.20151.
+
 ## 0.10.1
 
 - Fixed: Time Control no longer puts an error and a list of warnings from Il2CppInterop in the game log when the game starts.

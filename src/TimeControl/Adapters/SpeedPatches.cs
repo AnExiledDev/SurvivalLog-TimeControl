@@ -510,7 +510,7 @@ internal static partial class SpeedPatches
         {
             LogOnce(ref _hasLoggedPauseKeyIgnored,
                 $"{_pauseKey} pressed where it does not pause (mode {keys._gameMode}, world {keys._worldStateType}, timer {timer}, " +
-                $"menu holding time {keys._isTimePaused}, input off {keys._isInputDisabled}, typing {HotKeyManager.IsUGUIInputFocused()}); logged once");
+                $"menu holding time {keys._isTimePaused}, input off {keys._isInputDisabled}, typing {keys._isTextInputActive || HotKeyManager.IsUGUIInputFocused()}); logged once");
 
             return false;
         }
@@ -604,13 +604,14 @@ internal static partial class SpeedPatches
 
     /// <summary>
     /// The conditions the game checks before its own speed keys apart from where the player is (normal mode, no menu
-    /// holding time, input on), plus no text box being typed in and no key being rebound. An expedition runs in the
-    /// game's exploration mode, which the mod accepts too.
+    /// holding time, input on, no text being typed in a menu such as the item search), plus no other text box being
+    /// typed in and no key being rebound. An expedition runs in the game's exploration mode, which the mod accepts too.
     /// </summary>
     private static bool AreKeysForTheGame(HotKeyManager keys, GameTimer timer) =>
         SpeedKeys.IsModeForKeys(keys._gameMode == GameMode.Default, timer) &&
         !keys._isTimePaused &&
         !keys._isInputDisabled &&
+        !keys._isTextInputActive &&
         !IsRebindingAKey(keys) &&
         !HotKeyManager.IsUGUIInputFocused();
 

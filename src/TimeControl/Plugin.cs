@@ -15,7 +15,7 @@ namespace TimeControl;
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.timecontrol";
-    private const string Version = "0.10.1";
+    private const string Version = "0.10.2";
 
     public override void Load()
     {

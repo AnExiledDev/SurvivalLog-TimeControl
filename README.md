@@ -97,7 +97,7 @@ Works in English and Chinese: the pause badge and the speed buttons follow the g
 
 ## Requirements
 
-- Survival Log 1.1.19611. Built for this version; a game update can break it until the mod is updated.
+- Survival Log 1.1.20151. Built for this version; a game update can break it until the mod is updated.
 - The [BepInEx Pack for Survival Log](https://www.nexusmods.com/survivallog/mods/12), the BepInEx 6 (IL2CPP) build for the game.
 - Optional: [Exiled's Toolkit](https://github.com/AnExiledDev/SurvivalLog-ExiledToolkit) 0.4.0 or newer. With it, settings changed on the Mod Manager's Mods screen take effect without restarting the game. Without it, they take effect at the next game start.
 
@@ -121,7 +121,7 @@ Settings live in `BepInEx\config\com.dev.survivallog.timecontrol.cfg`, created t
 
 Built against BepInEx `6.0.0-be.788`.
 
-Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.10.1 started`. It says whether sleep fast-forward and expeditions are on, and the line after it lists the other features; that line is written again when a setting changes on the Mods screen. The next lines say which game hooks are in place and what the game's own pause key is; a line starting `could not hook` names a feature that will not work.
+Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.10.2 started`. It says whether sleep fast-forward and expeditions are on, and the line after it lists the other features; that line is written again when a setting changes on the Mods screen. The next lines say which game hooks are in place and what the game's own pause key is; a line starting `could not hook` names a feature that will not work.
 
 The same lines, plus every idle pause, alert pause, sleep and wake, are in `BepInEx\time-control.log`, which survives restarts and trims itself past 1 MB.
 
