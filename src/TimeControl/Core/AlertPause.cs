@@ -62,6 +62,7 @@ public readonly record struct AlertSettings(bool IsWaveOn, bool IsEmergencyOn, b
 /// <param name="WasSpeedChangedByHand">The player or the game's own buttons changed the speed since the last check, so a pause seen now may be theirs.</param>
 /// <param name="MoreRaised">The alerts after <see cref="Alert.QueueEmpty"/> that started since the last check.</param>
 /// <param name="IsHoldingSpeedUp">The player holds the game's hold-to-speed-up key, where only the danger alerts pause.</param>
+/// <param name="IsStoryPlaying">A story scene is playing, which waits on game time and holds on a black screen while paused.</param>
 public readonly record struct AlertSnapshot(
     bool CanPause,
     bool IsPaused,
@@ -72,10 +73,12 @@ public readonly record struct AlertSnapshot(
     float ElapsedSeconds,
     bool WasSpeedChangedByHand,
     AlertSet MoreRaised = default,
-    bool IsHoldingSpeedUp = false);
+    bool IsHoldingSpeedUp = false,
+    bool IsStoryPlaying = false);
 
 /// <param name="PauseFor">The alert to pause the game for now, or null to leave its speed alone.</param>
-public readonly record struct AlertStep(AlertPause State, Alert? PauseFor);
+/// <param name="ResumesHeldPause">Let go of the pause this alert holds, so a story scene can play.</param>
+public readonly record struct AlertStep(AlertPause State, Alert? PauseFor, bool ResumesHeldPause = false);
 
 /// <summary>
 /// Pause on alerts: the game is paused once when a zombie wave starts, an emergency fires, a trade drone comes home,
@@ -115,19 +118,22 @@ public abstract record AlertPause
 
     /// <summary>
     /// The mod's pauses apply under the timers the player waits out, never in a fast-forward such as sleep, and never
-    /// while an expedition is being finished, as the trip home waits on game time. The queue slow-down also waits while
-    /// the player holds the game's hold-to-speed-up key.
+    /// while an expedition is being finished or a story scene plays, as both wait on game time. The queue slow-down
+    /// also waits while the player holds the game's hold-to-speed-up key.
     /// </summary>
-    public static bool CanPause(GameTimer timer, bool isFastForwarding, bool isLeavingExpedition, bool isHoldingSpeedUp = false) =>
-        GameTimers.IsWaitedOut(timer) && !isFastForwarding && !isLeavingExpedition && !isHoldingSpeedUp;
+    public static bool CanPause(GameTimer timer, bool isFastForwarding, bool isLeavingExpedition, bool isHoldingSpeedUp = false, bool isStoryPlaying = false) =>
+        GameTimers.IsWaitedOut(timer) && !isFastForwarding && !isLeavingExpedition && !isHoldingSpeedUp && !isStoryPlaying;
 
     /// <summary>
     /// A speed change by hand while held means the pause standing now was made after this one, by the player or the
-    /// game, so it no longer holds the game for its alert.
+    /// game, so it no longer holds the game for its alert. A story scene starting while held lets the pause go, since
+    /// the scene would sit on a black screen; a pause made by hand stays the player's.
     /// </summary>
     public static AlertStep Next(AlertPause state, AlertSnapshot seen, AlertSettings settings) => state switch
     {
         Unseen unseen => Settle(unseen, seen),
+        Holding holding when seen.IsPaused && !seen.WasSpeedChangedByHand && seen.IsStoryPlaying =>
+            new AlertStep(new Watching(seen.IsWaveActive, TrackQueue(holding.QueueEmptySeconds, seen).EmptySeconds), null, ResumesHeldPause: true),
         Holding holding when seen.IsPaused && !seen.WasSpeedChangedByHand => Stay(Hold(holding, seen)),
         Holding holding => Watch(holding.WasWaveActive, holding.QueueEmptySeconds, seen, settings),
         Watching watching => Watch(watching.WasWaveActive, watching.QueueEmptySeconds, seen, settings),

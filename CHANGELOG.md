@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.4
+
+- Fixed: when the disaster starts, the cutscene no longer stays on a black screen until you unpause. Idle freeze and the alert pauses now wait while a story scene plays, and a pause they already made lets go when one starts.
+- Made for Survival Log 1.1.20151.
+
 ## 0.10.3
 
 - Typing a space or a number in another mod's search box or text box no longer pauses the game or changes its speed. This needs Exiled's Toolkit 0.12.0 or newer.

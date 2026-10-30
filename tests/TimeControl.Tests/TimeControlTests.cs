@@ -320,6 +320,26 @@ public class IdlePauseTests
     }
 
     [Fact]
+    public void Idle_freeze_never_pauses_while_a_story_scene_plays()
+    {
+        Assert.False(IdlePause.CanFreeze(isIdleFreezeOn: true, GameTimer.PrologueCountdown, isFastForwarding: false, isStoryPlaying: true));
+        Assert.True(IdlePause.CanFreeze(isIdleFreezeOn: true, GameTimer.PrologueCountdown, isFastForwarding: false, isStoryPlaying: false));
+    }
+
+    [Fact]
+    public void A_story_scene_starting_while_frozen_resumes_the_speed_the_game_had()
+    {
+        var idle = new IdleSnapshot(CanFreeze: true, IsBusy: false, IsPaused: false, ElapsedSeconds: 10f, RunningLevel: 3, IsLeavingExpedition: false);
+        var frozen = IdlePause.Next(IdlePause.Start, idle, IdlePause.DefaultDelaySeconds);
+        var story = idle with { CanFreeze = IdlePause.CanFreeze(true, GameTimer.PrologueCountdown, false, isStoryPlaying: true), IsPaused = true, ElapsedSeconds = 0.1f };
+        var step = IdlePause.Next(frozen.State, story, IdlePause.DefaultDelaySeconds);
+
+        Assert.Equal(IdleCommand.PauseGame, frozen.Command);
+        Assert.Equal(new IdleCommand.Resume(3), step.Command);
+        Assert.Equal(IdleCommand.Nothing, IdlePause.Next(step.State, story with { IsPaused = false }, IdlePause.DefaultDelaySeconds).Command);
+    }
+
+    [Fact]
     public void Idle_freeze_switched_off_never_pauses_anywhere()
     {
         Assert.False(IdlePause.CanFreeze(isIdleFreezeOn: false, GameTimer.DayClock, isFastForwarding: false));
@@ -1482,6 +1502,35 @@ public class AlertPauseTests
     private static AlertSnapshot Paused(AlertSnapshot seen) => seen with { IsPaused = true };
 
     private static AlertSnapshot Holding(AlertSnapshot seen) => seen with { IsHoldingSpeedUp = true };
+
+    [Fact]
+    public void No_alert_pauses_while_a_story_scene_plays()
+    {
+        Assert.False(AlertPause.CanPause(GameTimer.PrologueCountdown, isFastForwarding: false, isLeavingExpedition: false, isStoryPlaying: true));
+        Assert.True(AlertPause.CanPause(GameTimer.PrologueCountdown, isFastForwarding: false, isLeavingExpedition: false, isStoryPlaying: false));
+    }
+
+    [Fact]
+    public void A_story_scene_starting_while_an_alert_holds_the_game_lets_the_pause_go()
+    {
+        var story = Paused(WaveUnderWay) with { CanPause = false, IsStoryPlaying = true };
+        var step = Run(Defaults, Quiet, WaveUnderWay, story);
+
+        Assert.True(step.ResumesHeldPause);
+        Assert.Null(step.PauseFor);
+        Assert.IsType<AlertPause.Watching>(step.State);
+        Assert.False(Run(Defaults, Quiet, WaveUnderWay, story, story with { IsPaused = false }).ResumesHeldPause);
+    }
+
+    [Fact]
+    public void A_pause_made_by_hand_during_a_story_scene_stays_the_players()
+    {
+        var story = Paused(WaveUnderWay) with { CanPause = false, IsStoryPlaying = true };
+
+        Assert.False(Run(Defaults, Quiet, WaveUnderWay, story with { WasSpeedChangedByHand = true }).ResumesHeldPause);
+        Assert.False(Run(Defaults, Quiet, Quiet, story).ResumesHeldPause);
+        Assert.False(Run(Defaults, Quiet, WaveUnderWay, Paused(WaveUnderWay)).ResumesHeldPause);
+    }
 
     [Fact]
     public void A_danger_alert_still_pauses_while_the_speed_up_key_is_held()

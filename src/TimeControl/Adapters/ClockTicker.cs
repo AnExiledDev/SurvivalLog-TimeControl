@@ -144,11 +144,12 @@ public sealed partial class ClockTicker : MonoBehaviour
 
         var wasChangedByHand = SpeedPatches.TakeSpeedChangedByHand();
         var isAsleep = UpdateSleep(time, isPaused, wasChangedByHand, isLeavingExpedition);
+        var isStoryPlaying = StoryWatch.IsPlaying();
 
-        UpdateAlertPause(time, timer, isAsleep, isLeavingExpedition, elapsed, wasChangedByHand, now);
+        UpdateAlertPause(time, timer, isAsleep, isLeavingExpedition, isStoryPlaying, elapsed, wasChangedByHand, now);
         UpdateAwayPause(time, timer, isLeavingExpedition, wasChangedByHand, elapsed);
         UpdateWaits(time, timer, isAsleep, isLeavingExpedition, wasChangedByHand, elapsed, now);
-        UpdateIdlePause(time, time.IsPausedScale(), timer, elapsed, isAsleep, isLeavingExpedition);
+        UpdateIdlePause(time, time.IsPausedScale(), timer, elapsed, isAsleep, isLeavingExpedition, isStoryPlaying);
         UpdateQueueSlow(time, timer, isAsleep, isLeavingExpedition, elapsed, wasChangedByHand);
         UpdateExpeditionFinish(time, isLeavingExpedition);
 
@@ -287,7 +288,7 @@ public sealed partial class ClockTicker : MonoBehaviour
     /// seen after one is not the alert's.
     /// </summary>
     [HideFromIl2Cpp]
-    private void UpdateAlertPause(GameTimeManager time, GameTimer timer, bool isAsleep, bool isLeavingExpedition, float elapsed, bool wasChangedByHand, float now)
+    private void UpdateAlertPause(GameTimeManager time, GameTimer timer, bool isAsleep, bool isLeavingExpedition, bool isStoryPlaying, float elapsed, bool wasChangedByHand, float now)
     {
         var alerts = Settings.Alerts;
         var emergenciesFired = AlertSignals.TakeEmergenciesFired();
@@ -302,13 +303,19 @@ public sealed partial class ClockTicker : MonoBehaviour
 
         if (!alerts.IsAnyOn) return;
 
-        var canPause = AlertPause.CanPause(timer, (IsFastForwarding(time) || isAsleep) && !CanAlertWakeSleep(isAsleep), isLeavingExpedition);
+        var canPause = AlertPause.CanPause(timer, (IsFastForwarding(time) || isAsleep) && !CanAlertWakeSleep(isAsleep), isLeavingExpedition, isStoryPlaying: isStoryPlaying);
         var isWaveActive = alerts.IsWaveOn && _danger.IsWaveActive;
         var isBusy = alerts.IsQueueEmptyOn && time.IsLeadingRoleBusy();
-        var seen = new AlertSnapshot(canPause, time.IsPausedScale(), isWaveActive, emergenciesFired, dronesLanded, isBusy, elapsed, wasChangedByHand, moreRaised, SpeedPatches.IsHoldingGameKey(time));
+        var seen = new AlertSnapshot(canPause, time.IsPausedScale(), isWaveActive, emergenciesFired, dronesLanded, isBusy, elapsed, wasChangedByHand, moreRaised, SpeedPatches.IsHoldingGameKey(time), isStoryPlaying);
         var step = AlertPause.Next(_alert, seen, alerts);
 
         _alert = step.State;
+
+        if (step.ResumesHeldPause)
+        {
+            SpeedPatches.ChangeSpeed(time, SpeedPatches.LastRunningLevel);
+            LogFileOnly($"alert: a story scene is playing, resumed at speed level {SpeedPatches.LastRunningLevel} so it can finish");
+        }
 
         if (step.PauseFor is not { } alert) return;
 
@@ -331,9 +338,9 @@ public sealed partial class ClockTicker : MonoBehaviour
     /// workbench crafting, only matters while time runs where idle freeze applies or the game is held by this mod.
     /// </summary>
     [HideFromIl2Cpp]
-    private void UpdateIdlePause(GameTimeManager time, bool isPaused, GameTimer timer, float elapsed, bool isAsleep, bool isLeavingExpedition)
+    private void UpdateIdlePause(GameTimeManager time, bool isPaused, GameTimer timer, float elapsed, bool isAsleep, bool isLeavingExpedition, bool isStoryPlaying)
     {
-        var canFreeze = IdlePause.CanFreeze(Settings.IsIdleFreezeOn, timer, IsFastForwarding(time) || isAsleep, SpeedPatches.IsHoldingGameKey(time));
+        var canFreeze = IdlePause.CanFreeze(Settings.IsIdleFreezeOn, timer, IsFastForwarding(time) || isAsleep, SpeedPatches.IsHoldingGameKey(time), isStoryPlaying);
         var isBusy = ((canFreeze && !isPaused) || _idle is not IdlePause.Watching) && IsWorking(time);
         var seen = new IdleSnapshot(canFreeze, isBusy, isPaused, elapsed, SpeedPatches.LastRunningLevel, isLeavingExpedition);
         var before = _idle;
@@ -343,7 +350,7 @@ public sealed partial class ClockTicker : MonoBehaviour
 
         Carry(time, step.Command);
         _idle = step.State;
-        LogTransition(before, step, seen);
+        LogTransition(before, step, seen, isStoryPlaying);
     }
 
     private static void Carry(GameTimeManager time, IdleCommand command)
@@ -382,11 +389,13 @@ public sealed partial class ClockTicker : MonoBehaviour
         _finish = step.State;
     }
 
-    private static void LogTransition(IdlePause from, IdleStep step, IdleSnapshot seen)
+    private static void LogTransition(IdlePause from, IdleStep step, IdleSnapshot seen, bool isStoryPlaying)
     {
         var line = (from, step.State, step.Command) switch
         {
             (_, _, IdleCommand.Pause) => "idle: paused the game",
+            (_, _, IdleCommand.Resume resume) when isStoryPlaying =>
+                $"idle: a story scene is playing, resumed at speed level {resume.Level} so it can finish",
             (_, _, IdleCommand.Resume resume) when seen.IsLeavingExpedition =>
                 $"idle: the expedition is being finished, resumed at speed level {resume.Level} so the trip home can run",
             (_, _, IdleCommand.Resume resume) => $"idle: order given, resumed at speed level {resume.Level}",

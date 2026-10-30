@@ -15,7 +15,7 @@ namespace TimeControl;
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.timecontrol";
-    private const string Version = "0.10.3";
+    private const string Version = "0.10.4";
 
     public override void Load()
     {
@@ -98,6 +98,7 @@ public sealed class Plugin : BasePlugin
         log.TrimIfLarge();
         log.Write($"===== Time Control {Version} started: sleep fast-forward {OnOff(isSleepFastForwardOn)}, on expeditions {OnOff(isExpeditionOn)}");
         SpeedPatches.Apply(harmony, speeds, log.Write);
+        StoryWatch.Hook(harmony, log.Write);
         AlertsConfig.Bind(Config, harmony, log.Write);
         KeysConfig.Bind(Config, harmony, log.Write);
 
