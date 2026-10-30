@@ -25,3 +25,26 @@ public readonly record struct StoryTimeline(float StartedAt, double LengthSecond
         return played >= 0f && played < length + MarginSeconds;
     }
 }
+
+/// <summary>
+/// The move from before the disaster to after it. The game starts it as the countdown ends, clears the character's
+/// order, then waits on game time on a black screen before it opens the story screen and builds the new world.
+/// </summary>
+/// <param name="World">The world it started in.</param>
+/// <param name="StartedAt">The game time it started at.</param>
+public readonly record struct StoryTransition(IntPtr World, float StartedAt)
+{
+    /// <summary>
+    /// Game seconds it counts as under way at most, well past the game's own waits, so a world the game keeps for the
+    /// next one cannot hold the mod's pauses back for good. Game time stands still while paused, so a pause never runs it out.
+    /// </summary>
+    public const float MaxSeconds = 60f;
+
+    /// <summary>Under way while the world it started in is still the live one; a new world means it has moved on.</summary>
+    public bool IsUnderWay(IntPtr liveWorld, float gameTimeNow)
+    {
+        var played = gameTimeNow - StartedAt;
+
+        return World != IntPtr.Zero && World == liveWorld && played >= 0f && played < MaxSeconds;
+    }
+}

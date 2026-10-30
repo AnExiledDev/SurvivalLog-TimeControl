@@ -3,6 +3,39 @@ using Xunit;
 
 namespace TimeControl.Tests;
 
+public class StoryTransitionTests
+{
+    private static readonly IntPtr OldWorld = new(0x1000);
+    private static readonly IntPtr NewWorld = new(0x2000);
+
+    [Fact]
+    public void The_move_into_the_disaster_is_under_way_while_the_old_world_still_runs()
+    {
+        var transition = new StoryTransition(OldWorld, StartedAt: 100f);
+
+        Assert.True(transition.IsUnderWay(OldWorld, 100f));
+        Assert.True(transition.IsUnderWay(OldWorld, 104.5f));
+    }
+
+    [Fact]
+    public void A_new_world_means_the_move_has_finished()
+    {
+        Assert.False(new StoryTransition(OldWorld, 100f).IsUnderWay(NewWorld, 101f));
+        Assert.False(new StoryTransition(OldWorld, 100f).IsUnderWay(IntPtr.Zero, 101f));
+        Assert.False(new StoryTransition(IntPtr.Zero, 100f).IsUnderWay(IntPtr.Zero, 101f));
+    }
+
+    [Fact]
+    public void A_world_kept_for_the_next_one_stops_holding_the_pauses_back_after_a_while()
+    {
+        var transition = new StoryTransition(OldWorld, StartedAt: 100f);
+
+        Assert.True(transition.IsUnderWay(OldWorld, 100f + StoryTransition.MaxSeconds - 1f));
+        Assert.False(transition.IsUnderWay(OldWorld, 100f + StoryTransition.MaxSeconds + 1f));
+        Assert.False(transition.IsUnderWay(OldWorld, 3f));
+    }
+}
+
 public class StoryTimelineTests
 {
     [Fact]
