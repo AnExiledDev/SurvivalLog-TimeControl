@@ -25,17 +25,20 @@ internal static class GameClock
 
     /// <summary>
     /// Which timer runs: the game counts the day clock up and the prologue before the disaster down, and gives an
-    /// expedition's world a frozen timer (GameTimeManager.Initialize picks it for the exploration mode only).
+    /// expedition's world a frozen timer (GameTimeManager.Initialize picks it for the exploration mode only). Completing
+    /// preparations or the countdown running out both seal it (GameTimeManager.SealCountDownForDisaster sets IsCompleted).
     /// </summary>
     public static GameTimer Timer(GameTimeManager time)
     {
         var timer = time.Timer;
+        var countdown = timer?.TryCast<CountDownTimer>();
 
         return GameTimers.Classify(
             isCountingUp: timer?.TryCast<CountUpTimer>() != null,
-            isCountingDown: timer?.TryCast<CountDownTimer>() != null,
+            isCountingDown: countdown != null,
             isFrozen: timer?.TryCast<FrozenTimer>() != null,
-            isBeforeDisaster: time.WorldStateType == WorldStateType.PreDisaster);
+            isBeforeDisaster: time.WorldStateType == WorldStateType.PreDisaster,
+            isCountdownOver: countdown?.IsCompleted == true);
     }
 
     /// <summary>

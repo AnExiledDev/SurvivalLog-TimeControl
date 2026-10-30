@@ -60,10 +60,10 @@ public static class SpeedButtons
     /// </summary>
     /// <param name="timer">The timer as the mod controls it, so an expedition with TimeControlOnExpeditions off is not one.</param>
     public static bool ShouldShow(bool isOn, bool isNormalMode, GameTimer timer) =>
-        isOn && (timer is GameTimer.PrologueCountdown or GameTimer.Expedition) && SpeedKeys.IsModeForKeys(isNormalMode, timer);
+        isOn && (GameTimers.IsCountdown(timer) || timer == GameTimer.Expedition) && SpeedKeys.IsModeForKeys(isNormalMode, timer);
 
     /// <summary>The countdown to the disaster has its own HUD page; an expedition uses the main one, as home does.</summary>
-    public static HudPage Page(GameTimer timer) => timer == GameTimer.PrologueCountdown ? HudPage.Countdown : HudPage.Home;
+    public static HudPage Page(GameTimer timer) => GameTimers.IsCountdown(timer) ? HudPage.Countdown : HudPage.Home;
 
     /// <summary>
     /// The pause button is lit while paused, as the game lights its own; otherwise the button for the speed level, which

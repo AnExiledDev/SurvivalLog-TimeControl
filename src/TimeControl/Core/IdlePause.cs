@@ -66,11 +66,10 @@ public abstract record IdlePause
     /// Idle freeze applies to the timers the player waits out by standing around: the day clock at home, the
     /// countdown to the disaster and an expedition's exposure meter. Any other timer keeps the game's pace, and a
     /// fast-forward such as sleep is the game deliberately running time, so neither freezes. Neither does holding the
-    /// game's hold-to-speed-up key: the player is asking for time to run. Nor does a story scene, which counts its
-    /// length in game time, so a freeze would hold it on a black screen.
+    /// game's hold-to-speed-up key: the player is asking for time to run.
     /// </summary>
-    public static bool CanFreeze(bool isIdleFreezeOn, GameTimer timer, bool isFastForwarding, bool isHoldingSpeedUp = false, bool isStoryPlaying = false) =>
-        isIdleFreezeOn && GameTimers.IsWaitedOut(timer) && !isFastForwarding && !isHoldingSpeedUp && !isStoryPlaying;
+    public static bool CanFreeze(bool isIdleFreezeOn, GameTimer timer, bool isFastForwarding, bool isHoldingSpeedUp = false) =>
+        isIdleFreezeOn && GameTimers.IsWaitedOut(timer) && !isFastForwarding && !isHoldingSpeedUp;
 
     public static IdleStep Next(IdlePause state, IdleSnapshot seen, float delaySeconds) => state switch
     {
@@ -100,7 +99,8 @@ public abstract record IdlePause
 
     /// <summary>
     /// Time running again while frozen means the player pressed play, so it is left running. Otherwise an order,
-    /// finishing the expedition, or the freeze no longer applying (leaving home, sleeping), resumes the speed the game had.
+    /// finishing the expedition, or the freeze no longer applying (leaving home, sleeping, the countdown to the
+    /// disaster ending), resumes the speed the game had.
     /// </summary>
     private static IdleStep Hold(Frozen frozen, IdleSnapshot seen)
     {

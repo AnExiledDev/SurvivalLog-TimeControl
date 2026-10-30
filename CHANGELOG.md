@@ -1,13 +1,8 @@
 # Changelog
 
-## 0.10.5
+## 0.10.6
 
-- Fixed: the screen no longer stays black when the countdown to the disaster ends while idle freeze has paused the game. The mod's pauses now wait from the moment the countdown ends until the disaster has started.
-- Made for Survival Log 1.1.20151.
-
-## 0.10.4
-
-- Fixed: when the disaster starts, the cutscene no longer stays on a black screen until you unpause. Idle freeze and the alert pauses now wait while a story scene plays, and a pause they already made lets go when one starts.
+- Fixed: clicking Complete Preparations, or the countdown running out, while idle freeze or an alert pause holds the game no longer leaves the screen black before the disaster starts. Once preparations are complete the mod stops pausing and lets go of any pause it made, so the disaster plays at your speed. A pause you made yourself stays yours; press play or a speed key to go on.
 - Made for Survival Log 1.1.20151.
 
 ## 0.10.3

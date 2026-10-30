@@ -12,14 +12,17 @@ public static class SpeedKeys
     /// </summary>
     public static bool IsModeForKeys(bool isNormalMode, GameTimer timer) => isNormalMode || timer == GameTimer.Expedition;
 
-    /// <summary>The pause key works wherever the game's speed keys do, in the countdown to the disaster and on expeditions.</summary>
+    /// <summary>
+    /// The pause key works wherever the game's speed keys do, in the countdown to the disaster and on expeditions. It
+    /// still works once the countdown is over, so a pause the player made can be lifted while the disaster starts.
+    /// </summary>
     public static bool IsPauseKeyLive(bool isAfterDisaster, GameTimer timer) =>
-        isAfterDisaster || timer is GameTimer.PrologueCountdown or GameTimer.Expedition;
+        isAfterDisaster || GameTimers.IsCountdown(timer) || timer == GameTimer.Expedition;
 
     /// <summary>
     /// The mod answers the game's speed keys only in the countdown to the disaster and on expeditions; anywhere the
     /// game answers them itself, answering too would change the speed twice for one press.
     /// </summary>
     public static bool AreGameKeysOurs(bool isAfterDisaster, GameTimer timer) =>
-        timer == GameTimer.Expedition || (!isAfterDisaster && timer == GameTimer.PrologueCountdown);
+        timer == GameTimer.Expedition || (!isAfterDisaster && GameTimers.IsCountdown(timer));
 }
