@@ -6,7 +6,7 @@ public readonly record struct SpeedChipView(int Level, string Label);
 
 /// <summary>
 /// A small chip on the top right corner of the slow or the fastest speed button, saying the speed the mod holds on
-/// it, so a second or third press of the same key shows which speed is in use. It goes on the game's own buttons or
+/// it, so a second or third press of the same key shows which speed is in use. It goes on the game's buttons or
 /// the mod's copy, wherever the page shows them, and never takes a click.
 /// </summary>
 public static class SpeedChip
@@ -25,7 +25,7 @@ public static class SpeedChip
 
     /// <summary>
     /// The chip to show now, or null for none. Only a speed the mod holds gets one: a slow speed, or a fast speed above
-    /// the game's own high speed. Paused, the game lights its pause button and the chip goes.
+    /// the game's high speed. Paused, the game lights its pause button and the chip goes.
     /// </summary>
     /// <param name="heldSlow">The slow speed the mod holds, if any.</param>
     /// <param name="heldFast">The fast speed the mod holds above the game's high speed, if any.</param>
@@ -40,7 +40,7 @@ public static class SpeedChip
 
     /// <summary>
     /// The speed the game's hold-to-speed-up key runs at while it is held, for the chip on the fastest button, or null
-    /// when it is not held or runs at the game's own speed.
+    /// when it is not held or runs at the game's speed.
     /// </summary>
     public static float? HoldKeyFast(bool isHoldKeyRunning, float gameFastSpeed, float multiple) =>
         isHoldKeyRunning ? FastGear.HoldKeyScale(gameFastSpeed, multiple) : null;
@@ -56,7 +56,7 @@ public static class SpeedChip
 
     /// <summary>
     /// Puts the chip on the button for the view's level on the given page, or takes it off when there is no view or
-    /// no such button. The mod's copy marks each button with its level; the game's own buttons run slow, normal, fast,
+    /// no such button. The mod's copy marks each button with its level; the game's buttons run slow, normal, fast,
     /// fastest, pause (the slow one only where the game shows it), so the fastest one is second to last and the slow
     /// one first of five.
     /// </summary>

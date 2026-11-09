@@ -8,7 +8,7 @@ The game's slow button only slows once you stand idle, and there is no way to pa
 
 [size=5]Main features[/size]
 [list]
-[*][b]Slower speeds[/b]: the first press of the slow button is the game's own slow; press again for a true 0.5x, then 0.25x, then back to the game's own.[/*]
+[*][b]Slower speeds[/b]: the first press of the slow button is the game's slow; press again for a true 0.5x, then 0.25x, then back to the game's.[/*]
 [*][b]Super speed[/b]: press the fast button or key 3 again at high speed to run twice as fast. A small chip on the button shows the speed in use.[/*]
 [*][b]Idle pause[/b]: the game pauses after 3 seconds with nothing queued, and your next order resumes it.[/*]
 [*][b]Pause on alerts[/b]: the game pauses once when a zombie wave starts or an emergency fires. More can be switched on: a trade drone coming home, zombies hitting the house or a trap, the power going out, a need running low, falling ill, phone and trade messages, a ripe crop, dusk and dawn. On expeditions alerts only pause when TimeControlOnExpeditions is true.[/*]
@@ -24,9 +24,9 @@ The game's slow button only slows once you stand idle, and there is no way to pa
 [*][b]Fast sleep[/b]: sleep and naps run at super speed, and the game pauses when you wake.[/*]
 [*][b]Pause key[/b]: Space pauses and resumes, at home, before the disaster and on expeditions.[/*]
 [*][b]Expeditions[/b]: pause, speed keys, slow and super speed and the idle pause all work on expeditions.[/*]
-[*][b]Speed buttons everywhere[/b]: slow, normal, fast, fastest and pause buttons in the countdown before the disaster and on expeditions, where the game shows none. They work like the game's own buttons at home.[/*]
+[*][b]Speed buttons everywhere[/b]: slow, normal, fast, fastest and pause buttons in the countdown before the disaster and on expeditions, where the game shows none. They work like the game's buttons at home.[/*]
 [*][b]Pause badge[/b]: a small "Paused" or "Paused: idle" chip beside the speed buttons shows why the game stands still. It is see-through and clicks go straight through it.[/*]
-[*][b]See-through paused banner[/b]: the game's own paused banner is drawn half see-through, so the phone's reply choices under it stay readable. PauseOverlayOpacity in the config sets how much.[/*]
+[*][b]See-through paused banner[/b]: the game's paused banner is drawn half see-through, so the phone's reply choices under it stay readable. PauseOverlayOpacity in the config sets how much.[/*]
 [*][b]Hover highlights[/b]: objects still highlight under the mouse while paused or slowed.[/*]
 [/list]
 
@@ -34,14 +34,14 @@ The game's slow button only slows once you stand idle, and there is no way to pa
 [list]
 [*][b]Space[/b]: pause, press again to resume.[/*]
 [*][b]G[/b]: center the camera on your character (it was on Space).[/*]
-[*][b]1, 2, 3[/b]: the game's own speeds. Press 3 again at high speed for super speed.[/*]
+[*][b]1, 2, 3[/b]: the game's speeds. Press 3 again at high speed for super speed.[/*]
 [*][b]X[/b] (hold): the fastest speed until you let go.[/*]
-[*][b]Shift[/b] (hold): the game's own hold to speed up, at the speed you set in GameHoldKeySpeed (Fastest by default).[/*]
+[*][b]Shift[/b] (hold): the game's hold to speed up, at the speed you set in GameHoldKeySpeed (Fastest by default).[/*]
 [*][b]K[/b] (hold): the slowest slow speed until you let go.[/*]
 [*][b]5 to 9[/b]: speeds you set in the config, off by default.[/*]
 [*][b]Mouse wheel[/b] over the speed buttons: step through every speed.[/*]
 [/list]
-All keys can be changed in the config. A key you set in the game's own key settings always wins.
+All keys can be changed in the config. A key you set in the game's key settings always wins.
 
 Time Control adds no data of its own to your save and does not edit game files. It does change how fast game time runs, and that is saved with your game. You can remove it at any time.
 

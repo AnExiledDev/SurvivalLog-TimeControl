@@ -4,7 +4,7 @@ using System.Globalization;
 namespace TimeControl.Core;
 
 /// <summary>
-/// The game's own "paused" strip: a dark band with the pause sign across the lower middle of the screen, drawn by its
+/// The game's "paused" strip: a dark band with the pause sign across the lower middle of the screen, drawn by its
 /// SpeedUp page whenever the game stands still. The page already lets clicks through, but the band draws over
 /// whatever sits there, such as the phone's reply choices, so the mod makes it see-through. It also keeps the band out
 /// of hit-testing in its own right, in case the page ever stops letting clicks through. The game never unpauses from a

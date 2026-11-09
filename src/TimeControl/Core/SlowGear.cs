@@ -13,18 +13,18 @@ public enum SlowPress
     /// <summary>Paused, by anyone.</summary>
     FromPause,
 
-    /// <summary>Already running on the slow button, the game's own slow or one of ours.</summary>
+    /// <summary>Already running on the slow button, the game's slow or one of ours.</summary>
     FromSlowSpeed,
 }
 
 /// <summary>
-/// The extra speeds below the game's own slow. The first press is the game's own slow, which runs at full speed while
+/// The extra speeds below the game's slow. The first press is the game's slow, which runs at full speed while
 /// the character has orders and slows down when they idle; pressing slow again moves on through the list and wraps
-/// back to the game's own, so with "0.5,0.25" the presses go game's slow, half, quarter, game's slow.
+/// back to the game's, so with "0.5,0.25" the presses go game's slow, half, quarter, game's slow.
 /// </summary>
 public static class SlowGear
 {
-    /// <summary>The game's own slow, with none of our speeds held.</summary>
+    /// <summary>The game's slow, with none of our speeds held.</summary>
     public const int GamesOwn = -1;
 
     public const float Slowest = 0.05f;
@@ -57,8 +57,8 @@ public static class SlowGear
 
     /// <summary>
     /// Which speed a slow press lands on: an index into the list, or <see cref="GamesOwn"/>. A press while already slow
-    /// moves on one and wraps back to the game's own; a press that resumes from pause comes back to the speed in use
-    /// before it; a press from any other speed starts at the game's own.
+    /// moves on one and wraps back to the game's; a press that resumes from pause comes back to the speed in use
+    /// before it; a press from any other speed starts at the game's.
     /// </summary>
     public static int NextIndex(int current, int count, SlowPress from)
     {

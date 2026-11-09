@@ -11,7 +11,7 @@ public readonly record struct AlarmSettings(int? SecondOfDay, bool IsDaily);
 /// <param name="Timer">The timer running, as the mod controls it.</param>
 /// <param name="Reading">The running clock, or null when it could not be read.</param>
 /// <param name="CanRing">
-/// The game is where an alarm may pause it: the character is awake, no fast-forward of the game's own runs and no
+/// The game is where an alarm may pause it: the character is awake, no fast-forward of the game's runs and no
 /// expedition is being finished.
 /// </param>
 public readonly record struct AlarmSnapshot(GameTimer Timer, ClockReading? Reading, bool CanRing);

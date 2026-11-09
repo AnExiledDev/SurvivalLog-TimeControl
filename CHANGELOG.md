@@ -45,7 +45,7 @@
 - While you hold the game's hold-to-speed-up key, only danger alerts pause the game: a zombie wave, an emergency, zombies damaging the house or a trap, and low life. Turn this off with the new setting `DangerPausesWhileHolding`.
 - Holding the game's hold-to-speed-up key while paused now runs time, and letting go pauses again.
 - With `GameHoldKeySpeed` above 1, the fastest speed button shows the speed you run at while the key is held.
-- New setting `GameHoldKeySpeed` sets how fast the game's own hold-to-speed-up key (`Shift` by default) runs, as a multiple of Fastest. The default, 1, keeps the game's own speed.
+- New setting `GameHoldKeySpeed` sets how fast the game's hold-to-speed-up key (`Shift` by default) runs, as a multiple of Fastest. The default, 1, keeps the game's speed.
 - Made for Survival Log 1.1.19611.
 
 ## 0.9.3
@@ -56,8 +56,8 @@
 
 ## 0.9.2
 
-- The Slow button keeps the game's own slow on its first press, idle slowdown included. Pressing it again goes on to the slower speeds in `SlowSpeeds` (0.5x, then 0.25x by default), then back to the game's own slow.
-- Holding the game's own hold-to-speed-up key now works while one of the mod's slow speeds or super speed is in use; before, the mod put its speed straight back.
+- The Slow button keeps the game's slow on its first press, idle slowdown included. Pressing it again goes on to the slower speeds in `SlowSpeeds` (0.5x, then 0.25x by default), then back to the game's slow.
+- Holding the game's hold-to-speed-up key now works while one of the mod's slow speeds or super speed is in use; before, the mod put its speed straight back.
 - With a menu pause on (`PauseAtWorkbench` and the others), giving an order in that menu, such as a craft at the workbench, brings your speed back at once.
 - Made for Survival Log 1.1.19611.
 

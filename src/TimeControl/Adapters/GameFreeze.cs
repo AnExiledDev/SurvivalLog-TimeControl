@@ -11,7 +11,7 @@ namespace TimeControl.Adapters;
 /// Lifts the world freeze the game makes in player menus (<see cref="MenuFreeze"/>), checked on every tick of the clock check, so the speed
 /// keys and buttons work whatever menu is open. The game makes that freeze through BattleLogicWorld.OnPause, from the
 /// PauseBattleLogic event each menu sends as it opens and from moments inside some menus, such as a craft finishing at
-/// the workbench. The menus are read from the game's own record of the menus it shows. Every read fails soft, logged
+/// the workbench. The menus are read from the game's record of the menus it shows. Every read fails soft, logged
 /// at most a few times.
 /// </summary>
 internal static class GameFreeze

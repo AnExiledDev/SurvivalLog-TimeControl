@@ -9,7 +9,7 @@ public readonly record struct Phrase(string En, string Zh)
 }
 
 /// <summary>
-/// Every word the mod puts on screen. Chinese uses the game's own terms; the speed names are the game's own, used only
+/// Every word the mod puts on screen. Chinese uses the game's terms; the speed names are the game's, used only
 /// when the page has not loaded its text yet.
 /// </summary>
 public static class Texts

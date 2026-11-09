@@ -42,7 +42,7 @@ public static class SpeedLadder
         return speeds;
     }
 
-    /// <summary>The game level a scale reads as, the way the game's own speed level reading puts it.</summary>
+    /// <summary>The game level a scale reads as, the way the game's speed level reading puts it.</summary>
     /// <param name="doubleScale">The game's speed on its double speed level.</param>
     /// <param name="fastScale">The game's high speed.</param>
     public static int LevelFor(float scale, float doubleScale, float fastScale)

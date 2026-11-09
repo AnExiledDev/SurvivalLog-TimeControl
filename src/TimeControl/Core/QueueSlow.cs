@@ -10,7 +10,7 @@ public enum QueueEmptyAction
     Pause,
 }
 
-/// <summary>The speed the queue slow-down drops the game to, named as the game's own speed buttons are.</summary>
+/// <summary>The speed the queue slow-down drops the game to, named as the game's speed buttons are.</summary>
 public enum QueueSlowTarget
 {
     Slow,
@@ -46,7 +46,7 @@ public readonly record struct QueueSlowSettings(bool IsOn, QueueSlowTarget Targe
 /// <param name="IsBusy">The player's character has an order queued.</param>
 /// <param name="Running">The speed the game runs at, or last ran at when paused.</param>
 /// <param name="ElapsedSeconds">Real seconds since the last check.</param>
-/// <param name="WasSpeedChangedByHand">The player or the game's own buttons changed the speed since the last check.</param>
+/// <param name="WasSpeedChangedByHand">The player or the game's buttons changed the speed since the last check.</param>
 public readonly record struct QueueSlowSnapshot(bool CanSlow, bool IsPaused, bool IsBusy, GameSpeed Running, float ElapsedSeconds, bool WasSpeedChangedByHand);
 
 /// <param name="SlowTo">Drop the game to this speed now.</param>

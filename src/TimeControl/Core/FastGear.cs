@@ -18,13 +18,13 @@ public enum FastPress
 }
 
 /// <summary>
-/// The faster gears above the game's high speed. Gear 0 is the game's own high speed; gear N holds the Nth multiple
+/// The faster gears above the game's high speed. Gear 0 is the game's high speed; gear N holds the Nth multiple
 /// of it. Pressing the fast button while already fast moves up a gear and wraps back to the game's high speed, so
 /// with the default "2" the presses go high, super, high.
 /// </summary>
 public static class FastGear
 {
-    /// <summary>The game's own high speed, with no gear of ours on top.</summary>
+    /// <summary>The game's high speed, with no gear of ours on top.</summary>
     public const int GamesOwn = 0;
 
     /// <summary>Anything closer to 1 than this would look like the button did nothing.</summary>
@@ -68,7 +68,7 @@ public static class FastGear
     /// <summary>
     /// The gear after a speed change to <paramref name="level"/>. A pause keeps the gear so resuming comes back to
     /// it; any other speed drops it. The fast button cycles when already fast, resumes the kept gear from a pause,
-    /// and starts at the game's own high speed from any other speed.
+    /// and starts at the game's high speed from any other speed.
     /// </summary>
     public static int GearAfter(int gear, int count, int level, FastPress from)
     {
@@ -87,10 +87,10 @@ public static class FastGear
         };
     }
 
-    /// <summary>A gear that no longer exists, after the list shrank, is the game's own high speed.</summary>
+    /// <summary>A gear that no longer exists, after the list shrank, is the game's high speed.</summary>
     public static int Valid(int gear, int count) => gear >= GamesOwn && gear <= Math.Max(count, 0) ? gear : GamesOwn;
 
-    /// <summary>The gear with the largest multiple, or the game's own high speed when there are no gears.</summary>
+    /// <summary>The gear with the largest multiple, or the game's high speed when there are no gears.</summary>
     public static int FastestGear(IReadOnlyList<float> multiples)
     {
         var fastest = GamesOwn;
@@ -117,13 +117,13 @@ public static class FastGear
     /// <summary>The game's hold-to-speed-up key at its own speed: the game's high speed, with nothing on top.</summary>
     public const float GamesOwnHold = 1f;
 
-    /// <summary>An unreadable setting keeps the game's own hold speed; the rest is kept between it and the largest multiple.</summary>
+    /// <summary>An unreadable setting keeps the game's hold speed; the rest is kept between it and the largest multiple.</summary>
     public static float ClampHoldMultiple(float multiple) =>
         float.IsFinite(multiple) ? Math.Clamp(multiple, GamesOwnHold, MostMultiple) : GamesOwnHold;
 
     /// <summary>
     /// The scale the game's hold-to-speed-up key runs at: its multiple of the game's high speed, capped like a fast
-    /// gear. Null leaves the game's own speed-up alone, at a multiple of 1 or before the game's high speed is known.
+    /// gear. Null leaves the game's speed-up alone, at a multiple of 1 or before the game's high speed is known.
     /// </summary>
     public static float? HoldKeyScale(float gameFastSpeed, float multiple)
     {

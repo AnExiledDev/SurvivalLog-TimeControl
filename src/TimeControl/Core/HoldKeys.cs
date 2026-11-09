@@ -11,7 +11,7 @@ public enum HoldKind
     Slow,
 
     /// <summary>
-    /// The game's own hold-to-speed-up key, pressed while paused: the game will not speed up a paused clock, so the mod
+    /// The game's hold-to-speed-up key, pressed while paused: the game will not speed up a paused clock, so the mod
     /// runs it at that key's speed and pauses again on letting go.
     /// </summary>
     GameKey,
@@ -27,7 +27,7 @@ public readonly record struct HeldFrom(bool WasPaused, bool WasPausedByKey, Spee
 /// <param name="IsFastDown">The hold-fast key is down.</param>
 /// <param name="IsSlowDown">The hold-slow key is down, and there is a slow speed to hold.</param>
 /// <param name="CanHold">
-/// The game's speed is the player's to change: a timer they wait out, not asleep, no fast-forward of the game's own and
+/// The game's speed is the player's to change: a timer they wait out, not asleep, no fast-forward of the game's and
 /// no expedition being finished.
 /// </param>
 /// <param name="WasChangedByOthers">Anything but the speed keys changed the game's speed since the last check.</param>

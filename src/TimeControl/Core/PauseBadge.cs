@@ -8,8 +8,8 @@ public readonly record struct BadgeSettings(bool IsIdleBadgeOn, bool IsPauseKeyB
 
 /// <summary>
 /// A small chip on the game's HUD saying why the game stands still, so a stopped drone or a frozen clock never looks
-/// like a bug. It wears the game's own idle-slowdown chip style (which the game ships but never shows) and sits just
-/// right of the speed buttons, the game's own or the mod's, rather than above them where it would cover the row of
+/// like a bug. It wears the game's idle-slowdown chip style (which the game ships but never shows) and sits just
+/// right of the speed buttons, the game's or the mod's, rather than above them where it would cover the row of
 /// suggested actions; where the page has no speed buttons it sits at the top centre. It is see-through and never
 /// takes a click, so nothing under it is lost.
 /// </summary>
@@ -18,7 +18,7 @@ public static class PauseBadge
     /// <summary>The element the script owns in the page, found again by this id after every reload.</summary>
     private const string ElementId = "tc-pause-badge";
 
-    /// <summary>The class of the game's own idle-slowdown chip, styled by the page's own stylesheet.</summary>
+    /// <summary>The class of the game's idle-slowdown chip, styled by the page's own stylesheet.</summary>
     private const string NativeChipClass = "idle-slow-chip";
 
     /// <summary>Half see-through and outside hit-testing wherever the badge sits; never marked interactive, so the click-through map skips it too.</summary>
@@ -34,7 +34,7 @@ public static class PauseBadge
     /// <summary>
     /// What the badge says now; empty hides it. Only a pause still holding the game gets one, and the idle pause and
     /// an alert pause name themselves because a pause the player did not make looks like a bug; any other pause keeps
-    /// the game's own display.
+    /// the game's display.
     /// </summary>
     /// <param name="isIdleHolding">The idle pause made the pause and still owns it.</param>
     /// <param name="isPauseKeyHolding">The player's last speed change through the mod's keys was a pause.</param>

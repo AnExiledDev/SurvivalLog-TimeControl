@@ -43,7 +43,7 @@ internal static partial class SpeedPatches
 
     private static readonly SpeedChangeFanOut FanOut = new();
 
-    /// <summary>The game's own speed keys and the level its key handler sends for each.</summary>
+    /// <summary>The game's speed keys and the level its key handler sends for each.</summary>
     private static readonly (HotKeyAction Action, int Level)[] GameSpeedKeys =
     {
         (HotKeyAction.SpeedSlow, PauseToggle.Slow),
@@ -98,7 +98,7 @@ internal static partial class SpeedPatches
     /// </summary>
     public static bool IsNormalMode => _isNormalMode;
 
-    /// <summary>The fast gear sleep runs at: the one with the largest multiple, or the game's own high speed when there are none.</summary>
+    /// <summary>The fast gear sleep runs at: the one with the largest multiple, or the game's high speed when there are none.</summary>
     public static int FastestGear => FastGear.FastestGear(_fastMultiples);
 
     public static void Apply(Harmony harmony, SpeedSettings settings, Action<string> log)
@@ -116,9 +116,9 @@ internal static partial class SpeedPatches
         if (OwnsSlowGear)
         {
             Patch(harmony, typeof(GameTimeManager), nameof(GameTimeManager.ChangeGameSpeed), postfix: nameof(HoldChosenSlowSpeed),
-                done: $"slow button goes on from the game's own slow to {string.Join(" then ", Labels())}", consequence: "the slow button keeps the game's behaviour");
+                done: $"slow button goes on from the game's slow to {string.Join(" then ", Labels())}", consequence: "the slow button keeps the game's behaviour");
             Patch(harmony, typeof(GameTimeManager), nameof(GameTimeManager.UpdateIdleSlowdown), prefix: nameof(SkipGameIdleSlowdownOnOurSpeeds),
-                done: "the game's own idle slowdown is off while one of our slow speeds is held", consequence: "the game may drop our slow speeds to 0.3x when idle");
+                done: "the game's idle slowdown is off while one of our slow speeds is held", consequence: "the game may drop our slow speeds to 0.3x when idle");
         }
 
         if (OwnsFastGear)
@@ -130,8 +130,8 @@ internal static partial class SpeedPatches
         if (settings.IsSleepFastForwardOn)
         {
             Patch(harmony, typeof(GameTimeManager), nameof(GameTimeManager.StartTempSpeedUp), prefix: nameof(SkipGameSleepSpeedUp),
-                done: "the game's own sleep speed-up is replaced by the sleep fast-forward",
-                consequence: "the game's own sleep speed-up takes over from the sleep fast-forward partway through a sleep");
+                done: "the game's sleep speed-up is replaced by the sleep fast-forward",
+                consequence: "the game's sleep speed-up takes over from the sleep fast-forward partway through a sleep");
         }
 
         Patch(harmony, typeof(CameraTouch), nameof(CameraTouch.Update), prefix: nameof(KeepHoverTestOnRealTime),
@@ -151,7 +151,7 @@ internal static partial class SpeedPatches
             : $"{pauseKey} toggles pause, and the game's speed keys work {where}";
     }
 
-    /// <summary>The slow speed being held, or null when the slow button is not in use, not ours, or on the game's own slow.</summary>
+    /// <summary>The slow speed being held, or null when the slow button is not in use, not ours, or on the game's slow.</summary>
     public static float? HeldSlowSpeed(GameTimeManager time)
     {
         if (!IsOnOurSlowSpeed || !time.IsSlowGearActive) return null;
@@ -159,11 +159,11 @@ internal static partial class SpeedPatches
         return _slowSpeeds[_slowIndex];
     }
 
-    /// <summary>Whether the slow button sits on one of our speeds rather than the game's own slow.</summary>
+    /// <summary>Whether the slow button sits on one of our speeds rather than the game's slow.</summary>
     private static bool IsOnOurSlowSpeed => _slowIndex >= 0 && _slowIndex < _slowSpeeds.Count;
 
     /// <summary>
-    /// The fast speed being held, or null on the game's own high speed, at any other speed, while paused, or before
+    /// The fast speed being held, or null on the game's high speed, at any other speed, while paused, or before
     /// the game's high speed is known.
     /// </summary>
     public static float? HeldFastSpeed(GameTimeManager time)
@@ -184,7 +184,7 @@ internal static partial class SpeedPatches
         _fastGear = FastGear.Valid(speed.Gear, _fastMultiples.Count);
     }
 
-    /// <summary>A new world starts at the game's own speeds, and unpaused by the pause key.</summary>
+    /// <summary>A new world starts at the game's speeds, and unpaused by the pause key.</summary>
     public static void ForgetWorld()
     {
         _fastGear = FastGear.GamesOwn;
@@ -192,7 +192,7 @@ internal static partial class SpeedPatches
         _wasPauseRefused = false;
     }
 
-    /// <summary>Whether the player or the game's own speed buttons changed the live world's speed since the last call.</summary>
+    /// <summary>Whether the player or the game's speed buttons changed the live world's speed since the last call.</summary>
     public static bool TakeSpeedChangedByHand()
     {
         var wasChanged = _wasChangedByHand;
@@ -235,7 +235,7 @@ internal static partial class SpeedPatches
 
     /// <summary>
     /// A click on this mod's copy of the game's speed buttons. It counts as a change by hand and never as a pause key
-    /// press, as a click on the game's own button does.
+    /// press, as a click on the game's button does.
     /// </summary>
     public static void PressSpeedButton(GameTimeManager time, int level) => ChangeSpeedAs(time, level, ChangeSource.Button);
 
@@ -244,7 +244,7 @@ internal static partial class SpeedPatches
 
     /// <summary>
     /// A speed change this mod makes goes straight to the live time manager, so it would always count one and say
-    /// nothing about leftover worlds; only the game's own changes, which reach every manager listening, are counted.
+    /// nothing about leftover worlds; only the game's changes, which reach every manager listening, are counted.
     /// No pause goes through while an expedition is being finished, whoever asks for it, the player or this mod, as
     /// the trip home waits on game time; the refusal is kept for the ticker to tell of.
     /// </summary>
@@ -328,7 +328,7 @@ internal static partial class SpeedPatches
         }
     }
 
-    /// <summary>The game's own slow keeps its idle slowdown; on our speeds it would put the game at 0.3x instead.</summary>
+    /// <summary>The game's slow keeps its idle slowdown; on our speeds it would put the game at 0.3x instead.</summary>
     private static bool SkipGameIdleSlowdownOnOurSpeeds() => !IsOnOurSlowSpeed;
 
     /// <summary>
@@ -370,7 +370,7 @@ internal static partial class SpeedPatches
     }
 
     /// <summary>
-    /// The game's own slow is left as the game made it. On one of our speeds the game would run at full speed until
+    /// The game's slow is left as the game made it. On one of our speeds the game would run at full speed until
     /// the player idles, so the chosen speed is held at once.
     /// </summary>
     private static void HoldChosenSlowSpeed(GameTimeManager __instance, int speed)
@@ -390,7 +390,7 @@ internal static partial class SpeedPatches
             if (held == _lastLoggedHeld) return;
 
             _lastLoggedHeld = held;
-            _log(held is { } logged ? $"slow button: holding {SlowGear.Label(logged)}" : "slow button: the game's own slow");
+            _log(held is { } logged ? $"slow button: holding {SlowGear.Label(logged)}" : "slow button: the game's slow");
         }
         catch (Exception ex)
         {
@@ -459,7 +459,7 @@ internal static partial class SpeedPatches
     }
 
     /// <summary>
-    /// Runs before the game's own key handling. The game ignores its speed keys before the disaster and on expeditions,
+    /// Runs before the game's key handling. The game ignores its speed keys before the disaster and on expeditions,
     /// so there this answers them, along with the pause key wherever it works. A pause key press is never also read as
     /// one of the game's speed keys, unless the game itself uses that key.
     /// </summary>
@@ -518,7 +518,7 @@ internal static partial class SpeedPatches
         if (IsGameKey(_pauseKey))
         {
             LogOnce(ref _hasLoggedPauseKeyTaken,
-                $"{_pauseKey} is bound to one of the game's own actions, so it does not pause: rebind that action in the game's key settings or pick another PauseToggleKey; logged once");
+                $"{_pauseKey} is bound to one of the game's actions, so it does not pause: rebind that action in the game's key settings or pick another PauseToggleKey; logged once");
 
             return false;
         }
@@ -528,7 +528,7 @@ internal static partial class SpeedPatches
         return true;
     }
 
-    /// <summary>The game's own speed keys, read the way its key handler reads them and sending the levels it sends.</summary>
+    /// <summary>The game's speed keys, read the way its key handler reads them and sending the levels it sends.</summary>
     private static void AnswerGameSpeedKeys(GameTimeManager time)
     {
         foreach (var (action, level) in GameSpeedKeys)
@@ -555,7 +555,7 @@ internal static partial class SpeedPatches
     }
 
     /// <summary>
-    /// Only the game's default moves, so a key the player set in the game's own key settings still wins, and the
+    /// Only the game's default moves, so a key the player set in the game's key settings still wins, and the
     /// settings page and its reset show the new default.
     /// </summary>
     private static void MoveCenterCameraOffPauseKey()
@@ -586,7 +586,7 @@ internal static partial class SpeedPatches
     {
         try
         {
-            _log($"the game's own pause key is {HotKeyManager.Bind(HotKeyAction.SpeedPause)}");
+            _log($"the game's pause key is {HotKeyManager.Bind(HotKeyAction.SpeedPause)}");
         }
         catch (Exception ex)
         {

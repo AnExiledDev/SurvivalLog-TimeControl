@@ -15,7 +15,7 @@ public readonly record struct SleepUntilSettings(int? WakeAtSecond, bool IsWakeO
 /// <param name="IsWakeable">The character is in a real sleep, the kind the game speeds up; a nap is not.</param>
 /// <param name="Reading">The running clock, or null when it could not be read.</param>
 /// <param name="IsNewAlert">An alert paused the game on this check.</param>
-/// <param name="IsGameFastForwarding">The game's own sleep speed-up is still running; it ends a moment after the character wakes.</param>
+/// <param name="IsGameFastForwarding">The game's sleep speed-up is still running; it ends a moment after the character wakes.</param>
 /// <param name="IsPaused">The game is paused, by anyone.</param>
 public readonly record struct SleepUntilSnapshot(
     bool IsAsleep,
@@ -92,7 +92,7 @@ public abstract record SleepUntil
     }
 
     /// <summary>
-    /// A wake is asked for once and never pressed again. Once the character is up and the game's own speed-up has put
+    /// A wake is asked for once and never pressed again. Once the character is up and the game's speed-up has put
     /// its speed back, which can undo a pause made during it, a wake for an alert pauses the game if it runs.
     /// </summary>
     private static SleepUntilStep Rise(Woken woken, SleepUntilSnapshot seen)

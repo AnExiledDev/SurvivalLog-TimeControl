@@ -4,7 +4,7 @@ using System.Globalization;
 namespace TimeControl.Core;
 
 /// <summary>
-/// The mouse wheel over the speed buttons, the game's own or the mod's copy, steps the speed up or down. The page
+/// The mouse wheel over the speed buttons, the game's or the mod's copy, steps the speed up or down. The page
 /// counts the wheel's notches and the plugin takes the count on its next check, as it takes clicks on its buttons.
 /// While the wheel is on, a turn over the buttons is kept from the rest of the page, so the camera does not zoom too.
 /// </summary>

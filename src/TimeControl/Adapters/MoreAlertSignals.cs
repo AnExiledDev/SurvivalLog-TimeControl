@@ -97,7 +97,7 @@ internal static class MoreAlertSignals
     }
 
     /// <summary>
-    /// Each need against its maximum, as the game's own bars show them: a need kept as a fraction is scaled by the game's
+    /// Each need against its maximum, as the game's bars show them: a need kept as a fraction is scaled by the game's
     /// ratio, and the bar divides its value by that ratio and not its maximum (AttributeComponent.SyncAttr2UI).
     /// </summary>
     private static NeedLevels? ReadNeeds(BattleLogicWorld world)
@@ -164,7 +164,7 @@ internal static class MoreAlertSignals
         return (normal + evt, trade);
     }
 
-    /// <summary>Only the live world's crops count, so a leftover world still answering the game's events adds nothing. Only a plain field is written: this runs inside the game's own update.</summary>
+    /// <summary>Only the live world's crops count, so a leftover world still answering the game's events adds nothing. Only a plain field is written: this runs inside the game's update.</summary>
     private static void AfterPlantStateChanged(DataCollectionManager __instance, int plantState)
     {
         try

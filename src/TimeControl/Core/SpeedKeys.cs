@@ -1,7 +1,7 @@
 namespace TimeControl.Core;
 
 /// <summary>
-/// Where the pause key and the game's own speed keys work. The game answers its speed keys only at home after the
+/// Where the pause key and the game's speed keys work. The game answers its speed keys only at home after the
 /// disaster, so the countdown to the disaster and every expedition ran with no way to pause or speed them up.
 /// </summary>
 public static class SpeedKeys

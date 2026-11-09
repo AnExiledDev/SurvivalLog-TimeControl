@@ -19,7 +19,7 @@ internal static class Workbench
     /// <summary>The game's type for the workbench window, looked up the first time it is asked about.</summary>
     private static Il2CppSystem.Type? _toolTableUiType;
 
-    /// <summary>Whether the workbench window is open, by the game's own record of the menus it shows.</summary>
+    /// <summary>Whether the workbench window is open, by the game's record of the menus it shows.</summary>
     public static bool IsOpen()
     {
         var ui = BaseSingleton<ReduxUISystem>.IsInstanceCreated ? BaseSingleton<ReduxUISystem>.Instance : null;

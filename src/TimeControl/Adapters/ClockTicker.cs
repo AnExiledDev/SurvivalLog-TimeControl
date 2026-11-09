@@ -72,7 +72,7 @@ public sealed partial class ClockTicker : MonoBehaviour
 
     private void Update() => Tick();
 
-    /// <summary>A key or a click seen after this frame's Update, in the game's own key handling or a page answer, still acts on this frame.</summary>
+    /// <summary>A key or a click seen after this frame's Update, in the game's key handling or a page answer, still acts on this frame.</summary>
     private void LateUpdate()
     {
         if (_isCheckWanted) Tick();
@@ -172,7 +172,7 @@ public sealed partial class ClockTicker : MonoBehaviour
     }
 
     /// <summary>
-    /// Clicks on the mod's speed buttons go through first, as a click on the game's own button lands before the rest
+    /// Clicks on the mod's speed buttons go through first, as a click on the game's button lands before the rest
     /// of the check sees the speed. A click is only applied while the buttons are still meant to show.
     /// </summary>
     private static void PressSpeedButtons(GameTimeManager time, GameTimer timer)
@@ -259,9 +259,9 @@ public sealed partial class ClockTicker : MonoBehaviour
         var line = (from, step.State, step.Command) switch
         {
             (_, SleepWatch.Asleep asleep, SleepCommand.FastForward) =>
-                $"sleep: started, fast-forwarding at {time.BattleTimeScale:0.##}x in place of the game's own sleep speed-up of {time.ChapterSpeedUp2}x; {Describe(asleep.Before)} before",
+                $"sleep: started, fast-forwarding at {time.BattleTimeScale:0.##}x in place of the game's sleep speed-up of {time.ChapterSpeedUp2}x; {Describe(asleep.Before)} before",
             (SleepWatch.Awake, SleepWatch.Asleep asleep, _) =>
-                $"sleep: started, at the game's own sleep speed (its speed-up runs at {time.ChapterSpeedUp2}x); {Describe(asleep.Before)} before",
+                $"sleep: started, at the game's sleep speed (its speed-up runs at {time.ChapterSpeedUp2}x); {Describe(asleep.Before)} before",
             (SleepWatch.Asleep { IsHeld: true }, SleepWatch.Asleep { IsHeld: false }, _) => "sleep: speed changed by hand, kept until waking",
             (_, _, SleepCommand.PauseOnWake wake) => $"sleep: woke, paused the game; the next order, play or the pause key resumes {Describe(wake.ResumeAt)}",
             (_, _, SleepCommand.Resume resume) => $"sleep: order given after waking, resumed {Describe(resume.At)}",
@@ -411,7 +411,7 @@ public sealed partial class ClockTicker : MonoBehaviour
 
     /// <summary>
     /// Saves, menus and the game's other speed changes can put the scale back without going through the slow or fast
-    /// button, so a held slow or fast speed is checked and restored here; the game's own fast-forwards and its own speed
+    /// button, so a held slow or fast speed is checked and restored here; the game's fast-forwards and its own speed
     /// boost are left alone.
     /// </summary>
     [HideFromIl2Cpp]

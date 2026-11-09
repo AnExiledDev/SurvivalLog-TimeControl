@@ -35,7 +35,7 @@ public readonly record struct AwaySettings(bool IsFocusLossOn, bool IsBagOn, boo
 /// <param name="CanPause">The game is where the mod's pauses apply.</param>
 /// <param name="IsPaused">The game is paused, by anyone.</param>
 /// <param name="Running">The speed the game runs at, or last ran at when paused.</param>
-/// <param name="WasSpeedChangedByHand">The player or the game's own buttons changed the speed since the last check.</param>
+/// <param name="WasSpeedChangedByHand">The player or the game's buttons changed the speed since the last check.</param>
 /// <param name="IsBusy">The player's character has an order queued or a workbench is crafting, read only while a menu is open.</param>
 /// <param name="HasNewOrder">An order was given or a craft started since the last check, read only while a menu is open.</param>
 /// <param name="Elapsed">Real seconds since the last check.</param>

@@ -14,12 +14,12 @@ internal static partial class SpeedPatches
 
     public static void ApplyHoldKey(Harmony harmony) =>
         Patch(harmony, typeof(GameTimeManager), nameof(GameTimeManager.OnHoldSpeedBoost), prefix: nameof(RaiseGameHoldTarget), postfix: nameof(HoldGameHoldSpeed),
-            done: "the game's hold-to-speed-up key runs at GameHoldKeySpeed", consequence: "the game's hold-to-speed-up key keeps the game's own speed");
+            done: "the game's hold-to-speed-up key runs at GameHoldKeySpeed", consequence: "the game's hold-to-speed-up key keeps the game's speed");
 
     /// <summary>
     /// The game only starts its hold speed-up when the speed now is below its high speed, and then runs at that high
     /// speed, a whole number. Raising that number for the length of the call lets the hold start from any speed below
-    /// ours, with the game's own checks (not paused, no sleep speed-up, not on a frozen timer) still deciding; the
+    /// ours, with the game's checks (not paused, no sleep speed-up, not on a frozen timer) still deciding; the
     /// postfix puts the number back and sets the exact speed.
     /// </summary>
     /// <summary>
@@ -35,7 +35,7 @@ internal static partial class SpeedPatches
             ? new SpeedTarget.Custom(scale)
             : new SpeedTarget.Level(new GameSpeed(PauseToggle.Triple, FastGear.GamesOwn));
 
-    /// <summary>The game's hold-to-speed-up key is running time now, by the game's own boost or by the hold keys from a pause.</summary>
+    /// <summary>The game's hold-to-speed-up key is running time now, by the game's boost or by the hold keys from a pause.</summary>
     public static bool IsHoldingGameKey(GameTimeManager time) => time.IsHoldBoostActive() || IsGameKeyHeldFromPause;
 
     /// <summary>The key's press and release each ask for a check this frame, so the ticker follows the key at once.</summary>

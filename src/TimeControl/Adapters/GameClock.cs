@@ -42,10 +42,10 @@ internal static class GameClock
     }
 
     /// <summary>
-    /// The same writes the game's own speed change makes: the scale it reads back, the scale Unity runs at, and the
+    /// The same writes the game's speed change makes: the scale it reads back, the scale Unity runs at, and the
     /// message that tells the page's timers and progress bars the new pace. The longest frame step is set the way the
-    /// game's own custom speed sets it, so a fast speed is not cut short by the step the game allows at its high
-    /// speed; for the game's own speeds and slower that is the step it already uses.
+    /// game's custom speed sets it, so a fast speed is not cut short by the step the game allows at its high
+    /// speed; for the game's speeds and slower that is the step it already uses.
     /// </summary>
     public static void HoldSpeed(GameTimeManager time, float speed)
     {

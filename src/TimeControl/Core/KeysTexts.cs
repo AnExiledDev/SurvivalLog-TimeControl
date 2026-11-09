@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace TimeControl.Core;
 
-/// <summary>The words shown under the clock at home. Chinese uses the game's own terms.</summary>
+/// <summary>The words shown under the clock at home. Chinese uses the game's terms.</summary>
 public static class KeysTexts
 {
     public static readonly Phrase OrderDoneAt = new("Current order done at", "当前行为完成于");

@@ -16,11 +16,11 @@ public readonly record struct GameSpeed(int Level, int Gear)
 
 /// <summary>What the ticker saw on one check.</summary>
 /// <param name="IsAsleep">The player's character is sleeping or napping.</param>
-/// <param name="IsGameFastForwarding">The game's own sleep speed-up is still running; it ends a moment after the character wakes.</param>
+/// <param name="IsGameFastForwarding">The game's sleep speed-up is still running; it ends a moment after the character wakes.</param>
 /// <param name="IsBusy">The player's character has an order queued.</param>
 /// <param name="IsPaused">The game is paused, by anyone.</param>
 /// <param name="Running">The speed the game runs at, or last ran at when paused.</param>
-/// <param name="WasSpeedChangedByHand">The player, or the game's own speed buttons, changed the speed since the last check.</param>
+/// <param name="WasSpeedChangedByHand">The player, or the game's speed buttons, changed the speed since the last check.</param>
 /// <param name="IsLeavingExpedition">The expedition is being finished: the game's trip home waits on game time, so a pause would hold it forever.</param>
 public readonly record struct SleepSnapshot(
     bool IsAsleep,
@@ -31,9 +31,9 @@ public readonly record struct SleepSnapshot(
     bool WasSpeedChangedByHand,
     bool IsLeavingExpedition);
 
-/// <param name="IsFastForwardOn">Sleep runs at the fastest fast gear, in place of the game's own sleep speed-up.</param>
+/// <param name="IsFastForwardOn">Sleep runs at the fastest fast gear, in place of the game's sleep speed-up.</param>
 /// <param name="IsPauseOnWakeOn">The game pauses when the character wakes.</param>
-/// <param name="FastestGear">The fast gear sleep runs at; the game's own high speed when there are no gears.</param>
+/// <param name="FastestGear">The fast gear sleep runs at; the game's high speed when there are no gears.</param>
 public readonly record struct SleepSettings(bool IsFastForwardOn, bool IsPauseOnWakeOn, int FastestGear);
 
 /// <summary>What the ticker has to do to the game after a step.</summary>
@@ -115,7 +115,7 @@ public abstract record SleepWatch
     }
 
     /// <summary>
-    /// The game's own speed-up, when it runs, ends a moment after the character wakes and puts its speed back as it
+    /// The game's speed-up, when it runs, ends a moment after the character wakes and puts its speed back as it
     /// goes, so waking counts only once that is done; pausing earlier would have the game undo the pause. Waking while
     /// an expedition is being finished never pauses, and goes on as it does without the wake pause.
     /// </summary>

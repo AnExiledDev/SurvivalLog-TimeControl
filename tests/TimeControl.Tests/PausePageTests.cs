@@ -95,7 +95,7 @@ public class PauseBadgePageTests
 }
 
 /// <summary>
-/// The style that makes the game's own "paused" strip see-through, so the phone's reply choices under it can be read,
+/// The style that makes the game's "paused" strip see-through, so the phone's reply choices under it can be read,
 /// and keeps it out of the way of clicks.
 /// </summary>
 public class PauseOverlayPageTests

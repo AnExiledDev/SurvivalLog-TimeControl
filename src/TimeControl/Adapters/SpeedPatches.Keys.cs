@@ -51,10 +51,10 @@ internal static partial class SpeedPatches
             done: "hold keys and custom speed keys read", consequence: "HoldFastKey, HoldSlowKey and SpeedKeys5To9 will not work");
     }
 
-    /// <summary>The fastest speed the mod has: its fastest fast gear, or the game's own high speed when it has none.</summary>
+    /// <summary>The fastest speed the mod has: its fastest fast gear, or the game's high speed when it has none.</summary>
     public static SpeedTarget FastestTarget => new SpeedTarget.Level(new GameSpeed(PauseToggle.Triple, FastestGear));
 
-    /// <summary>The slowest of the slow button's speeds, or null when the slow button is the game's own.</summary>
+    /// <summary>The slowest of the slow button's speeds, or null when the slow button is the game's.</summary>
     public static SpeedTarget? SlowestTarget
     {
         get
@@ -214,7 +214,7 @@ internal static partial class SpeedPatches
     }
 
     /// <summary>
-    /// Runs before the game's own key handling, with the pause key's hook. A key only counts where the game would
+    /// Runs before the game's key handling, with the pause key's hook. A key only counts where the game would
     /// answer its own speed keys, so typing in a text box or rebinding a key never changes the speed. Nothing is read
     /// unless a hold key is down or a key was pressed this frame.
     /// </summary>
@@ -260,7 +260,7 @@ internal static partial class SpeedPatches
     }
 
     /// <summary>
-    /// Whether one of the game's own actions is bound to the key. The game's check skips the action it is asked about;
+    /// Whether one of the game's actions is bound to the key. The game's check skips the action it is asked about;
     /// HideUI is the one it always skipped before it took that argument, so the answer stays the same.
     /// </summary>
     private static bool IsGameKey(KeyCode key) => HotKeyManager.IsKeyTakenByOtherAction(key, GameCore.HotUpdate.HotKeyAction.HideUI);
@@ -278,7 +278,7 @@ internal static partial class SpeedPatches
         if (isTaken)
         {
             LogOnce(ref hasLogged,
-                $"{key} is bound to one of the game's own actions, so it does not hold a speed: rebind that action in the game's key settings or pick another {setting}; logged once");
+                $"{key} is bound to one of the game's actions, so it does not hold a speed: rebind that action in the game's key settings or pick another {setting}; logged once");
         }
 
         return !isTaken;

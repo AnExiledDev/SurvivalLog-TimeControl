@@ -4,7 +4,7 @@ namespace TimeControl.Core;
 
 /// <summary>What the ticker saw on one check.</summary>
 /// <param name="CanFreeze">Idle freeze is on, the day clock at home, the countdown to the disaster or an expedition is running, and no fast-forward such as sleep is.</param>
-/// <param name="IsBusy">The player's character has an order queued, the game's own test for "not idle".</param>
+/// <param name="IsBusy">The player's character has an order queued, the game's test for "not idle".</param>
 /// <param name="IsPaused">The game is paused, by anyone.</param>
 /// <param name="ElapsedSeconds">Real seconds since the last check.</param>
 /// <param name="RunningLevel">The speed level the game last ran at, which a resume goes back to.</param>

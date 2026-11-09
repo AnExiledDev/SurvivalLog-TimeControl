@@ -43,7 +43,7 @@ public abstract record WaitGoal
 /// <param name="IsBusy">The player's character has an order queued.</param>
 /// <param name="IsAsleep">The player's character is sleeping or napping.</param>
 /// <param name="IsSleepWatched">The mod's sleep handling is watching the sleep, and puts back the speed from before it on waking.</param>
-/// <param name="IsGameFastForwarding">The game's own sleep speed-up is still running; it ends a moment after the character wakes.</param>
+/// <param name="IsGameFastForwarding">The game's sleep speed-up is still running; it ends a moment after the character wakes.</param>
 /// <param name="ElapsedSeconds">Real seconds since the last check.</param>
 /// <param name="IsHeldAway">The mod is holding the game paused while the player is away, in another window or a menu.</param>
 public readonly record struct WaitSnapshot(
@@ -109,7 +109,7 @@ public abstract record WaitUntil
 
     /// <summary>
     /// The character fell asleep during a wait and the mod's sleep handling is off: the wait is over, and the speed
-    /// from before it comes back once they are up and the game's own sleep speed-up is done.
+    /// from before it comes back once they are up and the game's sleep speed-up is done.
     /// </summary>
     public sealed record AfterSleep(GameSpeed Before) : WaitUntil;
 

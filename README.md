@@ -6,10 +6,10 @@ Survival Log's slow button only slows the game once you stand idle, the clock ke
 
 ## Features
 
-- **Slower speeds on the slow button**: the game's own slow runs at full speed until you stand idle, then drops to 0.3x. The first press of the slow button is still the game's own slow. Press it again for a true 0.5x, again for 0.25x, and once more to go back to the game's own slow. On the mod's speeds the button's tooltip, and a small chip on its top right corner, show the speed in use.
+- **Slower speeds on the slow button**: the game's slow runs at full speed until you stand idle, then drops to 0.3x. The first press of the slow button is still the game's slow. Press it again for a true 0.5x, again for 0.25x, and once more to go back to the game's slow. On the mod's speeds the button's tooltip, and a small chip on its top right corner, show the speed in use.
 - **Super speed**: press the Fastest button (or key `3`) again while at Fastest and the game runs at twice that speed. Press it once more to go back to Fastest. A small chip on the top right corner of the button shows the speed the game really runs at, such as 6x. Pausing and resuming comes back to super speed; keys `1` and `2` and the slow button leave it.
 - **Idle pause**: once your character has stood idle with nothing queued for 3 seconds, the game pauses for real. The clock, zombies, plants, trade countdowns and the drone all stop. Your next order resumes the speed you had. Press play (or the pause key) while it is paused and time keeps running until your next order. A pause you made yourself is never undone by the mod.
-- **Fast sleep, and a pause on waking**: sleep and naps run at super speed in place of the game's own sleep speed-up. When your character wakes, however the sleep ended, the game pauses. Your next order, play or the pause key resumes the speed you had before the sleep. Pick another speed during a sleep and it is kept until you wake.
+- **Fast sleep, and a pause on waking**: sleep and naps run at super speed in place of the game's sleep speed-up. When your character wakes, however the sleep ended, the game pauses. Your next order, play or the pause key resumes the speed you had before the sleep. Pick another speed during a sleep and it is kept until you wake.
 - **Pause on alerts**: the game pauses once when a zombie wave starts or an emergency fires, so neither slips past at super speed. More can be switched on: a trade drone coming home, zombies damaging the house or a trap in a wave, the power going out, a need running low, falling ill, a phone or trade message, a crop ripening, and dusk (19:00) or dawn (7:00). Play or the pause key resumes the speed you had, and the same alert never pauses the game twice, so once you resume, time keeps running.
 - **When the queue runs out**: `OnQueueEmpty` can slow the game down (to normal speed by default) or pause it when your character finishes their last order. Slowed down, your next order brings your speed back.
 - **Pause while you are away**: the game pauses when you Alt+Tab out and brings your speed back when you return. It also pauses while a menu is open: the bag, workbench, phone, trade, cooking, a shop, the map and the rest, each switchable. An order or a craft started there runs until it is done, then the game pauses again, and starting a machine there, such as cooking or brewing, runs the game until you close the menu.
@@ -23,9 +23,9 @@ Survival Log's slow button only slows the game once you stand idle, the clock ke
 - **A pause key**: `Space` pauses, and pressing it again resumes the speed you had. It works at home, in the countdown before the disaster and on expeditions. The game had `Space` on centering the camera on your character, so that moves to `G`.
 - **Pausing before the disaster**: the game ignores its own speed keys in the countdown before the disaster. The mod answers them there, so you can pause, slow down and speed up while you prepare. The idle pause works there too.
 - **Time control on expeditions**: the game also ignores its speed keys on an expedition. With this mod the pause key, the game's speed keys, the slow and super speeds and the idle pause all work there. The day clock stands still while you are away and the exposure meter fills on game time, so pausing stops the meter and super speed fills it faster.
-- **Speed buttons before the disaster and on expeditions**: the game shows no speed buttons in the countdown before the disaster or on an expedition. The mod adds its own there, in the game's style: slow, normal, fast, fastest and pause. They work like the game's buttons at home, with the mod's slow and super speeds. In the countdown they sit to the right of the buttons in the bottom left corner; on an expedition they sit where the game's own buttons sit at home. On expeditions they only show when `TimeControlOnExpeditions` is `true`. Set `SpeedButtons` to `false` to hide them.
-- **A pause badge**: while the idle pause holds the game, a small "Paused: idle" chip sits just to the right of the speed buttons, in the game's own chip style. It sits beside the buttons, so it no longer covers the suggested actions above them. It is see-through and clicks go straight through it. While a pause you made with the pause key holds it (or with the game's own pause key, before the disaster and on expeditions), the chip says "Paused". The game's own pause at home after the disaster gets no chip; the game lights its pause button there. It goes away the moment time runs again. Where the screen shows no speed buttons, the chip sits at the top centre, except in the countdown before the disaster, where it only shows beside the mod's speed buttons.
-- **A see-through "paused" banner**: the game's own paused banner across the lower middle of the screen is drawn half see-through, so the phone's reply choices under it stay readable. Clicks go through it to whatever is underneath. Set `PauseOverlayOpacity` to `1` to keep the game's banner as it is, or to `0` to hide it.
+- **Speed buttons before the disaster and on expeditions**: the game shows no speed buttons in the countdown before the disaster or on an expedition. The mod adds its own there, in the game's style: slow, normal, fast, fastest and pause. They work like the game's buttons at home, with the mod's slow and super speeds. In the countdown they sit to the right of the buttons in the bottom left corner; on an expedition they sit where the game's buttons sit at home. On expeditions they only show when `TimeControlOnExpeditions` is `true`. Set `SpeedButtons` to `false` to hide them.
+- **A pause badge**: while the idle pause holds the game, a small "Paused: idle" chip sits just to the right of the speed buttons, in the game's chip style. It sits beside the buttons, so it no longer covers the suggested actions above them. It is see-through and clicks go straight through it. While a pause you made with the pause key holds it (or with the game's pause key, before the disaster and on expeditions), the chip says "Paused". The game's pause at home after the disaster gets no chip; the game lights its pause button there. It goes away the moment time runs again. Where the screen shows no speed buttons, the chip sits at the top centre, except in the countdown before the disaster, where it only shows beside the mod's speed buttons.
+- **A see-through "paused" banner**: the game's paused banner across the lower middle of the screen is drawn half see-through, so the phone's reply choices under it stay readable. Clicks go through it to whatever is underneath. Set `PauseOverlayOpacity` to `1` to keep the game's banner as it is, or to `0` to hide it.
 - **Hover highlights while paused**: objects highlight under the mouse while the game is paused or slowed, as they do at normal speed.
 - **A time log**: what the mod did (idle pauses, alert pauses, speed changes, sleep and wake) is written to `BepInEx\time-control.log`.
 
@@ -35,21 +35,21 @@ Time Control adds no data of its own to your save and does not edit game files. 
 | --- | --- |
 | `Space` | Pause. Press again to resume the speed you had. Works at home, in the countdown before the disaster and on expeditions. The game uses `Space` for camera follow, so that moves to `G`. Change it with `PauseToggleKey`. |
 | `G` | Camera follow: centers the camera on your character. The game has this on `Space`, so the mod moves it to `G`, which the game does not use by default. Change it with `CenterCameraKey`. |
-| `1`, `2`, `3` | The game's own speed keys. Press `3` again at Fastest for super speed. In the countdown before the disaster and on expeditions the mod answers them, since the game does not. |
+| `1`, `2`, `3` | The game's speed keys. Press `3` again at Fastest for super speed. In the countdown before the disaster and on expeditions the mod answers them, since the game does not. |
 | `X` | Hold for the fastest speed; let go to get your speed back. Change it with `HoldFastKey`. |
-| `Shift` | The game's own hold to speed up. Set how fast it runs with `GameHoldKeySpeed` (the game's Fastest by default). |
+| `Shift` | The game's hold to speed up. Set how fast it runs with `GameHoldKeySpeed` (the game's Fastest by default). |
 | `K` | Hold for the slowest slow speed; let go to get your speed back. Change it with `HoldSlowKey`. |
 | `5` to `9` | Off by default. Each runs at a speed you set in `SpeedKeys5To9`. |
 | Mouse wheel | Over the speed buttons, steps through every speed. Turn it off with `SpeedWheel`. |
-| `4`, `` ` `` (`~`) | The game's own pause and slow keys (or whatever you bound them to in the game's key settings). The mod answers them in the countdown before the disaster and on expeditions. |
+| `4`, `` ` `` (`~`) | The game's pause and slow keys (or whatever you bound them to in the game's key settings). The mod answers them in the countdown before the disaster and on expeditions. |
 
-A key you set in the game's own key settings always wins. If the game uses your pause key for one of its own actions, the pause key stands aside and the log says so. The pause key does nothing while you type in a text box or rebind a key.
+A key you set in the game's key settings always wins. If the game uses your pause key for one of its own actions, the pause key stands aside and the log says so. The pause key does nothing while you type in a text box or rebind a key.
 
 ## How it works
 
-**Idle** is the game's own test: no order from you in your character's queue, the same test the game's idle slowdown uses. Something your character does on its own does not count as an order, so the game can pause during it.
+**Idle** is the game's test: no order from you in your character's queue, the same test the game's idle slowdown uses. Something your character does on its own does not count as an order, so the game can pause during it.
 
-**Super speed** is a multiple of the game's Fastest speed (2x by default, set by `FastSpeeds`). Speeds are capped at 40x: the game moves its world one step per frame, and past 40x each step at 30 frames a second is longer than the game's own speeds allow.
+**Super speed** is a multiple of the game's Fastest speed (2x by default, set by `FastSpeeds`). Speeds are capped at 40x: the game moves its world one step per frame, and past 40x each step at 30 frames a second is longer than the game's speeds allow.
 
 **The pause badge** shows only for pauses the mod knows the reason for:
 
@@ -57,8 +57,8 @@ A key you set in the game's own key settings always wins. If the game uses your 
 - A pause on an alert names the alert, such as "Paused: wave", "Paused: emergency" or "Paused: queue empty".
 - A pause while you are away shows that the window is in the background or a menu is open.
 - A pause made with `PauseToggleKey` anywhere shows "Paused".
-- A pause made with the game's own pause key shows "Paused" in the countdown before the disaster and on expeditions, where the mod answers that key.
-- The game's own pause button gets no badge, and neither does the game's pause key at home after the disaster, where the game answers it itself and lights its own pause button.
+- A pause made with the game's pause key shows "Paused" in the countdown before the disaster and on expeditions, where the mod answers that key.
+- The game's pause button gets no badge, and neither does the game's pause key at home after the disaster, where the game answers it itself and lights its own pause button.
 
 **Alerts** each pause the game once, at the moment they start:
 
@@ -69,7 +69,7 @@ A key you set in the game's own key settings always wins. If the game uses your 
 
 Alerts pause only where the idle pause can: at home, in the countdown before the disaster and on expeditions, and not while your character sleeps or the game fast-forwards. An alert that starts while the game is already paused, or where alerts do not pause, is let go and does not pause the game later. On expeditions alerts only pause when `TimeControlOnExpeditions` is `true`. Loading a save in the middle of a wave does not pause it, and nothing that happens in the first second after loading does either. If two alerts start together, the game pauses once and the badge names the most pressing one: a wave, then an emergency, then a drone, then the queue.
 
-**Expeditions**: the day clock stands still while you are away and the exposure meter does the counting. The mod controls the expedition's game time, so the meter stops while paused and fills faster at super speed. Set `TimeControlOnExpeditions` to `false` to leave expeditions at the game's own pace.
+**Expeditions**: the day clock stands still while you are away and the exposure meter does the counting. The mod controls the expedition's game time, so the meter stops while paused and fills faster at super speed. Set `TimeControlOnExpeditions` to `false` to leave expeditions at the game's pace.
 
 ## Known issues and limits
 
@@ -77,10 +77,10 @@ Alerts pause only where the idle pause can: at home, in the countdown before the
 - The badge can blink out for up to half a second when the game redraws its speed buttons, then comes back.
 - Where the screen shows no speed buttons, the badge sits at the top centre and may cover part of the game's display there.
 - In the countdown before the disaster the badge only shows beside the mod's speed buttons. With `SpeedButtons` set to `false` there is no badge in the countdown.
-- Super speed moves the world in bigger steps per frame, so fights and walking are coarser than at the game's own speeds. A low frame rate caps how fast it really runs.
-- While `FastForwardSleep` is on, the game's own sleep speed-up never starts, so anything the game shows only during its speed-up does not show.
+- Super speed moves the world in bigger steps per frame, so fights and walking are coarser than at the game's speeds. A low frame rate caps how fast it really runs.
+- While `FastForwardSleep` is on, the game's sleep speed-up never starts, so anything the game shows only during its speed-up does not show.
 - An order you queued before waking does not resume the game after the wake pause. Give a new order, press play or press the pause key.
-- Pressing the game's own pause button while the idle pause holds the game does not make the pause yours: your next order still resumes. Press play first, then pause, to keep it paused.
+- Pressing the game's pause button while the idle pause holds the game does not make the pause yours: your next order still resumes. Press play first, then pause, to keep it paused.
 - The idle pause works at home, in the countdown before the disaster and on expeditions. Any other timer keeps the game's pace.
 - A click on those speed buttons can take up to a tenth of a second to change the speed.
 - When a pause starts, the paused banner can show at full strength for up to half a second before it turns see-through.
@@ -122,11 +122,11 @@ Settings live in `BepInEx\config\com.dev.survivallog.timecontrol.cfg`, created t
 
 Built against BepInEx `6.0.0-be.788`.
 
-Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.10.6 started`. It says whether sleep fast-forward and expeditions are on, and the line after it lists the other features; that line is written again when a setting changes on the Mods screen. The next lines say which game hooks are in place and what the game's own pause key is; a line starting `could not hook` names a feature that will not work.
+Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.10.6 started`. It says whether sleep fast-forward and expeditions are on, and the line after it lists the other features; that line is written again when a setting changes on the Mods screen. The next lines say which game hooks are in place and what the game's pause key is; a line starting `could not hook` names a feature that will not work.
 
 The same lines, plus every idle pause, alert pause, sleep and wake, are in `BepInEx\time-control.log`, which survives restarts and trims itself past 1 MB.
 
-If `Space` does not pause, look in the log for a line saying it is bound to one of the game's own actions, and rebind that action in the game's key settings or pick another `PauseToggleKey`.
+If `Space` does not pause, look in the log for a line saying it is bound to one of the game's actions, and rebind that action in the game's key settings or pick another `PauseToggleKey`.
 
 ## Changelog
 

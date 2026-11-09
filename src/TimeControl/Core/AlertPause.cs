@@ -30,10 +30,10 @@ public enum Alert
     TradeMessage,
     PlantRipe,
 
-    /// <summary>Night fell, by the game's own hours.</summary>
+    /// <summary>Night fell, by the game's hours.</summary>
     Dusk,
 
-    /// <summary>Night ended, by the game's own hours.</summary>
+    /// <summary>Night ended, by the game's hours.</summary>
     Dawn,
 }
 
@@ -57,9 +57,9 @@ public readonly record struct AlertSettings(bool IsWaveOn, bool IsEmergencyOn, b
 /// <param name="IsWaveActive">A zombie wave is under way.</param>
 /// <param name="EmergenciesFired">Emergencies that started since the last check.</param>
 /// <param name="DronesLanded">Trade drone trips that came home since the last check.</param>
-/// <param name="IsBusy">The player's character has an order queued, the game's own test for "not idle".</param>
+/// <param name="IsBusy">The player's character has an order queued, the game's test for "not idle".</param>
 /// <param name="ElapsedSeconds">Real seconds since the last check.</param>
-/// <param name="WasSpeedChangedByHand">The player or the game's own buttons changed the speed since the last check, so a pause seen now may be theirs.</param>
+/// <param name="WasSpeedChangedByHand">The player or the game's buttons changed the speed since the last check, so a pause seen now may be theirs.</param>
 /// <param name="MoreRaised">The alerts after <see cref="Alert.QueueEmpty"/> that started since the last check.</param>
 /// <param name="IsHoldingSpeedUp">The player holds the game's hold-to-speed-up key, where only the danger alerts pause.</param>
 /// <param name="IsUnderWaitedTimer">A timer the player waits out runs; once none does, such as when the countdown to the disaster is over, the game may wait on game time.</param>

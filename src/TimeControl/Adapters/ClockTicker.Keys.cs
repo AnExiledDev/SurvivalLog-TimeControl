@@ -175,7 +175,7 @@ public sealed partial class ClockTicker
     [HideFromIl2Cpp]
     private IdlePause IdleAfterHold() => _idleBeforeHold is IdlePause.Frozen or IdlePause.Released ? _idleBeforeHold : IdlePause.Start;
 
-    /// <summary>A custom speed key also resumes a pause, as the game's own speed keys do.</summary>
+    /// <summary>A custom speed key also resumes a pause, as the game's speed keys do.</summary>
     [HideFromIl2Cpp]
     private void PressCustomSpeed(GameTimeManager time, float scale)
     {
@@ -199,7 +199,7 @@ public sealed partial class ClockTicker
 
     /// <summary>
     /// The game puts one of its own speeds back after saves, menus and resumes, so a custom speed is checked and
-    /// restored here; the game's own fast-forwards and its own speed boost are left alone.
+    /// restored here; the game's fast-forwards and its own speed boost are left alone.
     /// </summary>
     [HideFromIl2Cpp]
     private void KeepCustomSpeedHeld(GameTimeManager time, bool isPaused)

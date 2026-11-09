@@ -156,7 +156,7 @@ function openCountdown(spec) {
     return page;
 }
 
-// CoreUI1 as an expedition draws it: the middle action group holding the order queue's wrapper, where the game's own
+// CoreUI1 as an expedition draws it: the middle action group holding the order queue's wrapper, where the game's
 // speed buttons go when it shows them. spec: { state, hasOwnButtons, hasNoQueue }
 function openHome(spec) {
     var settings = spec || {};
@@ -170,7 +170,7 @@ function openHome(spec) {
     return page;
 }
 
-// The game's own buttons: slow (where the game shows it), normal, fast, fastest, pause, 30px wide and 34px apart in
+// The game's buttons: slow (where the game shows it), normal, fast, fastest, pause, 30px wide and 34px apart in
 // the group's 2px padding, with no level marked on them.
 function showOwnButtons(page, hasNoSlowButton) {
     var group = (page.queue || page.middle).appendChild(new FakeElement('div', 'speed-controls'));

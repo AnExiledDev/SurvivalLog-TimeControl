@@ -11,7 +11,7 @@ namespace TimeControl.Adapters;
 /// Where the game says an alert happened. The wave state is read off the live world when the ticker asks; two hooks
 /// count emergencies that start and trade drones that come home, and the ticker takes the counts on its next check.
 /// Only the live world's managers count, so a leftover world still answering the game's events adds nothing. Only
-/// plain fields are written in the hooks: they run inside the game's own update.
+/// plain fields are written in the hooks: they run inside the game's update.
 /// </summary>
 internal static class AlertSignals
 {
@@ -53,7 +53,7 @@ internal static class AlertSignals
             done: "drone trips settled by a load are told apart from landings", consequence: "a drone that came home while the game was closed may pause it once on loading");
     }
 
-    /// <summary>Whether a zombie wave is under way in the live world, by the game's own test: any wave state but idle.</summary>
+    /// <summary>Whether a zombie wave is under way in the live world, by the game's test: any wave state but idle.</summary>
     public static bool IsWaveActive() => LiveWorld()?._TowerWaveManager?.IsWaveActive() == true;
 
     /// <summary>Emergencies that started since the last call.</summary>

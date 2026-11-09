@@ -46,7 +46,7 @@ internal static class GameWait
     internal static readonly BuffHold BuffHeld = new();
 
     /// <summary>
-    /// Watches the game entering a save: loading one, starting a new game, and the game's own moves to the next
+    /// Watches the game entering a save: loading one, starting a new game, and the game's moves to the next
     /// chapter, which all go through GameEntrance.EnterBattle. Hooked once; whether it pauses is the setting's call.
     /// </summary>
     public static void HookEnter(Harmony harmony, Action<string> log)
@@ -155,9 +155,9 @@ internal static class GameWait
     }
 
     /// <summary>
-    /// Wakes the character the way the game ends a finished sleep, never as a cancel: the game's own
+    /// Wakes the character the way the game ends a finished sleep, never as a cancel: the game's
     /// ActionManager.CompleteCurrentAction, which closes the sleep with no break, so the game gives what a finished sleep
-    /// gives. A sleep shorter than the minimum hours of the game's own early wake has its Vim and Vigor held back.
+    /// gives. A sleep shorter than the minimum hours of the game's early wake has its Vim and Vigor held back.
     /// With nothing to end the game's way, nothing is done; the mod never falls back to a cancel.
     /// </summary>
     /// <returns>What happened, for the log; null when the character could not be woken.</returns>

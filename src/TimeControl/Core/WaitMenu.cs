@@ -26,7 +26,7 @@ public sealed record WaitMenuView(HudPage Page, bool IsActive, string Tip, IRead
 /// <param name="AlarmSecond">The time of day the alarm in the settings rings at; null when none is set.</param>
 /// <param name="IsBrewing">A brewing barrel has a brew in it, at home.</param>
 /// <param name="IsBusy">The player's character has an order queued.</param>
-/// <param name="CanStartWait">A wait can start now: the character is awake and no fast-forward of the game's own runs.</param>
+/// <param name="CanStartWait">A wait can start now: the character is awake and no fast-forward of the game's runs.</param>
 public readonly record struct WaitMenuInput(
     HudPage Page,
     WaitUntil Wait,
@@ -56,7 +56,7 @@ public abstract record WaitChoice
 }
 
 /// <summary>
-/// The wait button: a small clock button beside the speed buttons, the game's own at home and the mod's copy in the
+/// The wait button: a small clock button beside the speed buttons, the game's at home and the mod's copy in the
 /// countdown to the disaster, that opens a short menu. It starts a wait, sets an alarm a number of hours on, and shows
 /// the wait or alarm running with a button to cancel it. A click is queued on the page and handed back to the ticker,
 /// as the speed buttons' are.

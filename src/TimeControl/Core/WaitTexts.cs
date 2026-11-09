@@ -3,7 +3,7 @@ using System.Globalization;
 
 namespace TimeControl.Core;
 
-/// <summary>Every word the wait menu puts on screen. Chinese uses the game's own terms where it has them.</summary>
+/// <summary>Every word the wait menu puts on screen. Chinese uses the game's terms where it has them.</summary>
 public static class WaitTexts
 {
     public static readonly Phrase WaitButton = new("Wait until", "等到");

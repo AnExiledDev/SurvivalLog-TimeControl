@@ -74,7 +74,7 @@ public sealed partial class ClockTicker
     /// <summary>
     /// Runs after the alert pause, so an alert starting as the player leaves is the pause that holds the game. It pauses
     /// where the alerts do, and also during sleep, so a sleep fast-forward is not run through while the player is away;
-    /// the game's own sleep speed-up is left alone, as pausing it would have the game undo the pause. Like idle freeze's,
+    /// the game's sleep speed-up is left alone, as pausing it would have the game undo the pause. Like idle freeze's,
     /// the pause is kept before it is made and the resume after.
     /// </summary>
     [HideFromIl2Cpp]
@@ -171,7 +171,7 @@ public sealed partial class ClockTicker
         }
     }
 
-    /// <summary>Whether a menu whose setting is on is open, by the game's own record of the menus it shows.</summary>
+    /// <summary>Whether a menu whose setting is on is open, by the game's record of the menus it shows.</summary>
     private static bool IsWatchedMenuOpen(AwaySettings settings)
     {
         var ui = BaseSingleton<ReduxUISystem>.IsInstanceCreated ? BaseSingleton<ReduxUISystem>.Instance : null;

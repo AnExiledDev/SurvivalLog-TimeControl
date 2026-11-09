@@ -8,7 +8,7 @@ namespace TimeControl.Core;
 /// </summary>
 public static class SleepRest
 {
-    /// <summary>The fewest hours slept the game's own early wake asks for before the character may get up.</summary>
+    /// <summary>The fewest hours slept the game's early wake asks for before the character may get up.</summary>
     public const float MinHours = 3f;
 
     /// <param name="slept">How long the character has slept, on the sleep's own timer.</param>

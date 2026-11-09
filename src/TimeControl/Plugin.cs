@@ -23,12 +23,12 @@ public sealed class Plugin : BasePlugin
 
         var slowSpeeds = Config.Bind("SlowButton", "SlowSpeeds", "0.5,0.25",
             new ConfigDescription(
-                "Extra slower speeds for the Slow button and the ` (~) key, separated by commas, each from 0.05 to 0.95. The first press is the game's own slow; pressing slow again moves on to these speeds, and after the last back to the game's own. Leave it empty to keep only the game's own slow. Takes effect at the next game start.\n" +
+                "Extra slower speeds for the Slow button and the ` (~) key, separated by commas, each from 0.05 to 0.95. The first press is the game's slow; pressing slow again moves on to these speeds, and after the last back to the game's. Leave it empty to keep only the game's slow. Takes effect at the next game start.\n" +
                 "慢速按钮和 ` (~) 键额外的更慢速度，用逗号分隔，每个在 0.05 到 0.95 之间。第一次按是游戏原本的慢速；已经在慢速时再按一次，会依次换到这些速度，最后一个之后回到游戏原本的慢速。留空则只保留游戏原本的慢速。下次启动游戏时生效。",
                 null, "ModManager.Restart")).Value;
         var fastMultiples = Config.Bind("FastButton", "FastSpeeds", "2",
             new ConfigDescription(
-                "Extra speeds above the game's Fastest speed, as multiples of it, separated by commas, each from 1.1 to 10. Pressing the Fastest button or the 3 key while already at Fastest moves to the next one, and after the last back to Fastest. Speeds are capped at 40x. Leave it empty to keep the game's own Fastest button. Takes effect at the next game start.\n" +
+                "Extra speeds above the game's Fastest speed, as multiples of it, separated by commas, each from 1.1 to 10. Pressing the Fastest button or the 3 key while already at Fastest moves to the next one, and after the last back to Fastest. Speeds are capped at 40x. Leave it empty to keep the game's Fastest button. Takes effect at the next game start.\n" +
                 "比游戏极速更快的额外速度，按极速的倍数填写，用逗号分隔，每个在 1.1 到 10 之间。已经在极速时再按极速按钮或 3 键，会换到下一档，最后一档之后回到极速。速度上限为 40 倍。留空则保留游戏原本的极速按钮。下次启动游戏时生效。",
                 null, "ModManager.Restart")).Value;
         var isIdleFreezeOn = Config.Bind("Clock", "IdleFreeze", true,
@@ -39,7 +39,7 @@ public sealed class Plugin : BasePlugin
             "角色空闲多少秒（现实时间）后才暂停游戏，这样两个指令之间的短暂空档不会触发暂停。设为 0 则一没有待执行的指令就立刻暂停。", null, "ModManager.ShowWhen=IdleFreeze"));
         var isSleepFastForwardOn = Config.Bind("Sleep", "FastForwardSleep", true,
             new ConfigDescription(
-                "Run sleep and naps at the fastest FastSpeeds speed (or at Fastest if FastSpeeds is empty), instead of the game's own sleep speed-up. A speed you pick while asleep is kept until you wake. Off keeps the game's own sleep speed-up. Takes effect at the next game start.\n" +
+                "Run sleep and naps at the fastest FastSpeeds speed (or at Fastest if FastSpeeds is empty), instead of the game's sleep speed-up. A speed you pick while asleep is kept until you wake. Off keeps the game's sleep speed-up. Takes effect at the next game start.\n" +
                 "睡觉和打盹时以 FastSpeeds 里最快的速度运行（FastSpeeds 留空时用极速），代替游戏自带的睡眠加速。睡着时你选的速度会一直保持到醒来。关闭则保留游戏自带的睡眠加速。下次启动游戏时生效。",
                 null, "ModManager.Restart")).Value;
         var isPauseOnWakeOn = Config.Bind("Sleep", "PauseOnWake", true,
@@ -52,12 +52,12 @@ public sealed class Plugin : BasePlugin
                 null, "ModManager.Restart")).Value;
         var centerCameraKeyText = Config.Bind("Keys", "CenterCameraKey", "G",
             new ConfigDescription(
-                "The key for camera follow (centering the camera on your character) when PauseToggleKey is Space, which is the game's own key for camera follow. By default the game does not use G for anything else. A key you set for camera follow in the game's key settings still wins. None leaves camera follow with no key. Takes effect at the next game start.\n" +
+                "The key for camera follow (centering the camera on your character) when PauseToggleKey is Space, which is the game's key for camera follow. By default the game does not use G for anything else. A key you set for camera follow in the game's key settings still wins. None leaves camera follow with no key. Takes effect at the next game start.\n" +
                 "当 PauseToggleKey 为 Space 时，镜头跟随（把镜头对准你的角色）改用的按键；Space 原本是游戏的镜头跟随键。游戏默认没有把 G 用在别处。你在游戏「按键」设置里给镜头跟随设的键仍然优先。设为 None 则镜头跟随没有按键。下次启动游戏时生效。",
                 null, "ModManager.Restart")).Value;
         var isExpeditionOn = Config.Bind("Expedition", "TimeControlOnExpeditions", true,
             new ConfigDescription(
-                "Let the pause key, the game's speed keys (1, 2, 3, 4 for pause and ` (~) for slow, by default), the SlowSpeeds and FastSpeeds speeds, the idle pause and the alert pauses work on expeditions. Pausing there also stops the exposure meter. Off leaves expeditions at the game's own pace and hides the mod's speed buttons there. Takes effect at the next game start.\n" +
+                "Let the pause key, the game's speed keys (1, 2, 3, 4 for pause and ` (~) for slow, by default), the SlowSpeeds and FastSpeeds speeds, the idle pause and the alert pauses work on expeditions. Pausing there also stops the exposure meter. Off leaves expeditions at the game's pace and hides the mod's speed buttons there. Takes effect at the next game start.\n" +
                 "外出探索时启用暂停键、游戏的速度键（默认 1、2、3，4 为暂停，` (~) 为慢速）、SlowSpeeds 和 FastSpeeds 的速度、空闲暂停和事件暂停。外出探索中暂停时，暴露值也会停止上涨。关闭则外出探索保持游戏原本的速度，也不显示本模组的速度按钮。下次启动游戏时生效。",
                 null, "ModManager.Restart")).Value;
         var isPauseOnWaveOn = Config.Bind("Alerts", "PauseOnWave", true,
@@ -73,16 +73,16 @@ public sealed class Plugin : BasePlugin
             new ConfigDescription("Show a small \"Paused: idle\" badge next to the speed buttons while the idle pause holds the game. It goes away as soon as time runs again.\n" +
             "空闲暂停期间，在速度按钮旁显示一个小标记「已暂停：空闲」。时间重新走动后立刻消失。", null, "ModManager.ShowWhen=Clock.IdleFreeze"));
         var isPauseKeyBadgeOn = Config.Bind("Display", "PauseKeyBadge", true,
-            "Show a small \"Paused\" badge next to the speed buttons while a pause you made with a key holds the game: the pause key anywhere, or the game's own pause key (4 by default) before the disaster and on expeditions. It goes away as soon as time runs again.\n" +
+            "Show a small \"Paused\" badge next to the speed buttons while a pause you made with a key holds the game: the pause key anywhere, or the game's pause key (4 by default) before the disaster and on expeditions. It goes away as soon as time runs again.\n" +
             "你用按键暂停游戏时，在速度按钮旁显示一个小标记「已暂停」：任何地方按暂停键，或在灾前筹备和外出探索时按游戏自带的暂停键（默认 4）。时间重新走动后立刻消失。");
         var isAlertBadgeOn = Config.Bind("Display", "AlertBadge", true,
             "Show a small badge naming the alert, such as \"Paused: wave\", next to the speed buttons while an alert pause holds the game. It goes away as soon as time runs again.\n" +
             "因尸潮、危机等事件暂停时，在速度按钮旁显示一个写明原因的小标记，例如「已暂停：尸潮」。时间重新走动后立刻消失。");
         var areSpeedButtonsOn = Config.Bind("Display", "SpeedButtons", true,
-            "Show speed buttons (slow, normal, fast, fastest and pause) before the disaster and on expeditions, where the game has none. They work like the game's own buttons at home, using your SlowSpeeds and FastSpeeds. On expeditions they only show when TimeControlOnExpeditions is on.\n" +
+            "Show speed buttons (slow, normal, fast, fastest and pause) before the disaster and on expeditions, where the game has none. They work like the game's buttons at home, using your SlowSpeeds and FastSpeeds. On expeditions they only show when TimeControlOnExpeditions is on.\n" +
             "在灾前筹备和外出探索时显示速度按钮（慢速、正常速度、快速、极速、暂停），游戏在这些时候没有这些按钮。用法和安全屋里游戏自带的按钮一样，并使用你的 SlowSpeeds 和 FastSpeeds。外出探索时只有开启 TimeControlOnExpeditions 才会显示。");
         var pauseOverlayOpacity = Config.Bind("Display", "PauseOverlayOpacity", PauseOverlay.DefaultOpacity,
-            "How visible the game's own paused banner across the lower middle of the screen is, from 0 (hidden) to 1 (as the game draws it). Lower values let you read the phone's reply choices under it. Clicks always pass through the banner.\n" +
+            "How visible the game's paused banner across the lower middle of the screen is, from 0 (hidden) to 1 (as the game draws it). Lower values let you read the phone's reply choices under it. Clicks always pass through the banner.\n" +
             "游戏自带的暂停横条（横跨屏幕中下方）有多明显，0 为隐藏，1 为游戏原样。数值越低，越容易看清下面手机里的回复选项。点击总是会穿过横条。");
 
         var log = new TimeLog(Log, Path.Combine(Paths.BepInExRootPath, "time-control.log"));

@@ -11,7 +11,7 @@ public readonly record struct SpeedButtonsView(HudPage Page, int ActiveLevel, st
 /// <summary>
 /// The game's speed buttons (slow, normal, fast, fastest and pause) are missing in the countdown to the disaster, whose
 /// HUD page has none, and on expeditions, where the game keeps its unlocks locked so they never switch on. There the mod
-/// draws a copy in the game's own style. A click goes through the same speed change as the game's button, so the slow
+/// draws a copy in the game's style. A click goes through the same speed change as the game's button, so the slow
 /// and fast speeds, the pause badge and the speed to resume to all behave as they do at home.
 /// </summary>
 public static class SpeedButtons
@@ -30,7 +30,7 @@ public static class SpeedButtons
         $"var take=function(){{var q=w.{ClicksQueue}||[];w.{ClicksQueue}=[];return q.length?'{ClicksPrefix}'+q.join(','):'{Ok}';}};";
 
     /// <summary>
-    /// The game's own look for its speed buttons, scoped to the mod's group: the countdown page has none of it, and the
+    /// The game's look for its speed buttons, scoped to the mod's group: the countdown page has none of it, and the
     /// copy on the main page matches what that page already gives the group.
     /// </summary>
     private const string Style =
@@ -92,7 +92,7 @@ public static class SpeedButtons
 
     /// <summary>
     /// Draws the buttons on the view's page and takes them off any other, lights the active one and hands back the
-    /// clicks. Where the page shows the game's own buttons after all, the mod's copy is taken away. Clicks queued by a
+    /// clicks. Where the page shows the game's buttons after all, the mod's copy is taken away. Clicks queued by a
     /// copy that was taken away are dropped, so a click made just before the buttons hid is never applied later. The
     /// clicks are taken last, so a draw that fails leaves them queued for the next script.
     /// </summary>
@@ -118,7 +118,7 @@ public static class SpeedButtons
     /// <summary>
     /// The small script sent between full draws: it only hands back the clicks. Buttons the page has lost (it
     /// reloaded) answer <see cref="NotOnPage"/> so the next check draws them again, and their clicks are dropped. Where
-    /// the copy stepped aside for the game's own buttons, there is nothing to draw and the answer is "ok".
+    /// the copy stepped aside for the game's buttons, there is nothing to draw and the answer is "ok".
     /// </summary>
     /// <remarks>Built once per page, as it is sent on most checks while the buttons show.</remarks>
     public static string CollectScript(HudPage page) => page == HudPage.Countdown ? CollectOnCountdown : CollectAtHome;
@@ -136,7 +136,7 @@ public static class SpeedButtons
     public static string RemovalScript() => Removal;
 
     /// <summary>
-    /// On the main page the copy goes where the game's own buttons sit, beside the order queue. The countdown page
+    /// On the main page the copy goes where the game's buttons sit, beside the order queue. The countdown page
     /// has no such place, so the copy sits at the bottom just right of the page's bottom-left buttons, and hides with
     /// them in the planning view.
     /// </summary>
