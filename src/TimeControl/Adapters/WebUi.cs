@@ -1,59 +1,32 @@
 using System;
-using ExiledToolkit.Game;
-using GameCore.HotUpdate;
-using GameCore.HotUpdate.ReduxUI;
-using UnityEngine;
-using Vuplex.WebView;
+using ToolkitWebUi = ExiledToolkit.Web.WebUi;
 
 namespace TimeControl.Adapters;
 
 /// <summary>
-/// The game's web view, looked up once a frame for every script the mod sends in it, and the one way the mod's page
-/// links send a script. Each answer goes to a callback the link made once, so a send costs the script and nothing
-/// more.
+/// The one way the mod's page links send a script, through Exiled's Toolkit. Each answer goes to the callback the link
+/// passes, and each problem goes to the link's <see cref="PageReply"/>.
 /// </summary>
 internal static class WebUi
 {
-    private static int _frame = -1;
-    private static IWebView? _view;
-
-    /// <summary>The web view, or null when the game has none to run a script in. Never throws.</summary>
-    public static IWebView? View(PageReply reply)
+    /// <summary>
+    /// False when the game has no web view to run the script in, or the script could not run. Never throws: a page that
+    /// cannot be reached costs what the script draws, never the ticker's pause handling.
+    /// </summary>
+    public static bool Send(string script, Il2CppSystem.Action<string> onReply, PageReply reply)
     {
-        var frame = Time.frameCount;
-
-        if (frame == _frame) return _view;
-
-        _frame = frame;
-        _view = null;
-
         try
         {
-            var ui = GameSingleton.Existing<ReduxUISystem>();
+            if (ToolkitWebUi.TryRun(script, onReply, out var failure)) return true;
 
-            _view = ui?.GetWebUILayer()?.canvasWebViewPrefab?.WebView;
+            if (failure != null) reply.Take("could not run script: " + failure.Message);
+
+            return false;
         }
         catch (Exception ex)
         {
+            // The Toolkit catches the script's own errors; what is left is finding the web view.
             reply.Take("could not reach the web view: " + ex.Message);
-        }
-
-        return _view;
-    }
-
-    /// <summary>Never throws: a page that cannot be reached costs what the script draws, never the ticker's pause handling.</summary>
-    public static bool Send(IWebView view, string script, Il2CppSystem.Action<string> onReply, PageReply reply)
-    {
-        try
-        {
-            view.ExecuteJavaScript(script, onReply);
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            reply.Take("could not run script: " + ex.Message);
-            _frame = -1;
 
             return false;
         }

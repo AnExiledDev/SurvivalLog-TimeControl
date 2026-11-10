@@ -44,9 +44,7 @@ internal sealed class WaitPageLink
 
         if (PauseBadge.ShouldSend(script, _lastSent, _isLastSentConfirmed, isRefreshDue, generation != _sentGeneration))
         {
-            if (WebUi.View(_reply) is not { } view) return;
-
-            if (!WebUi.Send(view, script.Length > 0 ? script : WaitMenu.RemovalScript(), (Action<string>)(reply => TakeReply(script, reply)), _reply)) return;
+            if (!WebUi.Send(script.Length > 0 ? script : WaitMenu.RemovalScript(), (Action<string>)(reply => TakeReply(script, reply)), _reply)) return;
 
             _lastSent = script;
             _isLastSentConfirmed = false;
@@ -57,7 +55,7 @@ internal sealed class WaitPageLink
 
         if (!isRefreshDue || input is not { } collected || script.Length == 0) return;
 
-        if (WebUi.View(_reply) is { } webView) WebUi.Send(webView, WaitMenu.CollectScript(collected.Page), _onCollectReply, _reply);
+        WebUi.Send(WaitMenu.CollectScript(collected.Page), _onCollectReply, _reply);
     }
 
     /// <summary>The menu is built again only when the input draws a different one; a clock that only ran on does not.</summary>

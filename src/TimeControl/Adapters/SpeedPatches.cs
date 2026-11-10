@@ -101,7 +101,7 @@ internal static partial class SpeedPatches
     /// <summary>The fast gear sleep runs at: the one with the largest multiple, or the game's high speed when there are none.</summary>
     public static int FastestGear => FastGear.FastestGear(_fastMultiples);
 
-    public static void Apply(Harmony harmony, PatchKit hooks, SpeedSettings settings, Action<string> log)
+    public static void Apply(PatchKit hooks, SpeedSettings settings, Action<string> log)
     {
         _hooks = hooks;
         _slowSpeeds = settings.SlowSpeeds;
@@ -139,7 +139,9 @@ internal static partial class SpeedPatches
             done: "hover highlight works while paused", consequence: "objects will not highlight on hover while paused");
 
         FindListeningActionField();
-        PatchLast(harmony, typeof(HotKeyManager), nameof(HotKeyManager.Update), nameof(HandleSpeedKeys),
+
+        // Last, so the key handler runs after every other mod's hook on the same method.
+        hooks.Patch(typeof(SpeedPatches), typeof(HotKeyManager), nameof(HotKeyManager.Update), null, Priority.Last, prefix: nameof(HandleSpeedKeys),
             done: KeysHooked(settings.PauseKey), consequence: "the pause key and the game's speed keys before the disaster and on expeditions will not work");
     }
 
@@ -283,25 +285,6 @@ internal static partial class SpeedPatches
     private static IEnumerable<string> FastLabels()
     {
         foreach (var multiple in _fastMultiples) yield return FastGear.Label(multiple);
-    }
-
-    /// <summary>
-    /// Hooks a key handler so it runs after every other mod's hook on the same method. PatchKit has no way to set
-    /// that order, so this one is placed here and logs the same line PatchKit does when it fails.
-    /// </summary>
-    private static void PatchLast(Harmony harmony, Type type, string method, string prefix, string done, string consequence)
-    {
-        try
-        {
-            harmony.Patch(
-                AccessTools.Method(type, method),
-                prefix: new HarmonyMethod(typeof(SpeedPatches), prefix) { priority = Priority.Last });
-            _log(done);
-        }
-        catch (Exception ex)
-        {
-            _log($"{HookFailure.Prefix} {type.Name}.{method}, {consequence}: {ex.Message}");
-        }
     }
 
     /// <summary>

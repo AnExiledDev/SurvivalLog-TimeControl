@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.10.8
+
+- Now needs Exiled's Toolkit 0.20.0 or newer.
+- Made for Survival Log 1.1.20719.
+
 ## 0.10.7
 
 - Now uses Exiled's Toolkit for its shared parts, so it needs Exiled's Toolkit 0.19.0 or newer.

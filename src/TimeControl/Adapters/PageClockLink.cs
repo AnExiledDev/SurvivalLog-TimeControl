@@ -58,9 +58,7 @@ internal sealed class PageClockLink
 
         if (!PageClock.ShouldSend(slowLabel, _lastClockSent, _isLastClockConfirmed, isRefreshDue, generation != _clockGeneration, pageText)) return;
 
-        if (WebUi.View(_clockReply) is not { } view) return;
-
-        if (!WebUi.Send(view, PageClock.Script(new PageClockUpdate(slowLabel)), (Action<string>)(reply => ConfirmClock(slowLabel, reply)), _clockReply)) return;
+        if (!WebUi.Send(PageClock.Script(new PageClockUpdate(slowLabel)), (Action<string>)(reply => ConfirmClock(slowLabel, reply)), _clockReply)) return;
 
         _lastClockSent = slowLabel;
         _isLastClockConfirmed = false;
@@ -84,9 +82,7 @@ internal sealed class PageClockLink
 
         if (!PauseBadge.ShouldSend(text, _lastBadgeSent, _isLastBadgeConfirmed, isRefreshDue, generation != _badgeGeneration)) return;
 
-        if (WebUi.View(_badgeReply) is not { } view) return;
-
-        if (!WebUi.Send(view, PauseBadge.Script(text, page), (Action<string>)(reply => ConfirmBadge(text, reply)), _badgeReply)) return;
+        if (!WebUi.Send(PauseBadge.Script(text, page), (Action<string>)(reply => ConfirmBadge(text, reply)), _badgeReply)) return;
 
         _lastBadgeSent = text;
         _isLastBadgeConfirmed = false;
@@ -114,9 +110,7 @@ internal sealed class PageClockLink
 
         if (!SpeedChip.ShouldSend(view, _lastChipSent, _isLastChipConfirmed, isRefreshDue, generation != _chipGeneration)) return;
 
-        if (WebUi.View(_chipReply) is not { } webView) return;
-
-        if (!WebUi.Send(webView, SpeedChip.Script(view, page), (Action<string>)(reply => ConfirmChip(view, reply)), _chipReply)) return;
+        if (!WebUi.Send(SpeedChip.Script(view, page), (Action<string>)(reply => ConfirmChip(view, reply)), _chipReply)) return;
 
         _lastChipSent = view;
         _isLastChipConfirmed = false;
@@ -140,9 +134,7 @@ internal sealed class PageClockLink
 
         if (!PauseBadge.ShouldSend(css, _lastOverlaySent, _isLastOverlayConfirmed, isRefreshDue, generation != _overlayGeneration)) return;
 
-        if (WebUi.View(_overlayReply) is not { } view) return;
-
-        if (!WebUi.Send(view, PauseOverlay.Script(css), (Action<string>)(reply => ConfirmOverlay(css, reply)), _overlayReply)) return;
+        if (!WebUi.Send(PauseOverlay.Script(css), (Action<string>)(reply => ConfirmOverlay(css, reply)), _overlayReply)) return;
 
         _lastOverlaySent = css;
         _isLastOverlayConfirmed = false;
@@ -172,9 +164,7 @@ internal sealed class PageClockLink
 
         if (next == ButtonsScript.None || (next == ButtonsScript.Collect && !isPollDue)) return;
 
-        if (WebUi.View(_buttonsReply) is not { } webView) return;
-
-        if (!WebUi.Send(webView, ButtonsScriptFor(next, view), isShown ? _onButtonsShownReply : _onButtonsRemovedReply, _buttonsReply)) return;
+        if (!WebUi.Send(ButtonsScriptFor(next, view), isShown ? _onButtonsShownReply : _onButtonsRemovedReply, _buttonsReply)) return;
 
         _buttonsOnPage = ButtonsSync.AfterSending(next, view, _buttonsOnPage);
 

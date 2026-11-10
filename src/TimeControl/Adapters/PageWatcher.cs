@@ -29,7 +29,7 @@ internal sealed class PageWatcher
     {
         _reply.Report();
 
-        if (WebUi.View(_reply) is { } view) WebUi.Send(view, PageWatch.Script, _onReply, _reply);
+        WebUi.Send(PageWatch.Script, _onReply, _reply);
     }
 
     private void Take(string reply)

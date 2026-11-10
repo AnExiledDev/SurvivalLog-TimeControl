@@ -44,11 +44,11 @@ internal static partial class SpeedPatches
     internal static KeysSettings KeySettings = KeysSettings.Off;
 
     /// <summary>Called once at start, after <see cref="Apply"/>, whose log it uses. The hooks stay in whatever the settings.</summary>
-    public static void ApplyKeys(Harmony harmony, PatchKit hooks)
+    public static void ApplyKeys(PatchKit hooks)
     {
         hooks.Patch(typeof(SpeedPatches), typeof(GameTimeManager), nameof(GameTimeManager.ChangeGameSpeed), prefix: nameof(NoteChangeByOthers),
             done: "speed changes watched for the hold keys", consequence: "a hold key may put back a speed after something else changed it");
-        PatchLast(harmony, typeof(HotKeyManager), nameof(HotKeyManager.Update), nameof(TrackSpeedKeys),
+        hooks.Patch(typeof(SpeedPatches), typeof(HotKeyManager), nameof(HotKeyManager.Update), null, Priority.Last, prefix: nameof(TrackSpeedKeys),
             done: "hold keys and custom speed keys read", consequence: "HoldFastKey, HoldSlowKey and SpeedKeys5To9 will not work");
     }
 

@@ -13,11 +13,11 @@ using UnityEngine;
 namespace TimeControl;
 
 [BepInPlugin(Guid, "Time Control", Version)]
-[BepInDependency(ToolkitGuid, ">=0.19.0")]
+[BepInDependency(ToolkitGuid, ">=0.20.0")]
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.timecontrol";
-    private const string Version = "0.10.7";
+    private const string Version = "0.10.8";
     private const string ToolkitGuid = "com.dev.survivallog.exiledtoolkit";
     private const int MaxLoggedFailures = 3;
     private const long MaxLogBytes = 1024 * 1024;
@@ -100,9 +100,9 @@ public sealed class Plugin : BasePlugin
         var hooks = new PatchKit(harmony, log.Write, MaxLoggedFailures);
 
         log.Write($"===== Time Control {Version} started: sleep fast-forward {OnOff(isSleepFastForwardOn)}, on expeditions {OnOff(isExpeditionOn)}");
-        SpeedPatches.Apply(harmony, hooks, speeds, log.Write);
+        SpeedPatches.Apply(hooks, speeds, log.Write);
         AlertsConfig.Bind(Config, hooks, log.Write);
-        KeysConfig.Bind(Config, harmony, hooks, log.Write);
+        KeysConfig.Bind(Config, hooks, log.Write);
 
         LiveSettings.Watch(() =>
         {

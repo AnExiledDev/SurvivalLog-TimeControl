@@ -54,11 +54,9 @@ internal sealed class KeysPage
 
         var isHooking = isSwitching || !isOn || !_isWheelOnConfirmed || generation != _wheelGeneration;
 
-        if (WebUi.View(_wheelReply) is not { } view) return;
-
         var script = !isHooking ? SpeedWheel.PollScript : SpeedWheel.Script(isOn);
 
-        if (!WebUi.Send(view, script, isOn ? _onWheelOnReply : _onWheelOffReply, _wheelReply)) return;
+        if (!WebUi.Send(script, isOn ? _onWheelOnReply : _onWheelOffReply, _wheelReply)) return;
 
         if (!isHooking) return;
 
@@ -105,9 +103,7 @@ internal sealed class KeysPage
 
         if (!PauseBadge.ShouldSend(label, _lastOrderSent, _isLastOrderConfirmed, isRefreshDue, generation != _orderGeneration)) return;
 
-        if (WebUi.View(_orderReply) is not { } view) return;
-
-        if (!WebUi.Send(view, OrderFinish.Script(label), (Action<string>)(reply => ConfirmOrder(label, reply)), _orderReply)) return;
+        if (!WebUi.Send(OrderFinish.Script(label), (Action<string>)(reply => ConfirmOrder(label, reply)), _orderReply)) return;
 
         _lastOrderSent = label;
         _isLastOrderConfirmed = false;
@@ -130,9 +126,7 @@ internal sealed class KeysPage
 
         if (!PauseBadge.ShouldSend(text, _lastCountdownSent, _isLastCountdownConfirmed, isRefreshDue, generation != _countdownGeneration)) return;
 
-        if (WebUi.View(_countdownReply) is not { } view) return;
-
-        if (!WebUi.Send(view, Countdowns.Script(text), (Action<string>)(reply => ConfirmCountdown(text, reply)), _countdownReply)) return;
+        if (!WebUi.Send(Countdowns.Script(text), (Action<string>)(reply => ConfirmCountdown(text, reply)), _countdownReply)) return;
 
         _lastCountdownSent = text;
         _isLastCountdownConfirmed = false;
