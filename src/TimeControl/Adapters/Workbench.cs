@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ExiledToolkit.Game;
 using GameCore.HotUpdate;
 using GameCore.HotUpdate.Battle.Logic;
 using GameCore.HotUpdate.ReduxUI;
@@ -22,7 +23,7 @@ internal static class Workbench
     /// <summary>Whether the workbench window is open, by the game's record of the menus it shows.</summary>
     public static bool IsOpen()
     {
-        var ui = BaseSingleton<ReduxUISystem>.IsInstanceCreated ? BaseSingleton<ReduxUISystem>.Instance : null;
+        var ui = GameSingleton.Existing<ReduxUISystem>();
 
         return ui != null && ui.IsUIActive(_toolTableUiType ??= Il2CppType.Of<WebUI_ToolTable>());
     }
@@ -32,7 +33,7 @@ internal static class Workbench
     {
         try
         {
-            var world = BaseSingleton<BattleLogicWorld>.IsInstanceCreated ? BaseSingleton<BattleLogicWorld>.Instance : null;
+            var world = GameSingleton.Existing<BattleLogicWorld>();
             var benches = world?._ToolTableManager?.ToolTableMap;
 
             if (benches == null) return false;
@@ -55,7 +56,7 @@ internal static class Workbench
     {
         try
         {
-            var world = BaseSingleton<BattleLogicWorld>.IsInstanceCreated ? BaseSingleton<BattleLogicWorld>.Instance : null;
+            var world = GameSingleton.Existing<BattleLogicWorld>();
             var benches = world?._ToolTableManager?.ToolTableMap;
 
             if (benches == null) return null;

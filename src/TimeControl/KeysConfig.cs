@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
 using BepInEx.Configuration;
+using ExiledToolkit;
+using ExiledToolkit.Game;
 using HarmonyLib;
 using TimeControl.Adapters;
 using TimeControl.Core;
@@ -11,7 +13,7 @@ namespace TimeControl;
 /// <summary>The settings for the hold keys, the custom speed keys, the speed wheel and the notes under the clock.</summary>
 internal static class KeysConfig
 {
-    public static void Bind(ConfigFile config, Harmony harmony, Action<string> log)
+    public static void Bind(ConfigFile config, Harmony harmony, PatchKit hooks, Action<string> log)
     {
         var holdFastKeyText = config.Bind("Keys", "HoldFastKey", "X",
             "Hold this key to run the game at the fastest speed the mod has (the fastest FastSpeeds speed, or Fastest if FastSpeeds is empty). Letting go brings back the speed you had, and if the game was paused it pauses again. Works at home, before the disaster and on expeditions when TimeControlOnExpeditions is on, but not while your character sleeps. A key the game uses for anything else does nothing. None turns it off.\n" +
@@ -39,11 +41,11 @@ internal static class KeysConfig
             "在安全屋的时钟下方显示距离下一波尸潮还剩多少游戏时间，例如「距尸潮 1小时5分钟」。包括游戏为今天安排的尸潮和「引诱装置」引来的尸潮。");
 
         CountdownSignals.Log = log;
-        SpeedPatches.ApplyKeys(harmony);
-        SpeedPatches.ApplyHoldKey(harmony);
+        SpeedPatches.ApplyKeys(harmony, hooks);
+        SpeedPatches.ApplyHoldKey(hooks);
         ClockTicker.SpeedKeysPage = new KeysPage(log);
 
-        OptionalLive.Watch(() =>
+        LiveSettings.Watch(() =>
         {
             var settings = new KeysSettings(
                 ParseKey("HoldFastKey", holdFastKeyText.Value, log),

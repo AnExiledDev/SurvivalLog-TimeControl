@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.10.7
+
+- Now uses Exiled's Toolkit for its shared parts, so it needs Exiled's Toolkit 0.19.0 or newer.
+- `time-control.log` no longer trims itself past 1 MB. It is moved to `time-control.log.1` and a new one starts.
+- Made for Survival Log 1.1.20719.
+
 ## 0.10.6
 
 - Fixed: clicking Complete Preparations, or the countdown running out, while idle freeze or an alert pause holds the game no longer leaves the screen black before the disaster starts. Once preparations are complete the mod stops pausing and lets go of any pause it made, so the disaster plays at your speed. A pause you made yourself stays yours; press play or a speed key to go on.

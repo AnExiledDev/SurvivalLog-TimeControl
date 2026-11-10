@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ExiledToolkit.Game;
 using GameCore.HotUpdate;
 using GameCore.HotUpdate.Battle.Logic;
 
@@ -38,7 +39,7 @@ internal static class CountdownSignals
     /// <summary>Game seconds until a thrown lure rig's wave; 0 when none is coming or unknown.</summary>
     public static int LureSecondsLeft(long totalSeconds) => Read("the lure rig's wave", totalSeconds, static s => ReadLureSecondsLeft(s), 0);
 
-    private static BattleLogicWorld? World() => BaseSingleton<BattleLogicWorld>.IsInstanceCreated ? BaseSingleton<BattleLogicWorld>.Instance : null;
+    private static BattleLogicWorld? World() => GameSingleton.Existing<BattleLogicWorld>();
 
     /// <summary>The order being carried out runs as an effect tree whose time left the effect manager keeps.</summary>
     private static int ReadOrderSecondsLeft()
@@ -59,9 +60,9 @@ internal static class CountdownSignals
     {
         var planned = World()?._DynamicEventManager?._CacheArgs_k__BackingField;
 
-        if (planned == null || planned.Count == 0 || !BaseSingleton<ConfigManager>.IsInstanceCreated) return Array.Empty<int>();
+        if (planned == null || planned.Count == 0 || !GameSingleton.IsCreated<ConfigManager>()) return Array.Empty<int>();
 
-        var config = BaseSingleton<ConfigManager>.Instance;
+        var config = GameSingleton.Existing<ConfigManager>();
         var hours = new List<int>();
 
         for (var i = 0; i < planned.Count; i++)

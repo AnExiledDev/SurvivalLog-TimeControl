@@ -1,4 +1,5 @@
 using System;
+using ExiledToolkit.Game;
 using GameCore.HotUpdate;
 using GameCore.HotUpdate.ReduxUI;
 using UnityEngine;
@@ -28,7 +29,7 @@ internal static class WebUi
 
         try
         {
-            var ui = BaseSingleton<ReduxUISystem>.IsInstanceCreated ? BaseSingleton<ReduxUISystem>.Instance : null;
+            var ui = GameSingleton.Existing<ReduxUISystem>();
 
             _view = ui?.GetWebUILayer()?.canvasWebViewPrefab?.WebView;
         }

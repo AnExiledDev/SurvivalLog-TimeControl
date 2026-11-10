@@ -1,7 +1,7 @@
 using System;
+using ExiledToolkit.Game;
 using GameCore.HotUpdate;
 using GameCore.HotUpdate.Battle.Logic;
-using HarmonyLib;
 using TimeControl.Core;
 
 namespace TimeControl.Adapters;
@@ -14,7 +14,6 @@ namespace TimeControl.Adapters;
 /// </summary>
 internal static class GameWait
 {
-    private const int MaxLoggedFailures = 3;
     private const float BrewReadSeconds = 3f;
 
     /// <summary>The pieces of furniture one check reads for barrels.</summary>
@@ -29,7 +28,7 @@ internal static class GameWait
     /// <summary>The game's event for a behaviour tree's first timer (BtEffectEventMsg.Delay_Trigger0).</summary>
     private const int TimedRewardEvent = 10;
 
-    private static Action<string> _log = _ => { };
+    private static PatchKit? _hooks;
     private static bool _isEnterHooked;
     private static bool _isEntered;
     private static IntPtr _worldAtEntry;
@@ -38,7 +37,6 @@ internal static class GameWait
     private static Il2CppSystem.Collections.Generic.List<Furniture>? _brewScan;
     private static int _brewScanAt;
     private static long? _brewScanEarliest;
-    private static int _failures;
     private static bool _isBuffHookTried;
     private static bool _isBuffHooked;
 
@@ -49,23 +47,16 @@ internal static class GameWait
     /// Watches the game entering a save: loading one, starting a new game, and the game's moves to the next
     /// chapter, which all go through GameEntrance.EnterBattle. Hooked once; whether it pauses is the setting's call.
     /// </summary>
-    public static void HookEnter(Harmony harmony, Action<string> log)
+    public static void HookEnter(PatchKit hooks)
     {
-        _log = log;
+        _hooks = hooks;
 
         if (_isEnterHooked) return;
 
         _isEnterHooked = true;
 
-        try
-        {
-            harmony.Patch(AccessTools.Method(typeof(GameEntrance), nameof(GameEntrance.EnterBattle)), prefix: new HarmonyMethod(typeof(GameWait), nameof(BeforeEnterBattle)));
-            log("entering a save watched");
-        }
-        catch (Exception ex)
-        {
-            log($"could not hook GameEntrance.EnterBattle, StartPaused will do nothing: {ex.Message}");
-        }
+        hooks.Patch(typeof(GameWait), typeof(GameEntrance), nameof(GameEntrance.EnterBattle), prefix: nameof(BeforeEnterBattle),
+            done: "entering a save watched", consequence: "StartPaused will do nothing");
     }
 
     /// <summary>
@@ -140,11 +131,13 @@ internal static class GameWait
             var world = LiveWorld();
             var role = world?._AgentManager?.GetLeadingRole();
 
-            if (world == null || role == null || !BaseSingleton<ConfigManager>.IsInstanceCreated) return false;
+            var configs = GameSingleton.Existing<ConfigManager>();
+
+            if (world == null || role == null || configs == null) return false;
 
             var actionId = world._ActionManager?.GetActionSource(role.InstanceId)?.CurrentAction?.ActionId;
 
-            return actionId is { } id && BaseSingleton<ConfigManager>.Instance?.Get_Config_Action(id)?.IsFast == true;
+            return actionId is { } id && configs.Get_Config_Action(id)?.IsFast == true;
         }
         catch (Exception ex)
         {
@@ -212,22 +205,15 @@ internal static class GameWait
     /// Watches the game granting a buff from a sleep or another action (AE_AddAttackerBuff.Run), so the one sleep
     /// WakeLeadingRole ended short goes without Vim and Vigor. Hooked once.
     /// </summary>
-    public static void HookSleepBuff(Harmony harmony, Action<string> log)
+    public static void HookSleepBuff(PatchKit hooks)
     {
+        _hooks = hooks;
+
         if (_isBuffHookTried) return;
 
         _isBuffHookTried = true;
-
-        try
-        {
-            harmony.Patch(AccessTools.Method(typeof(AE_AddAttackerBuff), nameof(AE_AddAttackerBuff.Run)), prefix: new HarmonyMethod(typeof(GameWait), nameof(BeforeAddBuff)));
-            _isBuffHooked = true;
-            log("sleep buff watched");
-        }
-        catch (Exception ex)
-        {
-            log($"could not hook AE_AddAttackerBuff.Run, a sleep woken early keeps Vim and Vigor: {ex.Message}");
-        }
+        _isBuffHooked = hooks.Patch(typeof(GameWait), typeof(AE_AddAttackerBuff), nameof(AE_AddAttackerBuff.Run), prefix: nameof(BeforeAddBuff),
+            done: "sleep buff watched", consequence: "a sleep woken early keeps Vim and Vigor");
     }
 
     /// <summary>The countdown's own clock: game seconds run since it started, and the time of day it started at.</summary>
@@ -362,13 +348,7 @@ internal static class GameWait
     }
 
     /// <summary>The live world, or null before the game has made one; reading the singleton's Instance would build one.</summary>
-    private static BattleLogicWorld? LiveWorld() =>
-        BaseSingleton<BattleLogicWorld>.IsInstanceCreated ? BaseSingleton<BattleLogicWorld>.Instance : null;
+    private static BattleLogicWorld? LiveWorld() => GameSingleton.Existing<BattleLogicWorld>();
 
-    private static void Fail(string doing, Exception ex)
-    {
-        _failures++;
-
-        if (_failures <= MaxLoggedFailures) _log($"failed {doing} (logged {_failures} of {MaxLoggedFailures}): {ex}");
-    }
+    private static void Fail(string doing, Exception ex) => _hooks?.Fail(doing, ex);
 }

@@ -1,6 +1,6 @@
 using System;
+using ExiledToolkit.Game;
 using GameCore.HotUpdate.Battle.Logic;
-using HarmonyLib;
 
 namespace TimeControl.Adapters;
 
@@ -15,26 +15,18 @@ internal static class MachineJobs
     /// <summary>How many machine jobs have started since the game loaded; only ever compared with an earlier read.</summary>
     public static int Started { get; private set; }
 
-    public static void Apply(Harmony harmony, Action<string> log)
+    public static void Apply(PatchKit hooks)
     {
-        Patch(harmony, typeof(CookingComponent), nameof(CookingComponent.StartCooking), "a stove", log);
-        Patch(harmony, typeof(BrewComponent), nameof(BrewComponent.BeginBrew), "a barrel", log);
-        Patch(harmony, typeof(DyeComponent), nameof(DyeComponent.Begin), "the dye vat", log);
-        Patch(harmony, typeof(ShredderComponent), nameof(ShredderComponent.BeginShred), "the shredder", log);
-        Patch(harmony, typeof(CompressorComponent), nameof(CompressorComponent.BeginCompress), "the compressor", log);
+        Patch(hooks, typeof(CookingComponent), nameof(CookingComponent.StartCooking), "a stove");
+        Patch(hooks, typeof(BrewComponent), nameof(BrewComponent.BeginBrew), "a barrel");
+        Patch(hooks, typeof(DyeComponent), nameof(DyeComponent.Begin), "the dye vat");
+        Patch(hooks, typeof(ShredderComponent), nameof(ShredderComponent.BeginShred), "the shredder");
+        Patch(hooks, typeof(CompressorComponent), nameof(CompressorComponent.BeginCompress), "the compressor");
     }
 
-    private static void Patch(Harmony harmony, Type type, string method, string machine, Action<string> log)
-    {
-        try
-        {
-            harmony.Patch(AccessTools.Method(type, method), postfix: new HarmonyMethod(typeof(MachineJobs), nameof(AfterStart)));
-        }
-        catch (Exception ex)
-        {
-            log($"could not hook {type.Name}.{method}, so a job started at {machine} stays paused with its menu open: {ex.Message}");
-        }
-    }
+    private static void Patch(PatchKit hooks, Type type, string method, string machine) =>
+        hooks.Patch(typeof(MachineJobs), type, method, postfix: nameof(AfterStart),
+            consequence: $"so a job started at {machine} stays paused with its menu open");
 
     private static void AfterStart() => Started++;
 }

@@ -1,6 +1,6 @@
 using System;
+using ExiledToolkit.Game;
 using GameCore.HotUpdate.Battle.Logic;
-using HarmonyLib;
 using TimeControl.Core;
 
 namespace TimeControl.Adapters;
@@ -12,8 +12,8 @@ internal static partial class SpeedPatches
 
     private const float HoldKeyTolerance = 0.001f;
 
-    public static void ApplyHoldKey(Harmony harmony) =>
-        Patch(harmony, typeof(GameTimeManager), nameof(GameTimeManager.OnHoldSpeedBoost), prefix: nameof(RaiseGameHoldTarget), postfix: nameof(HoldGameHoldSpeed),
+    public static void ApplyHoldKey(PatchKit hooks) =>
+        hooks.Patch(typeof(SpeedPatches), typeof(GameTimeManager), nameof(GameTimeManager.OnHoldSpeedBoost), prefix: nameof(RaiseGameHoldTarget), postfix: nameof(HoldGameHoldSpeed),
             done: "the game's hold-to-speed-up key runs at GameHoldKeySpeed", consequence: "the game's hold-to-speed-up key keeps the game's speed");
 
     /// <summary>

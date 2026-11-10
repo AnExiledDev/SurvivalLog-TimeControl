@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using ExiledToolkit.Game;
 using GameCore.HotUpdate;
 using GameCore.HotUpdate.Battle.Logic;
 using GameCore.HotUpdate.ReduxUI;
@@ -148,7 +149,7 @@ public sealed partial class ClockTicker
     {
         try
         {
-            var world = BaseSingleton<BattleLogicWorld>.IsInstanceCreated ? BaseSingleton<BattleLogicWorld>.Instance : null;
+            var world = GameSingleton.Existing<BattleLogicWorld>();
             var role = world?._AgentManager?.GetLeadingRole();
             var orders = role == null ? null : world!._ActionManager?.GetActionSource(role.InstanceId)?.ParentList;
 
@@ -174,7 +175,7 @@ public sealed partial class ClockTicker
     /// <summary>Whether a menu whose setting is on is open, by the game's record of the menus it shows.</summary>
     private static bool IsWatchedMenuOpen(AwaySettings settings)
     {
-        var ui = BaseSingleton<ReduxUISystem>.IsInstanceCreated ? BaseSingleton<ReduxUISystem>.Instance : null;
+        var ui = GameSingleton.Existing<ReduxUISystem>();
 
         if (ui == null) return false;
 

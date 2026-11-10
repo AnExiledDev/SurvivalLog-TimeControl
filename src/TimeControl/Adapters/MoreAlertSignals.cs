@@ -1,7 +1,7 @@
 using System;
+using ExiledToolkit.Game;
 using GameCore.HotUpdate;
 using GameCore.HotUpdate.Battle.Logic;
-using HarmonyLib;
 using TimeControl.Core;
 
 namespace TimeControl.Adapters;
@@ -13,8 +13,6 @@ namespace TimeControl.Adapters;
 /// </summary>
 internal static class MoreAlertSignals
 {
-    private const int MaxLoggedFailures = 3;
-
     /// <summary>The state DataCollectionManager.OnPlantStateChanged is told of when a crop becomes ready to harvest.</summary>
     private const int RipePlantState = 2;
 
@@ -24,30 +22,20 @@ internal static class MoreAlertSignals
     private static readonly Alert[] NeedAlerts = { Alert.LowSatiety, Alert.LowMorale, Alert.LowStamina, Alert.LowHealth, Alert.LowVitality };
 
     private static int _plantsRipened;
-    private static int _failures;
-    private static Action<string> _log = _ => { };
+    private static PatchKit? _hooks;
     private static bool _isPlantHooked;
 
     /// <summary>Called on the main thread at start and after each change. The crop hook goes in the first time its alert is turned on and stays in.</summary>
-    public static void Use(Harmony harmony, AlertSet on, Action<string> log)
+    public static void Use(PatchKit hooks, AlertSet on)
     {
-        _log = log;
+        _hooks = hooks;
 
         if (!on.Has(Alert.PlantRipe) || _isPlantHooked) return;
 
         _isPlantHooked = true;
 
-        try
-        {
-            harmony.Patch(
-                AccessTools.Method(typeof(DataCollectionManager), "OnPlantStateChanged"),
-                postfix: new HarmonyMethod(typeof(MoreAlertSignals), nameof(AfterPlantStateChanged)));
-            _log("ripe crops watched");
-        }
-        catch (Exception ex)
-        {
-            _log($"could not hook DataCollectionManager.OnPlantStateChanged, PauseOnCropRipe will do nothing: {ex.Message}");
-        }
+        hooks.Patch(typeof(MoreAlertSignals), typeof(DataCollectionManager), "OnPlantStateChanged", postfix: nameof(AfterPlantStateChanged),
+            done: "ripe crops watched", consequence: "PauseOnCropRipe will do nothing");
     }
 
     /// <summary>What the game shows now for each alert in <paramref name="on"/>; the crops counted are taken either way, so none are saved up.</summary>
@@ -178,8 +166,7 @@ internal static class MoreAlertSignals
     }
 
     /// <summary>The live world, or null before the game has made one; reading the singleton's Instance would build one.</summary>
-    private static BattleLogicWorld? LiveWorld() =>
-        BaseSingleton<BattleLogicWorld>.IsInstanceCreated ? BaseSingleton<BattleLogicWorld>.Instance : null;
+    private static BattleLogicWorld? LiveWorld() => GameSingleton.Existing<BattleLogicWorld>();
 
     /// <summary>The read takes what it reads from as an argument, so a static lambda serves and no closure is made per read.</summary>
     private static T? Try<TState, T>(string doing, TState state, Func<TState, T?> read) where T : struct
@@ -196,10 +183,5 @@ internal static class MoreAlertSignals
         }
     }
 
-    private static void Fail(string doing, Exception ex)
-    {
-        _failures++;
-
-        if (_failures <= MaxLoggedFailures) _log($"failed {doing} (logged {_failures} of {MaxLoggedFailures}): {ex}");
-    }
+    private static void Fail(string doing, Exception ex) => _hooks?.Fail(doing, ex);
 }

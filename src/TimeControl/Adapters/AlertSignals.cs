@@ -1,7 +1,7 @@
 using System;
+using ExiledToolkit.Game;
 using GameCore.HotUpdate;
 using GameCore.HotUpdate.Battle.Logic;
-using HarmonyLib;
 using TimeControl.Core;
 using UnityEngine;
 
@@ -15,15 +15,12 @@ namespace TimeControl.Adapters;
 /// </summary>
 internal static class AlertSignals
 {
-    private const int MaxLoggedFailures = 3;
-
     private static int _emergenciesFired;
     private static int _dronesLanded;
     private static bool _isCrisisNew;
     private static bool _isTripUnsettled;
     private static int _droneRestoreFrame = -1;
-    private static int _failures;
-    private static Action<string> _log = _ => { };
+    private static PatchKit? _hooks;
     private static bool _isCrisisHooked;
     private static bool _isDroneHooked;
 
@@ -31,15 +28,15 @@ internal static class AlertSignals
     /// Called on the main thread at start and after each change. Each hook goes in the first time its alert is turned on
     /// and stays in; the ticker lets go of the counts of an alert that is off.
     /// </summary>
-    public static void Use(Harmony harmony, AlertSettings settings, Action<string> log)
+    public static void Use(PatchKit hooks, AlertSettings settings)
     {
-        _log = log;
+        _hooks = hooks;
 
         if (settings.IsEmergencyOn && !_isCrisisHooked)
         {
             _isCrisisHooked = true;
 
-            Patch(harmony, typeof(DynamicEventManager), nameof(DynamicEventManager.TriggerCrisisEvent), nameof(BeforeCrisis), nameof(AfterCrisis),
+            hooks.Patch(typeof(AlertSignals), typeof(DynamicEventManager), nameof(DynamicEventManager.TriggerCrisisEvent), prefix: nameof(BeforeCrisis), postfix: nameof(AfterCrisis),
                 done: "emergencies watched", consequence: "PauseOnEmergency will do nothing");
         }
 
@@ -47,9 +44,9 @@ internal static class AlertSignals
 
         _isDroneHooked = true;
 
-        Patch(harmony, typeof(StrangerTradeActiveManager), nameof(StrangerTradeActiveManager.SettleDroneReturn), nameof(BeforeDroneSettle), nameof(AfterDroneSettle),
+        hooks.Patch(typeof(AlertSignals), typeof(StrangerTradeActiveManager), nameof(StrangerTradeActiveManager.SettleDroneReturn), prefix: nameof(BeforeDroneSettle), postfix: nameof(AfterDroneSettle),
             done: "trade drone landings watched", consequence: "PauseOnDroneArrival will do nothing");
-        Patch(harmony, typeof(StrangerTradeActiveManager), nameof(StrangerTradeActiveManager.RestoreDroneModelState), nameof(BeforeDroneRestore), postfix: null,
+        hooks.Patch(typeof(AlertSignals), typeof(StrangerTradeActiveManager), nameof(StrangerTradeActiveManager.RestoreDroneModelState), prefix: nameof(BeforeDroneRestore),
             done: "drone trips settled by a load are told apart from landings", consequence: "a drone that came home while the game was closed may pause it once on loading");
     }
 
@@ -149,33 +146,11 @@ internal static class AlertSignals
     private static void BeforeDroneRestore() => _droneRestoreFrame = Time.frameCount;
 
     /// <summary>The live world, or null before the game has made one; reading the singleton's Instance would build one.</summary>
-    private static BattleLogicWorld? LiveWorld() =>
-        BaseSingleton<BattleLogicWorld>.IsInstanceCreated ? BaseSingleton<BattleLogicWorld>.Instance : null;
+    private static BattleLogicWorld? LiveWorld() => GameSingleton.Existing<BattleLogicWorld>();
 
     private static bool IsLive(DynamicEventManager events) => LiveWorld()?._DynamicEventManager?.Pointer == events.Pointer;
 
     private static bool IsLive(StrangerTradeActiveManager trade) => LiveWorld()?._StrangerTradeActiveManager?.Pointer == trade.Pointer;
 
-    private static void Patch(Harmony harmony, Type type, string method, string prefix, string? postfix, string done, string consequence)
-    {
-        try
-        {
-            harmony.Patch(
-                AccessTools.Method(type, method),
-                prefix: new HarmonyMethod(typeof(AlertSignals), prefix),
-                postfix: postfix == null ? null : new HarmonyMethod(typeof(AlertSignals), postfix));
-            _log(done);
-        }
-        catch (Exception ex)
-        {
-            _log($"could not hook {type.Name}.{method}, {consequence}: {ex.Message}");
-        }
-    }
-
-    private static void Fail(string doing, Exception ex)
-    {
-        _failures++;
-
-        if (_failures <= MaxLoggedFailures) _log($"failed {doing} (logged {_failures} of {MaxLoggedFailures}): {ex}");
-    }
+    private static void Fail(string doing, Exception ex) => _hooks?.Fail(doing, ex);
 }

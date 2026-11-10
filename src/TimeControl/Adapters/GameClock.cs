@@ -1,4 +1,5 @@
 using System;
+using ExiledToolkit.Game;
 using GameCore.HotUpdate;
 using GameCore.HotUpdate.Battle.Logic;
 using TimeControl.Core;
@@ -19,7 +20,7 @@ internal static class GameClock
     /// game's event handlers as well; so the world is only read once the game has created it.
     /// </summary>
     public static GameTimeManager? Find() =>
-        BaseSingleton<BattleLogicWorld>.IsInstanceCreated ? BaseSingleton<BattleLogicWorld>.Instance?._GameTimeManager : null;
+        GameSingleton.Existing<BattleLogicWorld>()?._GameTimeManager;
 
     public static bool IsLive(GameTimeManager time) => Find() is { } live && live.Pointer == time.Pointer;
 
@@ -61,9 +62,9 @@ internal static class GameClock
     /// </summary>
     public static bool IsLeadingRoleAsleep()
     {
-        if (!BaseSingleton<BattleLogicWorld>.IsInstanceCreated) return false;
+        if (!GameSingleton.IsCreated<BattleLogicWorld>()) return false;
 
-        var role = BaseSingleton<BattleLogicWorld>.Instance?._AgentManager?.GetLeadingRole();
+        var role = GameSingleton.Existing<BattleLogicWorld>()?._AgentManager?.GetLeadingRole();
 
         if (role == null) return false;
 
@@ -79,11 +80,11 @@ internal static class GameClock
     /// </summary>
     public static bool IsExpeditionEnding(GameTimer timer)
     {
-        if (timer != GameTimer.Expedition || !BaseSingleton<BattleLogicWorld>.IsInstanceCreated) return false;
+        if (timer != GameTimer.Expedition || !GameSingleton.IsCreated<BattleLogicWorld>()) return false;
 
         try
         {
-            return BaseSingleton<BattleLogicWorld>.Instance?._ExploreManager?._hasEndProcessed == true;
+            return GameSingleton.Existing<BattleLogicWorld>()?._ExploreManager?._hasEndProcessed == true;
         }
         catch (Exception ex)
         {

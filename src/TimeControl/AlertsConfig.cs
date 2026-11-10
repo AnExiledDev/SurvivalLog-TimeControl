@@ -3,7 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using BepInEx.Configuration;
-using HarmonyLib;
+using ExiledToolkit;
+using ExiledToolkit.Game;
 using TimeControl.Adapters;
 using TimeControl.Core;
 
@@ -48,7 +49,7 @@ internal static class AlertsConfig
     }
 
     /// <summary>Binds the settings, moves the retired queue setting over, and applies them now and after each change.</summary>
-    public static void Bind(ConfigFile config, Harmony harmony, Action<string> log)
+    public static void Bind(ConfigFile config, PatchKit hooks, Action<string> log)
     {
         var retiredQueueValue = TakeRetired(config, RetiredQueueKey, log);
         var isFocusLossOn = config.Bind(ClockSection, "PauseOnFocusLoss", true,
@@ -129,8 +130,8 @@ internal static class AlertsConfig
 
         foreach (var (entry, _) in AlertToggles) watched.Add(entry);
 
-        MachineJobs.Apply(harmony, log);
-        OptionalLive.Watch(() =>
+        MachineJobs.Apply(hooks);
+        LiveSettings.Watch(() =>
         {
             var moreOn = MoreOn;
             var away = new AwaySettings(isFocusLossOn.Value, isBagOn.Value, isWorkbenchOn.Value, isPhoneOn.Value, isTradeOn.Value, isOtherMenusOn.Value);
@@ -144,7 +145,7 @@ internal static class AlertsConfig
                 $"on queue empty {onQueueEmpty.Value}{(queueSlowing.IsOn ? $" to {slowSpeed.Value}" : "")}, " +
                 $"more alerts on: {(moreOn.IsEmpty ? "none" : string.Join(", ", Names(moreOn)))}{(isLowNeedOn.Value ? $", low need at {ClockTicker.LowNeedPercent}%" : "")}, " +
                 $"danger alerts while holding speed-up {OnOff(isDangerWhileHoldingOn.Value)}");
-            MoreAlertSignals.Use(harmony, moreOn, log);
+            MoreAlertSignals.Use(hooks, moreOn);
         }, watched.ToArray());
     }
 

@@ -1,14 +1,15 @@
 using System;
 using BepInEx.Configuration;
-using HarmonyLib;
+using ExiledToolkit;
+using ExiledToolkit.Game;
 using TimeControl.Adapters;
 using TimeControl.Core;
 
 namespace TimeControl;
 
 /// <summary>
-/// The settings for the alarm clock, start paused and sleep until, read again after each change while the Toolkit is
-/// installed. A time that cannot be read is logged and counts as no time set.
+/// The settings for the alarm clock, start paused and sleep until, read again after each change. A time that cannot
+/// be read is logged and counts as no time set.
 /// </summary>
 internal static class WaitConfig
 {
@@ -20,7 +21,7 @@ internal static class WaitConfig
 
     public static SleepUntilSettings SleepUntil { get; private set; } = new(null, false);
 
-    public static void Bind(ConfigFile config, Harmony harmony, Action<string> log)
+    public static void Bind(ConfigFile config, PatchKit hooks, Action<string> log)
     {
         var alarmTime = config.Bind("Alarm", "AlarmTime", "",
             "A time of day on a 24-hour clock, such as 7 or 21:30, at which the game pauses once, at home and before the disaster. The pause key (Space by default) carries on at the speed you had. It stays quiet while your character sleeps and rings once they wake. Leave it empty for no alarm. With WaitButton on, the Wait until button beside the speed buttons can also set a one-time alarm a few hours ahead.\n" +
@@ -42,11 +43,11 @@ internal static class WaitConfig
             "Show the Wait until button beside the speed buttons. It runs the game at top speed until morning, the alarm time, a brew or the queue being done, or a few hours on, then pauses.\n" +
             "在速度按钮旁显示「等到」按钮。它会以最快速度运行游戏，直到早上、闹钟时间、酿造或队列完成，或几小时后，然后暂停。");
 
-        GameWait.HookEnter(harmony, log);
-        GameWait.HookSleepBuff(harmony, log);
+        GameWait.HookEnter(hooks);
+        GameWait.HookSleepBuff(hooks);
         ClockTicker.WaitPage = new WaitPageLink(log);
 
-        OptionalLive.Watch(() =>
+        LiveSettings.Watch(() =>
         {
             Alarm = new AlarmSettings(ReadTime("Alarm", "AlarmTime", alarmTime.Value, "no alarm", log), isAlarmDaily.Value);
             IsStartPausedOn = isStartPausedOn.Value;

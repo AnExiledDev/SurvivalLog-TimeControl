@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using GameCore.HotUpdate;
 using GameCore.HotUpdate.Battle.Logic;
 using GameCore.HotUpdate.Battle.Show;
+using ExiledToolkit;
+using ExiledToolkit.Game;
 using HarmonyLib;
 using Il2CppInterop.Runtime;
 using TimeControl.Core;
@@ -27,8 +29,6 @@ internal sealed record SpeedSettings(
 /// </summary>
 internal static partial class SpeedPatches
 {
-    private const int MaxLoggedFailures = 3;
-
     /// <summary>
     /// Who asked for a speed change: the game (its buttons, keys and menus), the player through this mod's keys, the
     /// player through this mod's copy of the speed buttons, or this mod itself.
@@ -76,7 +76,7 @@ internal static partial class SpeedPatches
     private static bool _areKeysSetUp;
     private static bool _hasLoggedPauseKeyIgnored;
     private static bool _hasLoggedPauseKeyTaken;
-    private static int _failures;
+    private static PatchKit? _hooks;
     private static Action<string> _log = _ => { };
 
     /// <summary>The speed level the pause key and idle freeze resume to.</summary>
@@ -101,8 +101,9 @@ internal static partial class SpeedPatches
     /// <summary>The fast gear sleep runs at: the one with the largest multiple, or the game's high speed when there are none.</summary>
     public static int FastestGear => FastGear.FastestGear(_fastMultiples);
 
-    public static void Apply(Harmony harmony, SpeedSettings settings, Action<string> log)
+    public static void Apply(Harmony harmony, PatchKit hooks, SpeedSettings settings, Action<string> log)
     {
+        _hooks = hooks;
         _slowSpeeds = settings.SlowSpeeds;
         _fastMultiples = settings.FastMultiples;
         _pauseKey = settings.PauseKey;
@@ -110,35 +111,35 @@ internal static partial class SpeedPatches
         _isExpeditionOn = settings.IsExpeditionOn;
         _log = log;
 
-        Patch(harmony, typeof(GameTimeManager), nameof(GameTimeManager.ChangeGameSpeed), prefix: nameof(BeforeSpeedChange),
+        hooks.Patch(typeof(SpeedPatches), typeof(GameTimeManager), nameof(GameTimeManager.ChangeGameSpeed), prefix: nameof(BeforeSpeedChange),
             done: "speed changes watched", consequence: "leftover game worlds cannot be detected and the slow button keeps the game's behaviour");
 
         if (OwnsSlowGear)
         {
-            Patch(harmony, typeof(GameTimeManager), nameof(GameTimeManager.ChangeGameSpeed), postfix: nameof(HoldChosenSlowSpeed),
+            hooks.Patch(typeof(SpeedPatches), typeof(GameTimeManager), nameof(GameTimeManager.ChangeGameSpeed), postfix: nameof(HoldChosenSlowSpeed),
                 done: $"slow button goes on from the game's slow to {string.Join(" then ", Labels())}", consequence: "the slow button keeps the game's behaviour");
-            Patch(harmony, typeof(GameTimeManager), nameof(GameTimeManager.UpdateIdleSlowdown), prefix: nameof(SkipGameIdleSlowdownOnOurSpeeds),
+            hooks.Patch(typeof(SpeedPatches), typeof(GameTimeManager), nameof(GameTimeManager.UpdateIdleSlowdown), prefix: nameof(SkipGameIdleSlowdownOnOurSpeeds),
                 done: "the game's idle slowdown is off while one of our slow speeds is held", consequence: "the game may drop our slow speeds to 0.3x when idle");
         }
 
         if (OwnsFastGear)
         {
-            Patch(harmony, typeof(GameTimeManager), nameof(GameTimeManager.ChangeGameSpeed), postfix: nameof(HoldChosenFastSpeed),
+            hooks.Patch(typeof(SpeedPatches), typeof(GameTimeManager), nameof(GameTimeManager.ChangeGameSpeed), postfix: nameof(HoldChosenFastSpeed),
                 done: $"fast button goes on to {string.Join(" then ", FastLabels())} the game's high speed", consequence: "the fast button keeps the game's behaviour");
         }
 
         if (settings.IsSleepFastForwardOn)
         {
-            Patch(harmony, typeof(GameTimeManager), nameof(GameTimeManager.StartTempSpeedUp), prefix: nameof(SkipGameSleepSpeedUp),
+            hooks.Patch(typeof(SpeedPatches), typeof(GameTimeManager), nameof(GameTimeManager.StartTempSpeedUp), prefix: nameof(SkipGameSleepSpeedUp),
                 done: "the game's sleep speed-up is replaced by the sleep fast-forward",
                 consequence: "the game's sleep speed-up takes over from the sleep fast-forward partway through a sleep");
         }
 
-        Patch(harmony, typeof(CameraTouch), nameof(CameraTouch.Update), prefix: nameof(KeepHoverTestOnRealTime),
+        hooks.Patch(typeof(SpeedPatches), typeof(CameraTouch), nameof(CameraTouch.Update), prefix: nameof(KeepHoverTestOnRealTime),
             done: "hover highlight works while paused", consequence: "objects will not highlight on hover while paused");
 
         FindListeningActionField();
-        Patch(harmony, typeof(HotKeyManager), nameof(HotKeyManager.Update), prefix: nameof(HandleSpeedKeys), isLast: true,
+        PatchLast(harmony, typeof(HotKeyManager), nameof(HotKeyManager.Update), nameof(HandleSpeedKeys),
             done: KeysHooked(settings.PauseKey), consequence: "the pause key and the game's speed keys before the disaster and on expeditions will not work");
     }
 
@@ -284,24 +285,24 @@ internal static partial class SpeedPatches
         foreach (var multiple in _fastMultiples) yield return FastGear.Label(multiple);
     }
 
-    private static void Patch(Harmony harmony, Type type, string method, string? prefix = null, string? postfix = null, bool isLast = false, string done = "", string consequence = "")
+    /// <summary>
+    /// Hooks a key handler so it runs after every other mod's hook on the same method. PatchKit has no way to set
+    /// that order, so this one is placed here and logs the same line PatchKit does when it fails.
+    /// </summary>
+    private static void PatchLast(Harmony harmony, Type type, string method, string prefix, string done, string consequence)
     {
         try
         {
             harmony.Patch(
                 AccessTools.Method(type, method),
-                prefix: prefix == null ? null : Hook(prefix, isLast),
-                postfix: postfix == null ? null : Hook(postfix, isLast));
+                prefix: new HarmonyMethod(typeof(SpeedPatches), prefix) { priority = Priority.Last });
             _log(done);
         }
         catch (Exception ex)
         {
-            _log($"could not hook {type.Name}.{method}, {consequence}: {ex.Message}");
+            _log($"{HookFailure.Prefix} {type.Name}.{method}, {consequence}: {ex.Message}");
         }
     }
-
-    private static HarmonyMethod Hook(string name, bool isLast) =>
-        new(typeof(SpeedPatches), name) { priority = isLast ? Priority.Last : Priority.Normal };
 
     /// <summary>
     /// The game's getter for HotKeyManager._listeningAction boxes the nullable, and il2cpp boxes an empty nullable to
@@ -510,7 +511,7 @@ internal static partial class SpeedPatches
         {
             LogOnce(ref _hasLoggedPauseKeyIgnored,
                 $"{_pauseKey} pressed where it does not pause (mode {keys._gameMode}, world {keys._worldStateType}, timer {timer}, " +
-                $"menu holding time {keys._isTimePaused}, input off {keys._isInputDisabled}, typing {keys._isTextInputActive || HotKeyManager.IsUGUIInputFocused() || OptionalLive.IsTyping()}); logged once");
+                $"menu holding time {keys._isTimePaused}, input off {keys._isInputDisabled}, typing {keys._isTextInputActive || HotKeyManager.IsUGUIInputFocused() || Typing.IsActive}); logged once");
 
             return false;
         }
@@ -605,7 +606,7 @@ internal static partial class SpeedPatches
     /// <summary>
     /// The conditions the game checks before its own speed keys apart from where the player is (normal mode, no menu
     /// holding time, input on, no text being typed in a menu such as the item search), plus no other text box being
-    /// typed in (a mod window's included, seen through Exiled's Toolkit 0.12.0 or newer) and no key being rebound. An
+    /// typed in (a mod window's included, seen through Exiled's Toolkit) and no key being rebound. An
     /// expedition runs in the game's exploration mode, which the mod accepts too.
     /// </summary>
     private static bool AreKeysForTheGame(HotKeyManager keys, GameTimer timer) =>
@@ -615,7 +616,7 @@ internal static partial class SpeedPatches
         !keys._isTextInputActive &&
         !IsRebindingAKey(keys) &&
         !HotKeyManager.IsUGUIInputFocused() &&
-        !OptionalLive.IsTyping();
+        !Typing.IsActive;
 
     /// <summary>Boxing an empty nullable gives null, so a non-null box means a key is being rebound.</summary>
     private static bool IsRebindingAKey(HotKeyManager keys)
@@ -627,10 +628,5 @@ internal static partial class SpeedPatches
         return IL2CPP.il2cpp_value_box(_listeningActionClass, field) != IntPtr.Zero;
     }
 
-    private static void Fail(string doing, Exception ex)
-    {
-        _failures++;
-
-        if (_failures <= MaxLoggedFailures) _log($"failed {doing} (logged {_failures} of {MaxLoggedFailures}): {ex}");
-    }
+    private static void Fail(string doing, Exception ex) => _hooks?.Fail(doing, ex);
 }

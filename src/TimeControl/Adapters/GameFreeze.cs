@@ -1,4 +1,5 @@
 using System;
+using ExiledToolkit.Game;
 using GameCore.HotUpdate;
 using GameCore.HotUpdate.Battle.Logic;
 using GameCore.HotUpdate.ReduxUI;
@@ -28,7 +29,7 @@ internal static class GameFreeze
     {
         try
         {
-            var world = BaseSingleton<BattleLogicWorld>.IsInstanceCreated ? BaseSingleton<BattleLogicWorld>.Instance : null;
+            var world = GameSingleton.Existing<BattleLogicWorld>();
 
             if (world == null)
             {
@@ -41,7 +42,7 @@ internal static class GameFreeze
 
             // Menus are read only while frozen, so a running game pays for one field read a check. A freeze that is the
             // game's needs no reads, and the held screens matter only over a player menu.
-            var ui = isFrozen && _state is not MenuFreeze.Games && BaseSingleton<ReduxUISystem>.IsInstanceCreated ? BaseSingleton<ReduxUISystem>.Instance : null;
+            var ui = isFrozen && _state is not MenuFreeze.Games ? GameSingleton.Existing<ReduxUISystem>() : null;
             var isPlayerMenuOpen = ui != null && IsAnyActive(ui, _playerMenus ??= PlayerMenus());
             var seen = new FreezeSnapshot(
                 isFrozen,

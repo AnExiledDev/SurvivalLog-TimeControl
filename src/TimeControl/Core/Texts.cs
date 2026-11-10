@@ -1,12 +1,7 @@
 using System.Collections.Generic;
+using ExiledToolkit.Kit;
 
 namespace TimeControl.Core;
-
-/// <summary>One piece of on-screen text in the two languages the game ships.</summary>
-public readonly record struct Phrase(string En, string Zh)
-{
-    public string Pick(bool isChinese) => isChinese ? Zh : En;
-}
 
 /// <summary>
 /// Every word the mod puts on screen. Chinese uses the game's terms; the speed names are the game's, used only

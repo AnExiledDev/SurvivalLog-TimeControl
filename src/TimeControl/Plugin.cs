@@ -1,8 +1,10 @@
 using System;
-using System.IO;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Unity.IL2CPP;
+using ExiledToolkit;
+using ExiledToolkit.Game;
+using ExiledToolkit.Kit;
 using HarmonyLib;
 using TimeControl.Adapters;
 using TimeControl.Core;
@@ -11,16 +13,17 @@ using UnityEngine;
 namespace TimeControl;
 
 [BepInPlugin(Guid, "Time Control", Version)]
-[BepInDependency(OptionalLive.ToolkitGuid, BepInDependency.DependencyFlags.SoftDependency)]
+[BepInDependency(ToolkitGuid, ">=0.19.0")]
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.timecontrol";
-    private const string Version = "0.10.6";
+    private const string Version = "0.10.7";
+    private const string ToolkitGuid = "com.dev.survivallog.exiledtoolkit";
+    private const int MaxLoggedFailures = 3;
+    private const long MaxLogBytes = 1024 * 1024;
 
     public override void Load()
     {
-        if (!OptionalLive.IsToolkitInstalled) Log.LogInfo(OptionalLive.MissingNote);
-
         var slowSpeeds = Config.Bind("SlowButton", "SlowSpeeds", "0.5,0.25",
             new ConfigDescription(
                 "Extra slower speeds for the Slow button and the ` (~) key, separated by commas, each from 0.05 to 0.95. The first press is the game's slow; pressing slow again moves on to these speeds, and after the last back to the game's. Leave it empty to keep only the game's slow. Takes effect at the next game start.\n" +
@@ -85,7 +88,7 @@ public sealed class Plugin : BasePlugin
             "How visible the game's paused banner across the lower middle of the screen is, from 0 (hidden) to 1 (as the game draws it). Lower values let you read the phone's reply choices under it. Clicks always pass through the banner.\n" +
             "游戏自带的暂停横条（横跨屏幕中下方）有多明显，0 为隐藏，1 为游戏原样。数值越低，越容易看清下面手机里的回复选项。点击总是会穿过横条。");
 
-        var log = new TimeLog(Log, Path.Combine(Paths.BepInExRootPath, "time-control.log"));
+        var log = new ModLog(Log, "time-control.log") { MaxFileBytes = MaxLogBytes };
         var speeds = new SpeedSettings(
             SlowGear.ParseSpeeds(slowSpeeds),
             FastGear.ParseMultiples(fastMultiples),
@@ -94,14 +97,14 @@ public sealed class Plugin : BasePlugin
             isSleepFastForwardOn,
             isExpeditionOn);
         var harmony = new Harmony(Guid);
+        var hooks = new PatchKit(harmony, log.Write, MaxLoggedFailures);
 
-        log.TrimIfLarge();
         log.Write($"===== Time Control {Version} started: sleep fast-forward {OnOff(isSleepFastForwardOn)}, on expeditions {OnOff(isExpeditionOn)}");
-        SpeedPatches.Apply(harmony, speeds, log.Write);
-        AlertsConfig.Bind(Config, harmony, log.Write);
-        KeysConfig.Bind(Config, harmony, log.Write);
+        SpeedPatches.Apply(harmony, hooks, speeds, log.Write);
+        AlertsConfig.Bind(Config, hooks, log.Write);
+        KeysConfig.Bind(Config, harmony, hooks, log.Write);
 
-        OptionalLive.Watch(() =>
+        LiveSettings.Watch(() =>
         {
             var alerts = new AlertSettings(isPauseOnWaveOn.Value, isPauseOnEmergencyOn.Value, isPauseOnDroneArrivalOn.Value, AlertsConfig.IsQueuePauseOn, AlertsConfig.MoreOn);
             var settings = new ClockSettings(
@@ -120,12 +123,12 @@ public sealed class Plugin : BasePlugin
                 $"idle badge {OnOff(settings.Badges.IsIdleBadgeOn)}, pause key badge {OnOff(settings.Badges.IsPauseKeyBadgeOn)}, alert badge {OnOff(settings.Badges.IsAlertBadgeOn)}, " +
                 $"speed buttons before the disaster and on expeditions {OnOff(settings.AreSpeedButtonsOn)}, " +
                 $"game's paused banner opacity {PauseOverlay.ClampOpacity(pauseOverlayOpacity.Value):0.##}");
-            AlertSignals.Use(harmony, alerts, log.Write);
+            AlertSignals.Use(hooks, alerts);
             ClockTicker.Settings = settings;
         }, isIdleFreezeOn, idleDelay, isPauseOnWakeOn, isPauseOnWaveOn, isPauseOnEmergencyOn, isPauseOnDroneArrivalOn,
             isIdleBadgeOn, isPauseKeyBadgeOn, isAlertBadgeOn, areSpeedButtonsOn, pauseOverlayOpacity);
 
-        WaitConfig.Bind(Config, harmony, log.Write);
+        WaitConfig.Bind(Config, hooks, log.Write);
         ClockTicker.Log = log.Write;
         GameClock.Log = log.Write;
         ClockTicker.LogFileOnly = log.WriteFileOnly;
