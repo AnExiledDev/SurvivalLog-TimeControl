@@ -17,7 +17,7 @@ namespace TimeControl;
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.timecontrol";
-    private const string Version = "0.10.9";
+    private const string Version = "0.10.10";
     private const string ToolkitGuid = "com.dev.survivallog.exiledtoolkit";
     private const int MaxLoggedFailures = 3;
     private const long MaxLogBytes = 1024 * 1024;
@@ -43,7 +43,7 @@ public sealed class Plugin : BasePlugin
         var isSleepFastForwardOn = Config.Bind("Sleep", "FastForwardSleep", true,
             new ConfigDescription(
                 "Run sleep and naps at the fastest FastSpeeds speed (or at Fastest if FastSpeeds is empty), instead of the game's sleep speed-up. A speed you pick while asleep is kept until you wake. Off keeps the game's sleep speed-up. Takes effect at the next game start.\n" +
-                "睡觉和打盹时以 FastSpeeds 里最快的速度运行（FastSpeeds 留空时用极速），代替游戏自带的睡眠加速。睡着时你选的速度会一直保持到醒来。关闭则保留游戏自带的睡眠加速。下次启动游戏时生效。",
+                "睡觉和打盹时以 FastSpeeds 里最快的速度运行（FastSpeeds 留空时用极速），代替游戏原本的睡眠加速。睡着时你选的速度会一直保持到醒来。关闭则保留游戏原本的睡眠加速。下次启动游戏时生效。",
                 null, "ModManager.Restart")).Value;
         var isPauseOnWakeOn = Config.Bind("Sleep", "PauseOnWake", true,
             "Pause the game when your character wakes from sleep or a nap, however it ends. Your next order or the pause key (Space by default) brings back the speed you had before the sleep.\n" +
@@ -77,16 +77,16 @@ public sealed class Plugin : BasePlugin
             "空闲暂停期间，在速度按钮旁显示一个小标记「已暂停：空闲」。时间重新走动后立刻消失。", null, "ModManager.ShowWhen=Clock.IdleFreeze"));
         var isPauseKeyBadgeOn = Config.Bind("Display", "PauseKeyBadge", true,
             "Show a small \"Paused\" badge next to the speed buttons while a pause you made with a key holds the game: the pause key anywhere, or the game's pause key (4 by default) before the disaster and on expeditions. It goes away as soon as time runs again.\n" +
-            "你用按键暂停游戏时，在速度按钮旁显示一个小标记「已暂停」：任何地方按暂停键，或在灾前筹备和外出探索时按游戏自带的暂停键（默认 4）。时间重新走动后立刻消失。");
+            "你用按键暂停游戏时，在速度按钮旁显示一个小标记「已暂停」：任何地方按暂停键，或在灾前筹备和外出探索时按游戏的暂停键（默认 4）。时间重新走动后立刻消失。");
         var isAlertBadgeOn = Config.Bind("Display", "AlertBadge", true,
             "Show a small badge naming the alert, such as \"Paused: wave\", next to the speed buttons while an alert pause holds the game. It goes away as soon as time runs again.\n" +
             "因尸潮、危机等事件暂停时，在速度按钮旁显示一个写明原因的小标记，例如「已暂停：尸潮」。时间重新走动后立刻消失。");
         var areSpeedButtonsOn = Config.Bind("Display", "SpeedButtons", true,
             "Show speed buttons (slow, normal, fast, fastest and pause) before the disaster and on expeditions, where the game has none. They work like the game's buttons at home, using your SlowSpeeds and FastSpeeds. On expeditions they only show when TimeControlOnExpeditions is on.\n" +
-            "在灾前筹备和外出探索时显示速度按钮（慢速、正常速度、快速、极速、暂停），游戏在这些时候没有这些按钮。用法和安全屋里游戏自带的按钮一样，并使用你的 SlowSpeeds 和 FastSpeeds。外出探索时只有开启 TimeControlOnExpeditions 才会显示。");
+            "在灾前筹备和外出探索时显示速度按钮（慢速、正常速度、快速、极速、暂停），游戏在这些时候没有这些按钮。用法和安全屋里原本的按钮一样，并使用你的 SlowSpeeds 和 FastSpeeds。外出探索时只有开启 TimeControlOnExpeditions 才会显示。");
         var pauseOverlayOpacity = Config.Bind("Display", "PauseOverlayOpacity", PauseOverlay.DefaultOpacity,
             "How visible the game's paused banner across the lower middle of the screen is, from 0 (hidden) to 1 (as the game draws it). Lower values let you read the phone's reply choices under it. Clicks always pass through the banner.\n" +
-            "游戏自带的暂停横条（横跨屏幕中下方）有多明显，0 为隐藏，1 为游戏原样。数值越低，越容易看清下面手机里的回复选项。点击总是会穿过横条。");
+            "游戏的暂停横条（横跨屏幕中下方）有多明显，0 为隐藏，1 为游戏原样。数值越低，越容易看清下面手机里的回复选项。点击总是会穿过横条。");
 
         var log = new ModLog(Log, "time-control.log") { MaxFileBytes = MaxLogBytes };
         var speeds = new SpeedSettings(
