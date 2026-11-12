@@ -1,5 +1,5 @@
 Name: Time Control
-Summary: A real pause and a real slow speed, before the disaster and on expeditions too. Space pauses anywhere, the game pauses itself when you go idle, Alt+Tab or a wave hits, and an optional Wait until button skips to morning. Hold X to fast-forward, set an alarm, and sleep until the hour you pick. Slow adds 0.5x and 0.25x and super speed doubles Fastest.
+Summary: A real pause and a real slow speed, before the disaster and on expeditions too. Space pauses anywhere, the game pauses itself when you go idle, Alt+Tab or a wave hits, and an optional Wait until button skips to morning. Hold X to fast-forward, set an alarm, and sleep until the hour you pick. You set the extra slow speeds and the super speed above Fastest.
 
 Description (BBCode):
 [center][img]https://sldb.core-directive.com/media/save/1-save-safe.png[/img][/center]
@@ -8,19 +8,19 @@ The game's slow button only slows once you stand idle, and there is no way to pa
 
 [size=5]Main features[/size]
 [list]
-[*][b]Slower speeds[/b]: the first press of the slow button is the game's slow; press again for a true 0.5x, then 0.25x, then back to the game's.[/*]
-[*][b]Super speed[/b]: press the fast button or key 3 again at high speed to run twice as fast. A small chip on the button shows the speed in use.[/*]
-[*][b]Idle pause[/b]: the game pauses after 3 seconds with nothing queued, and your next order resumes it.[/*]
-[*][b]Pause on alerts[/b]: the game pauses once when a zombie wave starts or an emergency fires. More can be switched on: a trade drone coming home, zombies hitting the house or a trap, the power going out, a need running low, falling ill, phone and trade messages, a ripe crop, dusk and dawn. On expeditions alerts only pause when TimeControlOnExpeditions is true.[/*]
-[*][b]When the queue runs out[/b]: the game can slow down or pause when your character finishes their last order.[/*]
-[*][b]Pause while away[/b]: the game pauses when you Alt+Tab out and picks up your speed when you come back. It also pauses while a menu is open: the bag, workbench, phone, trade, cooking, a shop, the map and the rest, each switchable. An order or craft started there runs until it is done, then the game pauses again, and starting a machine there, such as cooking or brewing, runs the game until you close the menu.[/*]
-[*][b]Speed control in every menu[/b]: the game stops time on its own while the workbench, bag, a shop or most other menus are open, and ignores the speed keys there. The mod lifts that stop, so the speed stays yours in any menu. Story, ending and settlement screens still stop time.[/*]
-[*][b]Hold keys[/b]: hold X for the fastest speed or K for the slowest; let go and your speed comes back. Keys 5 to 9 can hold speeds of your own, and the mouse wheel over the speed buttons steps through every speed.[/*]
-[*][b]Wait until[/b] (switch on with WaitButton): a clock button beside the speed buttons runs the game at top speed until morning, your alarm, a brew or the queue is done, or a few hours on, then pauses.[/*]
-[*][b]Alarm clock[/b]: pause at a time of day, daily or once, or a few hours from now from the Wait until menu.[/*]
+[*][b]Slower speeds[/b]: the first press of the slow button gives you the game's slow speed. Press it again for a true 0.5x, then 0.25x, then back to the game's slow speed. You can change these speeds in the config.[/*]
+[*][b]Super speed[/b]: press the Fastest button or key 3 again while at Fastest to run twice as fast (you set how much faster). A small chip on the button shows the speed in use.[/*]
+[*][b]Idle pause[/b]: the game pauses once your character has had nothing queued for 3 seconds (you set how long), and your next order resumes it.[/*]
+[*][b]Pause on alerts[/b]: the game pauses once when a zombie wave starts or an emergency fires. You can switch on more: a trade drone coming home, zombies hitting the house or a trap, the power going out, a need running low, falling ill, phone and trade messages, a ripe crop, dusk and dawn. On expeditions alerts only pause when TimeControlOnExpeditions is true.[/*]
+[*][b]When the queue runs out[/b] (off by default): the game can slow down or pause when your character finishes their last order.[/*]
+[*][b]Pause while away[/b]: the game pauses when you Alt+Tab out and brings your speed back when you return. It also pauses while a menu is open: the bag, workbench, phone, trade, cooking, a shop, the map and the rest, each with its own setting. An order or a craft started in a menu runs until it is done, then the game pauses again. Starting a machine from a menu, such as cooking or brewing, runs the game until you close the menu.[/*]
+[*][b]Speed control in every menu[/b]: the game stops time by itself while the workbench, bag, a shop or most other menus are open, and ignores the speed keys there. The mod removes that stop, so you control the speed in any menu. Story, ending and settlement screens still stop time.[/*]
+[*][b]Hold keys[/b]: hold X for the fastest speed or K for the slowest. Let go and your speed comes back. Keys 5 to 9 can hold speeds of your own, and the mouse wheel over the speed buttons steps through every speed.[/*]
+[*][b]Wait until[/b] (switch on with WaitButton): a clock button beside the speed buttons runs the game at top speed until morning, your alarm, a brew or the queue being done, or a few hours later, then pauses.[/*]
+[*][b]Alarm clock[/b]: pause the game at a time of day, every day or just once. The Wait until menu can also set one a few hours from now.[/*]
 [*][b]Sleep until[/b]: wake your character at the hour you pick, or when an alert goes off. If your character slept at least 3 hours, they still get Vim and Vigor. Naps are never cut short.[/*]
-[*][b]Start paused[/b]: a save can load paused.[/*]
-[*][b]Clock notes[/b]: at home, under the clock, when your current order is done and how long until night and the next wave.[/*]
+[*][b]Start paused[/b]: load a save paused.[/*]
+[*][b]Clock notes[/b]: at home, the clock shows when your current order will be done and how long until night and the next wave.[/*]
 [*][b]Fast sleep[/b]: sleep and naps run at super speed, and the game pauses when you wake.[/*]
 [*][b]Pause key[/b]: Space pauses and resumes, at home, before the disaster and on expeditions.[/*]
 [*][b]Expeditions[/b]: pause, speed keys, slow and super speed and the idle pause all work on expeditions.[/*]
@@ -33,8 +33,8 @@ The game's slow button only slows once you stand idle, and there is no way to pa
 [size=5]Hotkeys[/size]
 [list]
 [*][b]Space[/b]: pause, press again to resume.[/*]
-[*][b]G[/b]: center the camera on your character (it was on Space).[/*]
-[*][b]1, 2, 3[/b]: the game's speeds. Press 3 again at high speed for super speed.[/*]
+[*][b]G[/b]: center the camera on your character (the game has it on Space).[/*]
+[*][b]1, 2, 3[/b]: the game's speeds. Press 3 again at Fastest for super speed.[/*]
 [*][b]X[/b] (hold): the fastest speed until you let go.[/*]
 [*][b]Shift[/b] (hold): the game's hold to speed up, at the speed you set in GameHoldKeySpeed (Fastest by default).[/*]
 [*][b]K[/b] (hold): the slowest slow speed until you let go.[/*]
@@ -77,11 +77,11 @@ Works in English and Chinese.
 Delete [font=Courier New]TimeControl.dll[/font] from the [font=Courier New]BepInEx\plugins[/font] folder. If centering the camera is still on G afterwards, set it back in the game's key settings.
 
 [size=5]Configuration[/size]
-To change settings, edit [font=Courier New]BepInEx\config\com.dev.survivallog.timecontrol.cfg[/font] while the game is closed, or do it in game on the Mod Manager's Mods screen, where changes take effect at once, all but [font=Courier New]SlowSpeeds[/font], [font=Courier New]FastSpeeds[/font], [font=Courier New]FastForwardSleep[/font], [font=Courier New]PauseToggleKey[/font], [font=Courier New]CenterCameraKey[/font] and [font=Courier New]TimeControlOnExpeditions[/font], which take effect at the next game start (see [url=https://github.com/AnExiledDev/SurvivalLog-TimeControl/blob/main/CONFIG.md]CONFIG.md[/url] for every setting).
+To change settings, edit [font=Courier New]BepInEx\config\com.dev.survivallog.timecontrol.cfg[/font] while the game is closed, or change them in game on the Mod Manager's Mods screen. Changes there take effect right away, except [font=Courier New]SlowSpeeds[/font], [font=Courier New]FastSpeeds[/font], [font=Courier New]FastForwardSleep[/font], [font=Courier New]PauseToggleKey[/font], [font=Courier New]CenterCameraKey[/font] and [font=Courier New]TimeControlOnExpeditions[/font], which take effect the next time you start the game. Every setting is listed in [url=https://github.com/AnExiledDev/SurvivalLog-TimeControl/blob/main/CONFIG.md]CONFIG.md[/url].
 
 [size=5]Feedback[/size]
 Found a bug or have an idea? Come say hi on the [url=https://discord.gg/trTsyxUFqg]Core Directive Discord[/url], or post in this page's Posts tab. For bugs, please include [font=Courier New]BepInEx\LogOutput.log[/font] and [font=Courier New]BepInEx\time-control.log[/font].
-To reach me directly, message [b]exiled.dev[/b] on Discord; you can find me in the [url=https://discord.gg/MZGg4gQAUe]official Survival Log Discord[/url]. I'm also on X as [url=https://x.com/AnExiledDev]@AnExiledDev[/url].
+To reach me directly, message [b]exiled.dev[/b] on Discord. You can find me in the [url=https://discord.gg/MZGg4gQAUe]official Survival Log Discord[/url]. I'm also on X as [url=https://x.com/AnExiledDev]@AnExiledDev[/url].
 
 [size=5]Source and license[/size]
 Open source under MIT: [url=https://github.com/AnExiledDev/SurvivalLog-TimeControl]github.com/AnExiledDev/SurvivalLog-TimeControl[/url]
@@ -93,16 +93,16 @@ Open source under MIT: [url=https://github.com/AnExiledDev/SurvivalLog-TimeContr
 
 [size=5]主要功能[/size]
 [list]
-[*][b]更慢的速度[/b]：第一次按慢速按钮是游戏原本的慢速；再按一次变为真正的 0.5 倍速，再按变为 0.25 倍速，然后回到游戏原本的慢速。[/*]
-[*][b]超高速[/b]：在高速时再按一次快进按钮或 3 键，速度再翻一倍。按钮右上角的小标签会显示当前实际速度。[/*]
-[*][b]空闲暂停[/b]：队列里没有指令 3 秒后游戏会暂停，下一个指令会让游戏继续。[/*]
+[*][b]更慢的速度[/b]：第一次按慢速按钮是游戏原本的慢速；再按一次变为真正的 0.5 倍速，再按变为 0.25 倍速，然后回到游戏原本的慢速。这些速度可以在配置中修改。[/*]
+[*][b]超高速[/b]：在极速时再按一次极速按钮或 3 键，速度再翻一倍（倍数可以自己设）。按钮右上角的小标签会显示当前实际速度。[/*]
+[*][b]空闲暂停[/b]：角色的队列里没有指令满 3 秒（时长可以自己设）后游戏会暂停，下一个指令会让游戏继续。[/*]
 [*][b]事件暂停[/b]：尸潮开始或危机事件发生时，游戏暂停一次。还可以打开更多：交易无人机归来、丧尸破坏房屋或陷阱、停电、某项需求过低、生病、手机短信和交易短信、作物成熟、黄昏和清晨。外出探索时，只有 TimeControlOnExpeditions 为 true 才会因事件暂停。[/*]
-[*][b]队列做完时[/b]：角色做完最后一个指令时，游戏可以减速或暂停。[/*]
+[*][b]队列做完时[/b]（默认关闭）：角色做完最后一个指令时，游戏可以减速或暂停。[/*]
 [*][b]离开时暂停[/b]：按 Alt+Tab 切走时游戏暂停，切回来时恢复原来的速度。打开界面时也会暂停：背包、工作台、手机、交易、烹饪、商店、地图等，每一项都可单独开关。在其中下达指令或开始制作会让游戏运行到完成，然后再次暂停；在其中启动设备（例如烹饪或酿酒）会让游戏一直运行到你关闭界面。[/*]
 [*][b]任意界面都能调速[/b]：打开工作台、背包、商店等大多数界面时，游戏会自行停住时间，并且不响应调速键。本模组会解除这种停止，让你在任何界面里都能掌控速度。剧情、结局和结算画面仍会停住时间。[/*]
 [*][b]按住加速或减速[/b]：按住 X 以最快速度运行，按住 K 以最慢速度运行，松开后恢复原来的速度。5 到 9 键可以设为你自己的速度，在速度按钮上滚动鼠标滚轮可以依次切换所有速度。[/*]
 [*][b]等到[/b]（用 WaitButton 开启）：速度按钮旁的时钟按钮会以最高速度运行，直到早上、闹钟时间、酿造完成、队列做完或几小时后，然后暂停。[/*]
-[*][b]闹钟[/b]：在一天中的某个时间暂停，每天或只响一次；也可以在「等到」菜单里设几小时后暂停。[/*]
+[*][b]闹钟[/b]：在一天中的某个时间暂停游戏，每天都响或只响一次。「等到」菜单也可以设几小时后暂停。[/*]
 [*][b]睡到几点[/b]：在你选的时间或有事件发生时叫醒角色。如果角色已经睡了至少 3 小时，仍会获得「神清气爽」。打盹不会被打断。[/*]
 [*][b]暂停开局[/b]：读取存档时可以以暂停状态开始。[/*]
 [*][b]时钟提示[/b]：在安全屋时，时钟下方显示当前指令何时完成，以及距离夜晚和下一波尸潮还有多久。[/*]
@@ -119,7 +119,7 @@ Open source under MIT: [url=https://github.com/AnExiledDev/SurvivalLog-TimeContr
 [list]
 [*][b]Space[/b]：暂停，再按一次继续。[/*]
 [*][b]G[/b]：镜头对准你的角色（原本在 Space 上）。[/*]
-[*][b]1、2、3[/b]：游戏自己的速度。在高速时再按一次 3 进入超高速。[/*]
+[*][b]1、2、3[/b]：游戏自己的速度。在极速时再按一次 3 进入超高速。[/*]
 [*][b]X[/b]（按住）：以最快速度运行，松开恢复。[/*]
 [*][b]Shift[/b]（按住）：游戏自带的「按住加速」，速度在 GameHoldKeySpeed 中设定（默认极速）。[/*]
 [*][b]K[/b]（按住）：以最慢速度运行，松开恢复。[/*]

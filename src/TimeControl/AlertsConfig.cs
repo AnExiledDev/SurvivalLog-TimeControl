@@ -22,7 +22,7 @@ internal static class AlertsConfig
 
     private const string CarryOn = " Pick a speed or press the pause key (Space by default) to carry on.\n";
     private const string CarryOnChinese = "选一个速度或按暂停键（默认 Space）继续。";
-    private const string MenuKept = ", and bring back your speed when you close it. Giving an order while it is open, such as a craft, runs the game until the order is done, then it pauses again. Starting a machine there, such as a stove cooking, runs the game until you close it. If you change the speed yourself while it is open, your choice is kept.\n";
+    private const string MenuKept = ", and bring back your speed when you close it. Giving an order while it is open, such as a craft, runs the game until the order is done, then it pauses again. Starting a machine from the menu, such as cooking on a stove, runs the game until you close the menu. If you change the speed yourself while it is open, your choice is kept.\n";
     private const string MenuKeptChinese = "时暂停游戏，关闭时恢复原来的速度。打开期间下达指令（例如制作）会让游戏运行到指令完成，然后再次暂停。在其中启动设备（例如开始烹饪）会让游戏一直运行到你关闭界面。如果打开期间你自己改了速度，则保留你的选择。";
 
     private static readonly List<(ConfigEntry<bool> Entry, Alert[] Alerts)> AlertToggles = new();
@@ -64,17 +64,17 @@ internal static class AlertsConfig
         var isTradeOn = config.Bind(ClockSection, "PauseInTrade", true,
             "Pause the game while the trade window is open" + MenuKept + "打开交易界面" + MenuKeptChinese);
         var isOtherMenusOn = config.Bind(ClockSection, "PauseInOtherMenus", true,
-            "Pause the game while any other menu you open to use something is open: cooking, a brewing barrel, a heater, a machine, a shop, the drones, the codex, the map and the like" + MenuKept +
+            "Pause the game while any other menu for something you use is open, such as cooking, a brewing barrel, a heater, a machine, a shop, the drones, the codex or the map" + MenuKept +
             "打开其他使用类界面（烹饪、酿酒桶、电暖器、各种设备、商店、无人机、图鉴、地图等）" + MenuKeptChinese);
 
         var onQueueEmpty = config.Bind(AlertsSection, "OnQueueEmpty", QueueEmptyAction.Off,
-            "What happens when your character finishes the last order in their queue. Off does nothing. Slow drops the game to QueueEmptySlowSpeed if it runs faster, and brings your speed back on your next order unless you change the speed yourself in between. Pause pauses the game once; unlike IdleFreeze, it pauses right away and stays paused until you pick a speed or press the pause key (Space by default).\n" +
-            "角色做完队列里最后一个指令时怎么做。Off 不做任何事。Slow 在游戏比 QueueEmptySlowSpeed 快时降到这个速度，你下达下一个指令时恢复原来的速度，除非期间你自己改了速度。Pause 暂停游戏一次；与 IdleFreeze 不同，它会立刻暂停，并一直停着，直到你选一个速度或按暂停键（默认 Space）。");
+            "What happens when your character finishes the last order in their queue. Off does nothing. Slow drops the game to QueueEmptySlowSpeed if it runs faster, and brings your speed back on your next order unless you change the speed yourself in between. Pause pauses the game once. Unlike IdleFreeze, it pauses right away and stays paused until you pick a speed or press the pause key (Space by default).\n" +
+            "角色做完队列里最后一个指令时怎么做。Off 不做任何事。Slow 在游戏比 QueueEmptySlowSpeed 快时降到这个速度，你下达下一个指令时恢复原来的速度，除非期间你自己改了速度。Pause 暂停游戏一次。与 IdleFreeze 不同，它会立刻暂停，并一直停着，直到你选一个速度或按暂停键（默认 Space）。");
 
         var slowSpeed = config.Bind(AlertsSection, "QueueEmptySlowSpeed", QueueSlowTarget.Normal,
             new ConfigDescription(
-                "The speed OnQueueEmpty = Slow drops the game to: Slow (the slow speed you last used), Normal or Fast. It only slows the game down, never speeds it up.\n" +
-                "OnQueueEmpty 为 Slow 时降到的速度：Slow 为慢速（你上次用的慢速），Normal 为正常速度，Fast 为快速。只会让游戏变慢，不会变快。",
+                "The speed OnQueueEmpty = Slow drops the game to: Slow (the slow speed you last used), Normal or Fast. If the game already runs at this speed or slower, nothing changes.\n" +
+                "OnQueueEmpty 为 Slow 时降到的速度：Slow 为慢速（你上次用的慢速），Normal 为正常速度，Fast 为快速。如果游戏已经是这个速度或更慢，就不会改变。",
                 null, "ModManager.ShowWhen=OnQueueEmpty=Slow"));
 
         _onQueueEmpty = onQueueEmpty;
@@ -111,8 +111,8 @@ internal static class AlertsConfig
             "Pause the game once when a new trade message arrives on the phone." + CarryOn + "手机收到新的交易短信时暂停游戏一次。" + CarryOnChinese,
             Alert.TradeMessage);
         Toggle(config, "PauseOnCropRipe",
-            "Pause the game once when a crop is ready to harvest. Several ripening at once pause it once." + CarryOn +
-            "作物成熟可以收获时暂停游戏一次。几株同时成熟只暂停一次。" + CarryOnChinese,
+            "Pause the game once when a crop is ready to harvest. If several crops ripen at once, it pauses only once." + CarryOn +
+            "作物成熟可以收获时暂停游戏一次。几株作物同时成熟时只暂停一次。" + CarryOnChinese,
             Alert.PlantRipe);
         Toggle(config, "PauseOnDusk",
             "Pause the game once when evening comes, at 19:00 game time." + CarryOn + "游戏时间到晚上 19:00 时暂停游戏一次。" + CarryOnChinese,

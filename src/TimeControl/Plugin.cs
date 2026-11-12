@@ -17,7 +17,7 @@ namespace TimeControl;
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.timecontrol";
-    private const string Version = "0.10.8";
+    private const string Version = "0.10.9";
     private const string ToolkitGuid = "com.dev.survivallog.exiledtoolkit";
     private const int MaxLoggedFailures = 3;
     private const long MaxLogBytes = 1024 * 1024;
@@ -26,12 +26,12 @@ public sealed class Plugin : BasePlugin
     {
         var slowSpeeds = Config.Bind("SlowButton", "SlowSpeeds", "0.5,0.25",
             new ConfigDescription(
-                "Extra slower speeds for the Slow button and the ` (~) key, separated by commas, each from 0.05 to 0.95. The first press is the game's slow; pressing slow again moves on to these speeds, and after the last back to the game's. Leave it empty to keep only the game's slow. Takes effect at the next game start.\n" +
+                "Extra slower speeds for the Slow button and the ` (~) key, separated by commas, each from 0.05 to 0.95. The first press is the game's slow speed. Press slow again to step through these speeds, and after the last one you're back at the game's slow speed. Leave it empty to keep only the game's slow. Takes effect at the next game start.\n" +
                 "慢速按钮和 ` (~) 键额外的更慢速度，用逗号分隔，每个在 0.05 到 0.95 之间。第一次按是游戏原本的慢速；已经在慢速时再按一次，会依次换到这些速度，最后一个之后回到游戏原本的慢速。留空则只保留游戏原本的慢速。下次启动游戏时生效。",
                 null, "ModManager.Restart")).Value;
         var fastMultiples = Config.Bind("FastButton", "FastSpeeds", "2",
             new ConfigDescription(
-                "Extra speeds above the game's Fastest speed, as multiples of it, separated by commas, each from 1.1 to 10. Pressing the Fastest button or the 3 key while already at Fastest moves to the next one, and after the last back to Fastest. Speeds are capped at 40x. Leave it empty to keep the game's Fastest button. Takes effect at the next game start.\n" +
+                "Extra speeds above the game's Fastest speed, as multiples of it, separated by commas, each from 1.1 to 10. Pressing the Fastest button or the 3 key while already at Fastest moves to the next one, and after the last one you're back at Fastest. Speeds are capped at 40x. Leave it empty to keep the game's Fastest button. Takes effect at the next game start.\n" +
                 "比游戏极速更快的额外速度，按极速的倍数填写，用逗号分隔，每个在 1.1 到 10 之间。已经在极速时再按极速按钮或 3 键，会换到下一档，最后一档之后回到极速。速度上限为 40 倍。留空则保留游戏原本的极速按钮。下次启动游戏时生效。",
                 null, "ModManager.Restart")).Value;
         var isIdleFreezeOn = Config.Bind("Clock", "IdleFreeze", true,
@@ -64,8 +64,8 @@ public sealed class Plugin : BasePlugin
                 "外出探索时启用暂停键、游戏的速度键（默认 1、2、3，4 为暂停，` (~) 为慢速）、SlowSpeeds 和 FastSpeeds 的速度、空闲暂停和事件暂停。外出探索中暂停时，暴露值也会停止上涨。关闭则外出探索保持游戏原本的速度，也不显示本模组的速度按钮。下次启动游戏时生效。",
                 null, "ModManager.Restart")).Value;
         var isPauseOnWaveOn = Config.Bind("Alerts", "PauseOnWave", true,
-            "Pause the game once when a zombie wave starts. Pick a speed or press the pause key (Space by default) to carry on; the same wave does not pause the game again.\n" +
-            "尸潮开始时暂停游戏一次。选一个速度或按暂停键（默认 Space）继续；同一波尸潮不会再暂停。");
+            "Pause the game once when a zombie wave starts. Pick a speed or press the pause key (Space by default) to carry on. The same wave does not pause the game again.\n" +
+            "尸潮开始时暂停游戏一次。选一个速度或按暂停键（默认 Space）继续。同一波尸潮不会再暂停。");
         var isPauseOnEmergencyOn = Config.Bind("Alerts", "PauseOnEmergency", true,
             "Pause the game once when an emergency starts. Pick a speed or press the pause key (Space by default) to carry on.\n" +
             "危机事件开始时暂停游戏一次。选一个速度或按暂停键（默认 Space）继续。");

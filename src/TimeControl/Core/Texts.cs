@@ -15,7 +15,7 @@ public static class Texts
     public static readonly Phrase PausedEmergency = new("Paused: emergency", "已暂停：危机事件");
     public static readonly Phrase PausedDroneBack = new("Paused: drone back", "已暂停：无人机归来");
     public static readonly Phrase PausedQueueEmpty = new("Paused: queue empty", "已暂停：队列已空");
-    public static readonly Phrase PausedHouseHit = new("Paused: house attacked", "已暂停：丧尸攻门");
+    public static readonly Phrase PausedHouseHit = new("Paused: house attacked", "已暂停：房屋遭攻击");
     public static readonly Phrase PausedTrapHit = new("Paused: trap attacked", "已暂停：陷阱遭攻击");
     public static readonly Phrase PausedPowerOut = new("Paused: power out", "已暂停：停电");
     public static readonly Phrase PausedLowSatiety = new("Paused: low satiety", "已暂停：饱腹偏低");
