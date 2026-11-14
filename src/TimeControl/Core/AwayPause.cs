@@ -21,11 +21,15 @@ public readonly record struct AwaySettings(bool IsFocusLossOn, bool IsBagOn, boo
 
     public bool IsAnyMenuOn => IsBagOn || IsWorkbenchOn || IsPhoneOn || IsTradeOn || IsOtherMenusOn;
 
-    /// <summary>The window being in the background wins over a menu, as a menu cannot be used from there.</summary>
+    /// <summary>
+    /// The window being in the background wins over a menu, as a menu cannot be used from there. While someone else
+    /// plays in the same game, a window in the background doesn't count: the game keeps running for them.
+    /// </summary>
     /// <param name="isWatchedMenuOpen">A menu whose setting is on is open.</param>
-    public AwayReason? Reason(bool isInBackground, bool isWatchedMenuOpen)
+    /// <param name="isShared">Another player is in this game, through a multiplayer mod.</param>
+    public AwayReason? Reason(bool isInBackground, bool isWatchedMenuOpen, bool isShared)
     {
-        if (IsFocusLossOn && isInBackground) return AwayReason.Background;
+        if (IsFocusLossOn && isInBackground && !isShared) return AwayReason.Background;
 
         return isWatchedMenuOpen ? AwayReason.Menu : null;
     }

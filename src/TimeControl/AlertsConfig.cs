@@ -53,8 +53,8 @@ internal static class AlertsConfig
     {
         var retiredQueueValue = TakeRetired(config, RetiredQueueKey, log);
         var isFocusLossOn = config.Bind(ClockSection, "PauseOnFocusLoss", true,
-            "Pause the game when its window goes to the background, for example after Alt+Tab, and bring back your speed when you switch back. If you change the speed yourself in the meantime, your choice is kept. Works at home, before the disaster, on expeditions (with TimeControlOnExpeditions on) and during sleep fast-forward.\n" +
-            "游戏窗口切到后台时（例如按 Alt+Tab 后）暂停游戏，切回来时恢复原来的速度。如果期间你自己改了速度，则保留你的选择。在安全屋、灾前筹备、外出探索（需开启 TimeControlOnExpeditions）和睡眠快进时都有效。");
+            "Pause the game when its window goes to the background, for example after Alt+Tab, and bring back your speed when you switch back. If you change the speed yourself in the meantime, your choice is kept. Works at home, before the disaster, on expeditions (with TimeControlOnExpeditions on) and during sleep fast-forward. While another player is in the same game with you, for example through Multiplayer, this setting is ignored so the game keeps running for them.\n" +
+            "游戏窗口切到后台时（例如按 Alt+Tab 后）暂停游戏，切回来时恢复原来的速度。如果期间你自己改了速度，则保留你的选择。在安全屋、灾前筹备、外出探索（需开启 TimeControlOnExpeditions）和睡眠快进时都有效。有其他玩家和你在同一局游戏中时（例如通过 Multiplayer 联机），此设置会被忽略，让游戏为他们继续运行。");
         var isBagOn = config.Bind(ClockSection, "PauseInBag", true,
             "Pause the game while your bag is open" + MenuKept + "打开背包" + MenuKeptChinese);
         var isWorkbenchOn = config.Bind(ClockSection, "PauseAtWorkbench", true,

@@ -36,7 +36,7 @@
     <AssemblyMetadata Include="ModManager.Description" Value="Slower speeds, a super speed and a pause key that also works before the disaster and on expeditions. The game pauses itself when your character goes idle, a wave or an emergency starts, or your character wakes up, and sleep runs fast. There are also hold keys, an alarm clock, a Wait until button and more alerts that can pause the game.&#10;更慢的速度、超高速，以及在灾前筹备和外出探索时也能用的暂停键。角色空闲、尸潮或危机事件开始、角色醒来时，游戏会自动暂停，睡觉也会快进。另有按住加速或减速键、闹钟、「等到」按钮，以及更多可以让游戏暂停的事件。" />
     <AssemblyMetadata Include="ModManager.Author" Value="AnExiledDev" />
     <AssemblyMetadata Include="ModManager.Category" Value="QualityOfLife" />
-    <AssemblyMetadata Include="ModManager.GameVersion" Value="1.1.20719" />
+    <AssemblyMetadata Include="ModManager.GameVersion" Value="1.1.21271" />
     <AssemblyMetadata Include="ModManager.Settings" Value="Live" />
     <AssemblyMetadata Include="ModManager.NexusId" Value="47" />
     <AssemblyMetadata Include="ModManager.GitHub" Value="AnExiledDev/SurvivalLog-TimeControl" />

@@ -321,9 +321,9 @@ public class AwayPauseTests
     [Fact]
     public void The_background_wins_over_an_open_menu()
     {
-        Assert.Equal(AwayReason.Background, AllOn.Reason(isInBackground: true, isWatchedMenuOpen: true));
-        Assert.Equal(AwayReason.Menu, AllOn.Reason(isInBackground: false, isWatchedMenuOpen: true));
-        Assert.Null(AllOn.Reason(isInBackground: false, isWatchedMenuOpen: false));
+        Assert.Equal(AwayReason.Background, AllOn.Reason(isInBackground: true, isWatchedMenuOpen: true, isShared: false));
+        Assert.Equal(AwayReason.Menu, AllOn.Reason(isInBackground: false, isWatchedMenuOpen: true, isShared: false));
+        Assert.Null(AllOn.Reason(isInBackground: false, isWatchedMenuOpen: false, isShared: false));
     }
 
     [Fact]
@@ -331,8 +331,28 @@ public class AwayPauseTests
     {
         var menusOnly = AllOn with { IsFocusLossOn = false };
 
-        Assert.Null(menusOnly.Reason(isInBackground: true, isWatchedMenuOpen: false));
-        Assert.Equal(AwayReason.Menu, menusOnly.Reason(isInBackground: true, isWatchedMenuOpen: true));
+        Assert.Null(menusOnly.Reason(isInBackground: true, isWatchedMenuOpen: false, isShared: false));
+        Assert.Equal(AwayReason.Menu, menusOnly.Reason(isInBackground: true, isWatchedMenuOpen: true, isShared: false));
+    }
+
+    [Fact]
+    public void Focus_loss_is_ignored_while_someone_else_plays_in_the_game()
+    {
+        // Two copies on one PC: clicking the second window puts the first in the background, and pausing it would
+        // stop the game for the other player too.
+        Assert.Null(AllOn.Reason(isInBackground: true, isWatchedMenuOpen: false, isShared: true));
+        Assert.Equal(AwayReason.Menu, AllOn.Reason(isInBackground: true, isWatchedMenuOpen: true, isShared: true));
+    }
+
+    [Fact]
+    public void A_game_paused_for_focus_loss_resumes_once_someone_else_joins()
+    {
+        var alone = AtTheGame with { Away = AllOn.Reason(isInBackground: true, isWatchedMenuOpen: false, isShared: false) };
+        var shared = AtTheGame with { Away = AllOn.Reason(isInBackground: true, isWatchedMenuOpen: false, isShared: true), IsPaused = true };
+        var steps = Steps(alone, shared);
+
+        Assert.True(steps[0].IsPausing);
+        Assert.Equal(Fast, steps[1].ResumeAt);
     }
 
     [Fact]

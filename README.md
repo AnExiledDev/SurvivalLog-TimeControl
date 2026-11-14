@@ -13,6 +13,7 @@ Survival Log's slow button only slows the game once you stand idle, the clock ke
 - **Pause on alerts**: the game pauses once when a zombie wave starts or an emergency fires, so neither slips past at super speed. You can switch on more: a trade drone coming home, zombies damaging the house or a trap in a wave, the power going out, a need running low, falling ill, a phone or trade message, a crop ripening, and dusk (19:00) or dawn (7:00). Play or the pause key resumes the speed you had. The same alert never pauses the game twice, so once you resume, time keeps running.
 - **When the queue runs out** (off by default): `OnQueueEmpty` can slow the game down (to normal speed by default) or pause it when your character finishes their last order. If it slowed the game down, your next order brings your speed back.
 - **Pause while you are away**: the game pauses when you Alt+Tab out and brings your speed back when you return. It also pauses while a menu is open: the bag, workbench, phone, trade, cooking, a shop, the map and the rest, each with its own setting. An order or a craft started in a menu runs until it is done, then the game pauses again. Starting a machine from a menu, such as cooking or brewing, runs the game until you close the menu.
+- **Playing together**: while someone plays in your game through Multiplayer, the Alt+Tab pause is off, so the game keeps running for them, and the idle pause waits while any player has an order queued. In someone else's game, the host's game sets the speed, so this mod doesn't pause anything or hold a speed there.
 - **Speed control in every menu**: the game stops time by itself while the workbench, bag, a shop or most other menus are open, and ignores the speed keys there. The mod removes that stop, so you control the speed in any menu. Story, ending and settlement screens still stop time.
 - **Hold to speed up or slow down**: hold `X` for the fastest speed or `K` for the slowest slow speed. Let go and the speed you had comes back, pause included. Keys `5` to `9` can each hold a speed of your own (`SpeedKeys5To9`), and the mouse wheel over the speed buttons steps through every speed.
 - **Wait until** (off by default, `WaitButton`): a clock button beside the speed buttons runs the game at top speed until morning, your alarm time, a brew being done, the queue being done or a few hours later, then pauses. The same menu sets a one-time "Pause in" alarm.
@@ -99,7 +100,7 @@ Works in English and Chinese. The pause badge and the speed buttons follow the g
 
 - Survival Log 1.1.20719. A game update can break the mod until it is updated.
 - The [BepInEx Pack for Survival Log](https://www.nexusmods.com/survivallog/mods/12), the BepInEx 6 (IL2CPP) build for the game.
-- [Exiled's Toolkit](https://github.com/AnExiledDev/SurvivalLog-ExiledToolkit) 0.20.0 or newer. Time Control does not load without it. It applies settings changed on the Mod Manager's Mods screen without restarting the game, and keeps the speed and pause keys from doing anything while you type in another mod's window.
+- [Exiled's Toolkit](https://github.com/AnExiledDev/SurvivalLog-ExiledToolkit) 0.22.0 or newer. Time Control does not load without it. It applies settings changed on the Mod Manager's Mods screen without restarting the game, and keeps the speed and pause keys from doing anything while you type in another mod's window.
 - Optional: [Mod Manager](https://www.nexusmods.com/survivallog/mods/73). With it, you can change every setting in game on its Mods screen and see what each one does, without opening the config file.
 
 ## Install
@@ -122,7 +123,7 @@ Settings live in `BepInEx\config\com.dev.survivallog.timecontrol.cfg`, created t
 
 Built against BepInEx `6.0.0-be.788`.
 
-Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.10.10 started`. It says whether sleep fast-forward and expeditions are on, and the line after it lists the other features. That line is written again when a setting changes on the Mods screen. The next lines say which game hooks are in place and what the game's pause key is. A line starting `could not hook` names a feature that will not work.
+Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.11.0 started`. It says whether sleep fast-forward and expeditions are on, and the line after it lists the other features. That line is written again when a setting changes on the Mods screen. The next lines say which game hooks are in place and what the game's pause key is. A line starting `could not hook` names a feature that will not work.
 
 The same lines, plus every idle pause, alert pause, sleep and wake, are in `BepInEx\time-control.log`, which survives restarts. Past 1 MB it is moved to `time-control.log.1` and a new one starts.
 
@@ -151,7 +152,7 @@ This is a BepInEx 6 IL2CPP plugin. It compiles against BepInEx and the game's IL
 dotnet build src/TimeControl -c Release -p:GameDir="C:\path\to\Survival Log"
 ```
 
-`GameDir` is the game folder. The default in the project file is a local path you will almost certainly need to override. Compiling also needs Exiled's Toolkit 0.20.0 or newer: point `-p:ToolkitDll="C:\path\to\ExiledToolkit.dll"` at its DLL. The output DLL is at `src\TimeControl\bin\Release\TimeControl.dll`.
+`GameDir` is the game folder. The default in the project file is a local path you will almost certainly need to override. Compiling also needs Exiled's Toolkit 0.22.0 or newer: point `-p:ToolkitDll="C:\path\to\ExiledToolkit.dll"` at its DLL. The output DLL is at `src\TimeControl\bin\Release\TimeControl.dll`.
 
 The unit tests cover the pure timing rules and need nothing from the game:
 

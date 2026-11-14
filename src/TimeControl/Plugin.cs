@@ -13,11 +13,11 @@ using UnityEngine;
 namespace TimeControl;
 
 [BepInPlugin(Guid, "Time Control", Version)]
-[BepInDependency(ToolkitGuid, ">=0.20.0")]
+[BepInDependency(ToolkitGuid, ">=0.22.0")]
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.timecontrol";
-    private const string Version = "0.10.10";
+    private const string Version = "0.11.0";
     private const string ToolkitGuid = "com.dev.survivallog.exiledtoolkit";
     private const int MaxLoggedFailures = 3;
     private const long MaxLogBytes = 1024 * 1024;

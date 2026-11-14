@@ -3,7 +3,6 @@ using ExiledToolkit.Game;
 using GameCore.HotUpdate;
 using GameCore.HotUpdate.Battle.Logic;
 using TimeControl.Core;
-using GameScale = GameCore.Scripts.TimeManager;
 
 namespace TimeControl.Adapters;
 
@@ -42,19 +41,8 @@ internal static class GameClock
             isCountdownOver: countdown?.IsCompleted == true);
     }
 
-    /// <summary>
-    /// The same writes the game's speed change makes: the scale it reads back, the scale Unity runs at, and the
-    /// message that tells the page's timers and progress bars the new pace. The longest frame step is set the way the
-    /// game's custom speed sets it, so a fast speed is not cut short by the step the game allows at its high
-    /// speed; for the game's speeds and slower that is the step it already uses.
-    /// </summary>
-    public static void HoldSpeed(GameTimeManager time, float speed)
-    {
-        time.BattleTimeScale = speed;
-        GameScale.SetBattleTimeScale(speed);
-        time.ApplyGmMaxDeltaTime(speed);
-        time.NotifyCountDownTimerScaleSync();
-    }
+    /// <summary>Makes the game run at <paramref name="speed"/> everywhere the game reads its speed.</summary>
+    public static void HoldSpeed(GameTimeManager time, float speed) => TimeScale.Hold(time, speed);
 
     /// <summary>
     /// Whether the player's character is sleeping or napping: the game marks the character asleep for the whole of

@@ -1,4 +1,5 @@
 using System;
+using ExiledToolkit.Game;
 using GameCore.HotUpdate.Battle.Logic;
 using Il2CppInterop.Runtime.Attributes;
 using TimeControl.Core;
@@ -139,21 +140,32 @@ public sealed partial class ClockTicker : MonoBehaviour
 
         if (!isPaused) SpeedPatches.LastRunningLevel = time.GetSpeedLevel();
 
-        KeepGearSpeedHeld(time, isPaused, now);
-        KeepCustomSpeedHeld(time, isPaused);
+        var isGuest = OtherPlayers.IsGuest;
 
-        var wasChangedByHand = SpeedPatches.TakeSpeedChangedByHand();
-        var isAsleep = UpdateSleep(time, isPaused, wasChangedByHand, isLeavingExpedition);
+        if (isGuest)
+        {
+            FollowHost();
+        }
+        else
+        {
+            KeepGearSpeedHeld(time, isPaused, now);
+            KeepCustomSpeedHeld(time, isPaused);
 
-        UpdateAlertPause(time, timer, isAsleep, isLeavingExpedition, elapsed, wasChangedByHand, now);
-        UpdateAwayPause(time, timer, isLeavingExpedition, wasChangedByHand, elapsed);
-        UpdateWaits(time, timer, isAsleep, isLeavingExpedition, wasChangedByHand, elapsed, now);
-        UpdateIdlePause(time, time.IsPausedScale(), timer, elapsed, isAsleep, isLeavingExpedition);
-        UpdateQueueSlow(time, timer, isAsleep, isLeavingExpedition, elapsed, wasChangedByHand);
-        UpdateExpeditionFinish(time, isLeavingExpedition);
+            var wasChangedByHand = SpeedPatches.TakeSpeedChangedByHand();
+            var isAsleep = UpdateSleep(time, isPaused, wasChangedByHand, isLeavingExpedition);
+
+            UpdateAlertPause(time, timer, isAsleep, isLeavingExpedition, elapsed, wasChangedByHand, now);
+            UpdateAwayPause(time, timer, isLeavingExpedition, wasChangedByHand, elapsed);
+            UpdateWaits(time, timer, isAsleep, isLeavingExpedition, wasChangedByHand, elapsed, now);
+            UpdateIdlePause(time, time.IsPausedScale(), timer, elapsed, isAsleep, isLeavingExpedition);
+            UpdateQueueSlow(time, timer, isAsleep, isLeavingExpedition, elapsed, wasChangedByHand);
+            UpdateExpeditionFinish(time, isLeavingExpedition);
+        }
 
         var isPollDue = TakePoll(now);
         var isRefreshDue = TakePageRefresh(now);
+
+        if (isGuest) HideWaitPage(isRefreshDue);
 
         SyncPage(time, timer, isRefreshDue, isPollDue);
         SyncKeysPage(time, timer, now, isPollDue);
@@ -199,6 +211,24 @@ public sealed partial class ClockTicker : MonoBehaviour
         ForgetExtraWatches();
         SpeedPatches.ForgetWorld();
         ForgetSpeedKeysOnNewWorld();
+    }
+
+    /// <summary>
+    /// In someone else's game the host's copy sets the time and the speed, so this copy pauses nothing, holds no speed
+    /// and runs no waits. Nothing is put back either: the host's speed is the one that counts.
+    /// </summary>
+    [HideFromIl2Cpp]
+    private void FollowHost()
+    {
+        SpeedPatches.TakeSpeedChangedByHand();
+        _idle = IdlePause.Start;
+        _sleep = SleepWatch.Start;
+        _alert = AlertPause.Start;
+        _finish = ExpeditionFinish.Start;
+        _wait = Core.WaitUntil.Start;
+        _sleepUntil = SleepUntil.Start;
+        _startPause = StartPause.Done;
+        ForgetExtraWatches();
     }
 
     /// <summary>

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.11.0
+
+- Works with Multiplayer. While someone plays in your game, Alt+Tab no longer pauses it, and the idle pause waits while any player has an order queued. In someone else's game, this mod leaves the speed and pausing to the host.
+- Now needs Exiled's Toolkit 0.22.0 or newer.
+- Made for Survival Log 1.1.21271.
+
 ## 0.10.10
 
 - Clearer wording in the settings.

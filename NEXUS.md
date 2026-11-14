@@ -14,6 +14,7 @@ The game's slow button only slows once you stand idle, and there is no way to pa
 [*][b]Pause on alerts[/b]: the game pauses once when a zombie wave starts or an emergency fires. You can switch on more: a trade drone coming home, zombies hitting the house or a trap, the power going out, a need running low, falling ill, phone and trade messages, a ripe crop, dusk and dawn. On expeditions alerts only pause when TimeControlOnExpeditions is true.[/*]
 [*][b]When the queue runs out[/b] (off by default): the game can slow down or pause when your character finishes their last order.[/*]
 [*][b]Pause while away[/b]: the game pauses when you Alt+Tab out and brings your speed back when you return. It also pauses while a menu is open: the bag, workbench, phone, trade, cooking, a shop, the map and the rest, each with its own setting. An order or a craft started in a menu runs until it is done, then the game pauses again. Starting a machine from a menu, such as cooking or brewing, runs the game until you close the menu.[/*]
+[*][b]Playing together[/b]: while someone plays in your game through Multiplayer, the Alt+Tab pause is off, so the game keeps running for them, and the idle pause waits while any player has an order queued. In someone else's game, the host's game sets the speed, so this mod doesn't pause anything or hold a speed there.[/*]
 [*][b]Speed control in every menu[/b]: the game stops time by itself while the workbench, bag, a shop or most other menus are open, and ignores the speed keys there. The mod removes that stop, so you control the speed in any menu. Story, ending and settlement screens still stop time.[/*]
 [*][b]Hold keys[/b]: hold X for the fastest speed or K for the slowest. Let go and your speed comes back. Keys 5 to 9 can hold speeds of your own, and the mouse wheel over the speed buttons steps through every speed.[/*]
 [*][b]Wait until[/b] (switch on with WaitButton): a clock button beside the speed buttons runs the game at top speed until morning, your alarm, a brew or the queue being done, or a few hours later, then pauses.[/*]
@@ -60,7 +61,7 @@ Works in English and Chinese.
 [list]
 [*]Survival Log 1.1.20719. A game update can break it until the mod is updated.[/*]
 [*][url=https://www.nexusmods.com/survivallog/mods/12]BepInEx for Survival Log[/url]. Install it first.[/*]
-[*][url=https://www.nexusmods.com/survivallog/mods/61]Exiled's Toolkit[/url] 0.20.0 or newer. Time Control does not load without it. It applies settings changed on the Mod Manager's Mods screen without restarting the game, and keeps the speed and pause keys from doing anything while you type in another mod's window.[/*]
+[*][url=https://www.nexusmods.com/survivallog/mods/61]Exiled's Toolkit[/url] 0.22.0 or newer. Time Control does not load without it. It applies settings changed on the Mod Manager's Mods screen without restarting the game, and keeps the speed and pause keys from doing anything while you type in another mod's window.[/*]
 [*]Optional: [url=https://www.nexusmods.com/survivallog/mods/73]Mod Manager[/url]. With it, you can change every setting in game on its Mods screen and see what each one does, without opening the config file.[/*]
 [/list]
 
@@ -99,6 +100,7 @@ Open source under MIT: [url=https://github.com/AnExiledDev/SurvivalLog-TimeContr
 [*][b]事件暂停[/b]：尸潮开始或危机事件发生时，游戏暂停一次。还可以打开更多：交易无人机归来、丧尸破坏房屋或陷阱、停电、某项需求过低、生病、手机短信和交易短信、作物成熟、黄昏和清晨。外出探索时，只有 TimeControlOnExpeditions 为 true 才会因事件暂停。[/*]
 [*][b]队列做完时[/b]（默认关闭）：角色做完最后一个指令时，游戏可以减速或暂停。[/*]
 [*][b]离开时暂停[/b]：按 Alt+Tab 切走时游戏暂停，切回来时恢复原来的速度。打开界面时也会暂停：背包、工作台、手机、交易、烹饪、商店、地图等，每一项都可单独开关。在其中下达指令或开始制作会让游戏运行到完成，然后再次暂停；在其中启动设备（例如烹饪或酿酒）会让游戏一直运行到你关闭界面。[/*]
+[*][b]多人同玩[/b]：有人通过 Multiplayer 在你的游戏中时，Alt+Tab 暂停会关闭，让游戏为他们继续运行；任何一名玩家还有排队的指令时，闲置暂停都会等待。在别人的游戏中时，由房主的游戏决定速度，本模组在这里不会暂停，也不会锁定速度。[/*]
 [*][b]任意界面都能调速[/b]：打开工作台、背包、商店等大多数界面时，游戏会自行停住时间，并且不响应调速键。本模组会解除这种停止，让你在任何界面里都能掌控速度。剧情、结局和结算画面仍会停住时间。[/*]
 [*][b]按住加速或减速[/b]：按住 X 以最快速度运行，按住 K 以最慢速度运行，松开后恢复原来的速度。5 到 9 键可以设为你自己的速度，在速度按钮上滚动鼠标滚轮可以依次切换所有速度。[/*]
 [*][b]等到[/b]（用 WaitButton 开启）：速度按钮旁的时钟按钮会以最高速度运行，直到早上、闹钟时间、酿造完成、队列做完或几小时后，然后暂停。[/*]
@@ -144,7 +146,7 @@ Time Control 不会往存档里添加自己的数据，也不会修改游戏文�
 [list]
 [*]Survival Log 1.1.20719。游戏更新后模组可能暂时失效，直到模组更新为止。[/*]
 [*][url=https://www.nexusmods.com/survivallog/mods/12]BepInEx for Survival Log[/url]，请先安装。[/*]
-[*][url=https://www.nexusmods.com/survivallog/mods/61]Exiled's Toolkit[/url] 0.20.0 或更新版本。没有它本模组不会加载。它让在 Mod Manager 的「模组」界面修改的设置无需重启游戏即可生效，并让你在其他模组的窗口里打字时，速度键和暂停键不起作用。[/*]
+[*][url=https://www.nexusmods.com/survivallog/mods/61]Exiled's Toolkit[/url] 0.22.0 或更新版本。没有它本模组不会加载。它让在 Mod Manager 的「模组」界面修改的设置无需重启游戏即可生效，并让你在其他模组的窗口里打字时，速度键和暂停键不起作用。[/*]
 [*]可选：[url=https://www.nexusmods.com/survivallog/mods/73]Mod Manager[/url]。装了它，可以在游戏里它的「模组」界面修改每项设置，并看到每项的说明，不用打开配置文件。[/*]
 [/list]
 

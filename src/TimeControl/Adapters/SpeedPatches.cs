@@ -355,11 +355,12 @@ internal static partial class SpeedPatches
 
     /// <summary>
     /// The game's slow is left as the game made it. On one of our speeds the game would run at full speed until
-    /// the player idles, so the chosen speed is held at once.
+    /// the player idles, so the chosen speed is held at once. In someone else's game the host's speed counts, so
+    /// nothing is held.
     /// </summary>
     private static void HoldChosenSlowSpeed(GameTimeManager __instance, int speed)
     {
-        if (speed != PauseToggle.Slow) return;
+        if (speed != PauseToggle.Slow || OtherPlayers.IsGuest) return;
 
         try
         {
@@ -385,10 +386,12 @@ internal static partial class SpeedPatches
     /// <summary>
     /// The game's high speed button stays lit on every fast gear, since the game reads any speed at or above its high
     /// speed as that level. A change this mod makes for sleep or a resume lands on the gear it asks for; any other
-    /// goes by where the speed was.
+    /// goes by where the speed was. In someone else's game the host's speed counts, so nothing is held.
     /// </summary>
     private static void HoldChosenFastSpeed(GameTimeManager __instance, int speed)
     {
+        if (OtherPlayers.IsGuest) return;
+
         try
         {
             if (!GameClock.IsLive(__instance)) return;

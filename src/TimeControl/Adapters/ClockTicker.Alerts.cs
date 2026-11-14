@@ -91,7 +91,7 @@ public sealed partial class ClockTicker
         }
 
         var isPaused = time.IsPausedScale();
-        var away = settings.Reason(!Application.isFocused, settings.IsAnyMenuOn && IsWatchedMenuOpen(settings));
+        var away = settings.Reason(!Application.isFocused, settings.IsAnyMenuOn && IsWatchedMenuOpen(settings), OtherPlayers.Count > 0);
         var canPause = AlertPause.CanPause(timer, IsFastForwarding(time), isLeavingExpedition);
         var isBusy = away == AwayReason.Menu && IsWorking(time);
         var hasNewOrder = TakeNewMenuWork(away == AwayReason.Menu);
@@ -112,8 +112,11 @@ public sealed partial class ClockTicker
         LogAway(before, step);
     }
 
-    /// <summary>The character has an order queued, or a workbench is crafting, which runs on its own timer and is no order.</summary>
-    private static bool IsWorking(GameTimeManager time) => time.IsLeadingRoleBusy() || Workbench.IsAnyCrafting();
+    /// <summary>
+    /// The character has an order queued, or a workbench is crafting, which runs on its own timer and is no order, or
+    /// another player in the same game has an order queued.
+    /// </summary>
+    private static bool IsWorking(GameTimeManager time) => time.IsLeadingRoleBusy() || Workbench.IsAnyCrafting() || OtherPlayers.IsAnyBusy;
 
     /// <summary>
     /// Whether the player gave an order or started a craft since the last check in the same open menu: an order or a
