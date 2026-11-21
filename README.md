@@ -26,7 +26,7 @@ Survival Log's slow button only slows the game once you stand idle, the clock ke
 - **Time control on expeditions**: the game also ignores its speed keys on an expedition. With this mod the pause key, the game's speed keys, the slow and super speeds and the idle pause all work there. The day clock stands still while you are away and the exposure meter fills on game time, so pausing stops the meter and super speed fills it faster.
 - **Speed buttons before the disaster and on expeditions**: the game shows no speed buttons in the countdown before the disaster or on an expedition. The mod adds its own there, in the game's style: slow, normal, fast, fastest and pause. They work like the game's buttons at home, with the mod's slow and super speeds. In the countdown they sit to the right of the buttons in the bottom left corner. On an expedition they sit where the game's buttons sit at home, and only show when `TimeControlOnExpeditions` is `true`. Set `SpeedButtons` to `false` to hide them.
 - **A pause badge**: while the idle pause holds the game, a small "Paused: idle" chip sits just to the right of the speed buttons, in the game's chip style, so it doesn't cover the suggested actions above them. It is see-through and clicks go straight through it. While a pause you made with the pause key holds the game (or with the game's pause key, before the disaster and on expeditions), the chip says "Paused". A pause made with the game's pause button or key at home after the disaster gets no chip, because the game already lights its pause button there. The chip goes away the moment time runs again. Where the screen shows no speed buttons, the chip sits at the top centre. The one exception is the countdown before the disaster, where it only shows beside the mod's speed buttons.
-- **A see-through "paused" banner**: the game's paused banner across the lower middle of the screen is drawn half see-through, so the phone's reply choices under it stay readable. Clicks go through it to whatever is underneath. Set `PauseOverlayOpacity` to `1` to keep the game's banner as it is, or to `0` to hide it.
+- **A see-through "paused" banner**: the game's paused banner across the lower middle of the screen is drawn half see-through. While a menu is open, such as the bag, a storage rack, the workbench, the shop, the phone or the settings, it's hidden, so it doesn't cover what you're using. Clicks go through it to whatever is underneath. Set `PauseOverlayOpacity` to `1` to keep the game's banner as it is everywhere, or to `0` to hide it.
 - **Hover highlights while paused**: objects highlight under the mouse while the game is paused or slowed, as they do at normal speed.
 - **A time log**: what the mod did (idle pauses, alert pauses, speed changes, sleep and wake) is written to `BepInEx\time-control.log`.
 
@@ -84,7 +84,7 @@ Alerts pause only where the idle pause can: at home, in the countdown before the
 - Pressing the game's pause button while the idle pause holds the game does not make the pause yours, so your next order still resumes. Press play first, then pause, to keep it paused.
 - The idle pause works at home, in the countdown before the disaster and on expeditions. Any other timer keeps the game's pace.
 - A click on the mod's speed buttons can take up to a tenth of a second to change the speed.
-- When a pause starts, the paused banner can show at full strength for up to half a second before it turns see-through.
+- When a pause starts, the paused banner can show at full strength for up to half a second before it turns see-through or hides.
 - The countdown before the disaster has no text for the speed buttons, so the mod names them itself, in English or Chinese to match the game, without the hotkey. The mod's buttons hide while the planning view is open, along with the game's buttons in the bottom left corner.
 - An alert that starts while your character sleeps does not pause the game, unless `WakeOnAlert` is on. `PauseOnWake` pauses it when they wake.
 - After sleep, a speed from `SpeedKeys5To9` comes back as the nearest speed button's speed. Speeds from those keys show no chip on the buttons.
@@ -123,7 +123,7 @@ Settings live in `BepInEx\config\com.dev.survivallog.timecontrol.cfg`, created t
 
 Built against BepInEx `6.0.0-be.788`.
 
-Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.11.0 started`. It says whether sleep fast-forward and expeditions are on, and the line after it lists the other features. That line is written again when a setting changes on the Mods screen. The next lines say which game hooks are in place and what the game's pause key is. A line starting `could not hook` names a feature that will not work.
+Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.11.1 started`. It says whether sleep fast-forward and expeditions are on, and the line after it lists the other features. That line is written again when a setting changes on the Mods screen. The next lines say which game hooks are in place and what the game's pause key is. A line starting `could not hook` names a feature that will not work.
 
 The same lines, plus every idle pause, alert pause, sleep and wake, are in `BepInEx\time-control.log`, which survives restarts. Past 1 MB it is moved to `time-control.log.1` and a new one starts.
 

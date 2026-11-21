@@ -193,6 +193,35 @@ public class PauseOverlayPageTests
     }
 
     [Fact]
+    public void Over_a_menu_the_paused_strip_is_hidden_and_still_lets_clicks_through()
+    {
+        var ui = new FakeWebUi(AllPages);
+
+        Assert.Equal("ok", ui.Send(PauseOverlay.Script(PauseOverlay.MenuCss(0.5f))));
+        Assert.Equal("0!important", ui.Text($"sheetStyle(overlayStyleOn(speedUp), '{PauseRule}', 'opacity')"));
+        Assert.Equal("none!important", ui.Text($"sheetStyle(overlayStyleOn(speedUp), '{PauseRule}', 'pointer-events')"));
+    }
+
+    [Fact]
+    public void Closing_the_menu_brings_the_strip_back_at_the_set_opacity()
+    {
+        var ui = new FakeWebUi(AllPages);
+
+        ui.Send(PauseOverlay.Script(PauseOverlay.MenuCss(0.5f)));
+
+        Assert.Equal("ok", ui.Send(Half));
+        Assert.Equal(1.0, ui.Number("speedUp.document.querySelectorAll('style').length"));
+        Assert.Equal("0.5!important", ui.Text($"sheetStyle(overlayStyleOn(speedUp), '{PauseRule}', 'opacity')"));
+    }
+
+    [Fact]
+    public void Fully_opaque_leaves_the_games_strip_alone_over_a_menu_too()
+    {
+        Assert.Equal("", PauseOverlay.MenuCss(1f));
+        Assert.Equal("", PauseOverlay.MenuCss(3f));
+    }
+
+    [Fact]
     public void Opacity_is_kept_between_hidden_and_as_drawn_and_a_bad_number_keeps_the_default()
     {
         Assert.Equal(0f, PauseOverlay.ClampOpacity(-1f));

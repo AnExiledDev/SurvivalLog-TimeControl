@@ -27,7 +27,7 @@ The game's slow button only slows once you stand idle, and there is no way to pa
 [*][b]Expeditions[/b]: pause, speed keys, slow and super speed and the idle pause all work on expeditions.[/*]
 [*][b]Speed buttons everywhere[/b]: slow, normal, fast, fastest and pause buttons in the countdown before the disaster and on expeditions, where the game shows none. They work like the game's buttons at home.[/*]
 [*][b]Pause badge[/b]: a small "Paused" or "Paused: idle" chip beside the speed buttons shows why the game stands still. It is see-through and clicks go straight through it.[/*]
-[*][b]See-through paused banner[/b]: the game's paused banner is drawn half see-through, so the phone's reply choices under it stay readable. PauseOverlayOpacity in the config sets how much.[/*]
+[*][b]See-through paused banner[/b]: the game's paused banner is drawn half see-through, and it's hidden while a menu is open, so it doesn't cover the bag, a shop or the phone's reply choices. PauseOverlayOpacity in the config sets how much.[/*]
 [*][b]Hover highlights[/b]: objects still highlight under the mouse while paused or slowed.[/*]
 [/list]
 
@@ -113,7 +113,7 @@ Open source under MIT: [url=https://github.com/AnExiledDev/SurvivalLog-TimeContr
 [*][b]外出探索[/b]：暂停、速度键、慢速、超高速和空闲暂停在外出探索时都能用。[/*]
 [*][b]到处都有速度按钮[/b]：在灾前筹备和外出探索时，游戏本身不显示速度按钮，本模组会补上慢速、正常、快速、极速和暂停按钮，用法和安全屋里原本的按钮一样。[/*]
 [*][b]暂停标签[/b]：速度按钮旁的小标签「已暂停」或「已暂停：空闲」说明游戏为什么停着。它是半透明的，点击会直接穿过它。[/*]
-[*][b]半透明的暂停横幅[/b]：游戏自己的暂停横幅改为半透明，下面手机里的回复选项依然看得清。配置中的 PauseOverlayOpacity 可调节透明度。[/*]
+[*][b]半透明的暂停横幅[/b]：游戏的暂停横幅改为半透明，打开菜单时还会隐藏，不会挡住背包、商店或手机里的回复选项。配置中的 PauseOverlayOpacity 可调节透明度。[/*]
 [*][b]悬停高亮[/b]：暂停或慢速时，鼠标下的物体依然会高亮。[/*]
 [/list]
 

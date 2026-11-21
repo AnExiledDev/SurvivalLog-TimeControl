@@ -118,7 +118,7 @@ The game's speed keys are `1` (normal), `2` (fast), `3` (fastest), `4` (pause) a
 | `NightCountdown` | `true` | Show, under the clock at home, how much game time is left until night. It shows during the day only. |
 | `WaveCountdown` | `true` | Show, under the clock at home, how much game time is left until the next wave. It counts the waves the game has planned for today and the wave a lure rig calls in. |
 | `WaitButton` | `false` | Show the Wait until button beside the speed buttons (see below). |
-| `PauseOverlayOpacity` | `0.5` | How visible the game's paused banner across the lower middle of the screen is, from `0` (hidden) to `1` (as the game draws it). Lower values let you read the phone's reply choices under it. Clicks always pass through the banner. |
+| `PauseOverlayOpacity` | `0.5` | How visible the game's paused banner across the lower middle of the screen is, from `0` (hidden) to `1` (as the game draws it). Below 1, it's also hidden while any menu is open, such as the bag, a storage rack, the workbench, the shop, the phone or the settings, so it doesn't cover what you're using. Clicks always pass through the banner. |
 
 Each badge goes away the moment time runs again. A badge is see-through and clicks go straight through it. Where the screen shows no speed buttons, the badge sits at the top centre instead. The one exception is the countdown before the disaster: there a badge only shows beside the mod's speed buttons, so with `SpeedButtons` set to `false`, or where the mod adds no buttons, no badge shows in the countdown.
 

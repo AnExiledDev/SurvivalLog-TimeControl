@@ -17,14 +17,15 @@ internal sealed record ClockSettings(
     AlertSettings Alerts,
     BadgeSettings Badges,
     bool AreSpeedButtonsOn,
-    string PauseOverlayCss);
+    string PauseOverlayCss,
+    string PauseOverlayMenuCss);
 
 /// <summary>
 /// Ten times a second: pauses the game while the player idles at home, in the countdown to the disaster or on an
 /// expedition and resumes it on their next order, fast-forwards sleep and pauses on waking, pauses once when an alert
 /// starts, lets no pause hold up the trip home from an expedition, keeps the chosen slow or fast speed held, remembers
 /// the speed to resume to, shows the pause badge, shows speed buttons where the game has none, makes the game's pause
-/// strip see-through and puts the slow speed in use on the slow button's tooltip.
+/// strip see-through and hides it over menus, and puts the slow speed in use on the slow button's tooltip.
 /// </summary>
 public sealed partial class ClockTicker : MonoBehaviour
 {
@@ -37,7 +38,7 @@ public sealed partial class ClockTicker : MonoBehaviour
     private const int MaxLoggedFailures = 3;
 
     internal static ClockSettings Settings = new(false, IdlePause.DefaultDelaySeconds, false, false, false,
-        new AlertSettings(false, false, false, false), new BadgeSettings(false, false, false), false, "");
+        new AlertSettings(false, false, false, false), new BadgeSettings(false, false, false), false, "", "");
     internal static Action<string> Log = _ => { };
     internal static Action<string> LogFileOnly = _ => { };
     internal static PageClockLink? Page;
@@ -485,8 +486,23 @@ public sealed partial class ClockTicker : MonoBehaviour
         Page?.SyncBadge(badge, buttons?.Page ?? HudPage.Home, isRefreshDue, generation);
         var heldFast = SpeedChip.HoldKeyFast(SpeedPatches.IsHoldingGameKey(time), time.ChapterSpeedUp2, SpeedPatches.HoldKeyMultiple) ?? SpeedPatches.HeldFastSpeed(time);
         Page?.SyncSpeedChip(SpeedChip.View(isPaused, heldSlow, heldFast), buttons?.Page ?? HudPage.Home, isRefreshDue, generation);
-        Page?.SyncPauseOverlay(Settings.PauseOverlayCss, isRefreshDue, generation);
+        Page?.SyncPauseOverlay(PauseOverlayCss(), isRefreshDue, generation);
         Page?.Sync(slowLabel, isRefreshDue, generation, Watch?.SlowText);
+    }
+
+    /// <summary>
+    /// The pause strip's style for now. The menu style goes out whenever a menu is open, paused or not, so it needs no
+    /// pause check. The game reopens the strip's page on each pause, so a pause started in a menu can still show the
+    /// band for up to half a second. With the band left as the game draws it, no screens are read.
+    /// </summary>
+    [HideFromIl2Cpp]
+    private static string PauseOverlayCss()
+    {
+        var settings = Settings;
+
+        if (settings.PauseOverlayCss.Length == 0) return "";
+
+        return MenuScreens.IsAnyOpen() ? settings.PauseOverlayMenuCss : settings.PauseOverlayCss;
     }
 
     /// <summary>

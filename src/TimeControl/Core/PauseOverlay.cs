@@ -5,10 +5,10 @@ namespace TimeControl.Core;
 
 /// <summary>
 /// The game's "paused" strip: a dark band with the pause sign across the lower middle of the screen, drawn by its
-/// SpeedUp page whenever the game stands still. The page already lets clicks through, but the band draws over
-/// whatever sits there, such as the phone's reply choices, so the mod makes it see-through. It also keeps the band out
-/// of hit-testing in its own right, in case the page ever stops letting clicks through. The game never unpauses from a
-/// click on the band, so nothing is lost by that.
+/// SpeedUp page whenever the game's speed is 0. The page already lets clicks through, but the band draws over
+/// whatever sits there, such as the phone's reply choices or the bottom of the bag, so the mod makes it see-through,
+/// and hides it while a menu is open. It also keeps the band out of hit-testing in its own right, in case the page ever
+/// stops letting clicks through. The game never unpauses from a click on the band, so nothing is lost by that.
 /// </summary>
 public static class PauseOverlay
 {
@@ -38,6 +38,12 @@ public static class PauseOverlay
 
         return $".speedup-strip.is-pause{{opacity:{shown}!important;pointer-events:none!important;}}";
     }
+
+    /// <summary>
+    /// The style while a menu is open: the band is hidden, since over a menu it only covers what the player is using.
+    /// Fully opaque still leaves the game's band as it is.
+    /// </summary>
+    public static string MenuCss(float opacity) => ClampOpacity(opacity) >= 1f ? "" : Css(0f);
 
     /// <summary>
     /// Puts the style on the game's page, or with an empty style takes it off. With the page not open there is nothing

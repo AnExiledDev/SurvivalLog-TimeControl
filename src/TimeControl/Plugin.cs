@@ -17,7 +17,7 @@ namespace TimeControl;
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.timecontrol";
-    private const string Version = "0.11.0";
+    private const string Version = "0.11.1";
     private const string ToolkitGuid = "com.dev.survivallog.exiledtoolkit";
     private const int MaxLoggedFailures = 3;
     private const long MaxLogBytes = 1024 * 1024;
@@ -85,8 +85,8 @@ public sealed class Plugin : BasePlugin
             "Show speed buttons (slow, normal, fast, fastest and pause) before the disaster and on expeditions, where the game has none. They work like the game's buttons at home, using your SlowSpeeds and FastSpeeds. On expeditions they only show when TimeControlOnExpeditions is on.\n" +
             "在灾前筹备和外出探索时显示速度按钮（慢速、正常速度、快速、极速、暂停），游戏在这些时候没有这些按钮。用法和安全屋里原本的按钮一样，并使用你的 SlowSpeeds 和 FastSpeeds。外出探索时只有开启 TimeControlOnExpeditions 才会显示。");
         var pauseOverlayOpacity = Config.Bind("Display", "PauseOverlayOpacity", PauseOverlay.DefaultOpacity,
-            "How visible the game's paused banner across the lower middle of the screen is, from 0 (hidden) to 1 (as the game draws it). Lower values let you read the phone's reply choices under it. Clicks always pass through the banner.\n" +
-            "游戏的暂停横条（横跨屏幕中下方）有多明显，0 为隐藏，1 为游戏原样。数值越低，越容易看清下面手机里的回复选项。点击总是会穿过横条。");
+            "How visible the game's paused banner across the lower middle of the screen is, from 0 (hidden) to 1 (as the game draws it). Below 1, it's also hidden while any menu is open, such as the bag, a storage rack, the workbench, the shop, the phone or the settings, so it doesn't cover what you're using. Clicks always pass through the banner.\n" +
+            "游戏的暂停横条（横跨屏幕中下方）有多明显，0 为隐藏，1 为游戏原样。小于 1 时，打开任何菜单期间（例如背包、置物架、工作台、商店、手机或设置）横条也会隐藏，不会挡住你正在用的界面。点击总是会穿过横条。");
 
         var log = new ModLog(Log, "time-control.log") { MaxFileBytes = MaxLogBytes };
         var speeds = new SpeedSettings(
@@ -116,7 +116,8 @@ public sealed class Plugin : BasePlugin
                 alerts,
                 new BadgeSettings(isIdleBadgeOn.Value, isPauseKeyBadgeOn.Value, isAlertBadgeOn.Value),
                 areSpeedButtonsOn.Value,
-                PauseOverlay.Css(pauseOverlayOpacity.Value));
+                PauseOverlay.Css(pauseOverlayOpacity.Value),
+                PauseOverlay.MenuCss(pauseOverlayOpacity.Value));
 
             log.Write($"idle pause {(settings.IsIdleFreezeOn ? $"after {settings.IdleFreezeDelaySeconds:0.#}s" : "off")}, pause on waking {OnOff(settings.IsPauseOnWakeOn)}, " +
                 $"pause on wave {OnOff(alerts.IsWaveOn)}, on emergency {OnOff(alerts.IsEmergencyOn)}, on drone arrival {OnOff(alerts.IsDroneArrivalOn)}, on queue empty {OnOff(alerts.IsQueueEmptyOn)}, " +

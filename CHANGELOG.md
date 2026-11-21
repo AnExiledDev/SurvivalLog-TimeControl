@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.11.1
+
+- The paused banner across the lower middle of the screen is now hidden while a menu is open, such as the bag, a storage rack, the shop, the phone or the settings, so it no longer covers what you're using. With `PauseOverlayOpacity` at 1 the banner stays as the game draws it.
+- Made for Survival Log 1.1.21671.
+
 ## 0.11.0
 
 - Works with Multiplayer. While someone plays in your game, Alt+Tab no longer pauses it, and the idle pause waits while any player has an order queued. In someone else's game, this mod leaves the speed and pausing to the host.

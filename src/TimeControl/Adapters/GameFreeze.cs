@@ -78,7 +78,7 @@ internal static class GameFreeze
     }
 
     /// <summary>Menus the player opens to use something, each of which freezes the world as it opens.</summary>
-    private static Il2CppSystem.Type[] PlayerMenus() =>
+    public static Il2CppSystem.Type[] PlayerMenus() =>
     [
         Il2CppType.Of<WebUI_ToolTable>(), Il2CppType.Of<WebUI_BackpackUI>(), Il2CppType.Of<WebUI_PhoneSMS>(), Il2CppType.Of<WebUI_TradeUI>(),
         .. OtherMenus(),
@@ -96,7 +96,7 @@ internal static class GameFreeze
     ];
 
     /// <summary>Screens the game must keep time stopped for: stories, endings, settlements, choices, rewards and the settings.</summary>
-    private static Il2CppSystem.Type[] HeldScreens() =>
+    public static Il2CppSystem.Type[] HeldScreens() =>
     [
         Il2CppType.Of<WebUI_OutSetting>(), Il2CppType.Of<WebUI_Settlement>(), Il2CppType.Of<WebUI_DailySettlement>(), Il2CppType.Of<WebUI_EndlessSettlement>(),
         Il2CppType.Of<WebUI_EndingShow>(), Il2CppType.Of<WebUI_EndingChoice>(), Il2CppType.Of<WebUI_RogueSelect>(), Il2CppType.Of<WebUI_RebirthUpgrade>(),
