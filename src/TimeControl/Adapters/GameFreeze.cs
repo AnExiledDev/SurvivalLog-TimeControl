@@ -24,7 +24,10 @@ internal static class GameFreeze
     private static MenuFreeze _state = MenuFreeze.Start;
     private static int _failures;
 
-    /// <summary>Called on every clock check while a game is running.</summary>
+    /// <summary>Forgets the freeze it was watching, for a timer the mod leaves at the game's pace.</summary>
+    public static void Reset() => _state = MenuFreeze.Start;
+
+    /// <summary>Called on every clock check while a game is running under a timer the mod controls.</summary>
     public static void Update(float elapsed)
     {
         try

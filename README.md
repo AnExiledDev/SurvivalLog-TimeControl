@@ -98,7 +98,7 @@ Works in English and Chinese. The pause badge and the speed buttons follow the g
 
 ## Requirements
 
-- Survival Log 1.1.20719. A game update can break the mod until it is updated.
+- Survival Log 1.1.21671. A game update can break the mod until it is updated.
 - The [BepInEx Pack for Survival Log](https://www.nexusmods.com/survivallog/mods/12), the BepInEx 6 (IL2CPP) build for the game.
 - [Exiled's Toolkit](https://github.com/AnExiledDev/SurvivalLog-ExiledToolkit) 0.22.0 or newer. Time Control does not load without it. It applies settings changed on the Mod Manager's Mods screen without restarting the game, and keeps the speed and pause keys from doing anything while you type in another mod's window.
 - Optional: [Mod Manager](https://www.nexusmods.com/survivallog/mods/73). With it, you can change every setting in game on its Mods screen and see what each one does, without opening the config file.
@@ -123,7 +123,7 @@ Settings live in `BepInEx\config\com.dev.survivallog.timecontrol.cfg`, created t
 
 Built against BepInEx `6.0.0-be.788`.
 
-Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.11.1 started`. It says whether sleep fast-forward and expeditions are on, and the line after it lists the other features. That line is written again when a setting changes on the Mods screen. The next lines say which game hooks are in place and what the game's pause key is. A line starting `could not hook` names a feature that will not work.
+Check `BepInEx\LogOutput.log` for a line starting `===== Time Control 0.11.2 started`. It says whether sleep fast-forward and expeditions are on, and the line after it lists the other features. That line is written again when a setting changes on the Mods screen. The next lines say which game hooks are in place and what the game's pause key is. A line starting `could not hook` names a feature that will not work.
 
 The same lines, plus every idle pause, alert pause, sleep and wake, are in `BepInEx\time-control.log`, which survives restarts. Past 1 MB it is moved to `time-control.log.1` and a new one starts.
 

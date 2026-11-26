@@ -133,7 +133,11 @@ public sealed partial class ClockTicker : MonoBehaviour
         var isLeavingExpedition = GameClock.IsExpeditionEnding(timer);
 
         ReadLanguage(now);
-        GameFreeze.Update(elapsed);
+
+        // Under any other timer the game keeps its own pace, menu freeze included.
+        if (GameTimers.IsWaitedOut(timer)) GameFreeze.Update(elapsed);
+        else GameFreeze.Reset();
+
         PressSpeedButtons(time, timer);
         UpdateSpeedKeys(time, timer, isLeavingExpedition);
 

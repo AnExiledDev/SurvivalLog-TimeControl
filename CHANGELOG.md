@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.11.2
+
+- With `TimeControlOnExpeditions` off, opening a menu on an expedition stops time again like it does without the mod. The same goes for any other time the mod leaves the game's pace alone. Before, the mod still took that pause away.
+- Made for Survival Log 1.1.21671.
+
 ## 0.11.1
 
 - The paused banner across the lower middle of the screen is now hidden while a menu is open, such as the bag, a storage rack, the shop, the phone or the settings, so it no longer covers what you're using. With `PauseOverlayOpacity` at 1 the banner stays as the game draws it.
