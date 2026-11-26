@@ -14,10 +14,10 @@ internal static class KeysConfig
 {
     public static void Bind(ConfigFile config, PatchKit hooks, Action<string> log)
     {
-        var holdFastKeyText = config.Bind("Keys", "HoldFastKey", "X",
+        var holdFastKeyText = config.Bind("Keys", "HoldFastKey", HoldKeys.DefaultFastKey,
             "Hold this key to run the game at the fastest speed the mod has (the fastest FastSpeeds speed, or Fastest if FastSpeeds is empty). Letting go brings back the speed you had, and if the game was paused it pauses again. Works at home, before the disaster and on expeditions when TimeControlOnExpeditions is on, but not while your character sleeps. A key the game uses for anything else does nothing. None turns it off.\n" +
             "按住这个键时，游戏以本模组最快的速度运行（FastSpeeds 里最快的速度，FastSpeeds 留空时用极速）。松开后恢复之前的速度；如果之前是暂停的，会重新暂停。在安全屋、灾前筹备和外出探索（需开启 TimeControlOnExpeditions）时有效，角色睡觉时无效。如果这个键已被游戏用于其他功能，按住不会有作用。设为 None 则关闭。");
-        var holdSlowKeyText = config.Bind("Keys", "HoldSlowKey", "K",
+        var holdSlowKeyText = config.Bind("Keys", "HoldSlowKey", HoldKeys.DefaultSlowKey,
             "Hold this key to run the game at the slowest SlowSpeeds speed. Letting go brings back the speed you had, and if the game was paused it pauses again. Does nothing while SlowSpeeds is empty. While both hold keys are down, HoldFastKey wins. Works where HoldFastKey does. A key the game uses for anything else does nothing. None turns it off.\n" +
             "按住这个键时，游戏以 SlowSpeeds 里最慢的速度运行。松开后恢复之前的速度；如果之前是暂停的，会重新暂停。SlowSpeeds 留空时无效。两个按住键同时按下时以 HoldFastKey 为准。生效范围与 HoldFastKey 相同。如果这个键已被游戏用于其他功能，按住不会有作用。设为 None 则关闭。");
         var customSpeedsText = config.Bind("Keys", "SpeedKeys5To9", "",

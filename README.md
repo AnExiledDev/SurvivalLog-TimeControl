@@ -15,7 +15,7 @@ Survival Log's slow button only slows the game once you stand idle, the clock ke
 - **Pause while you are away**: the game pauses when you Alt+Tab out and brings your speed back when you return. It also pauses while a menu is open: the bag, workbench, phone, trade, cooking, a shop, the map and the rest, each with its own setting. An order or a craft started in a menu runs until it is done, then the game pauses again. Starting a machine from a menu, such as cooking or brewing, runs the game until you close the menu.
 - **Playing together**: while someone plays in your game through Multiplayer, the Alt+Tab pause is off, so the game keeps running for them, and the idle pause waits while any player has an order queued. In someone else's game, the host's game sets the speed, so this mod doesn't pause anything or hold a speed there.
 - **Speed control in every menu**: the game stops time by itself while the workbench, bag, a shop or most other menus are open, and ignores the speed keys there. The mod removes that stop, so you control the speed in any menu. Story, ending and settlement screens still stop time.
-- **Hold to speed up or slow down**: hold `X` for the fastest speed or `K` for the slowest slow speed. Let go and the speed you had comes back, pause included. Keys `5` to `9` can each hold a speed of your own (`SpeedKeys5To9`), and the mouse wheel over the speed buttons steps through every speed.
+- **Hold to speed up or slow down**: hold `L` for the fastest speed or `K` for the slowest slow speed. Let go and the speed you had comes back, pause included. Keys `5` to `9` can each hold a speed of your own (`SpeedKeys5To9`), and the mouse wheel over the speed buttons steps through every speed.
 - **Wait until** (off by default, `WaitButton`): a clock button beside the speed buttons runs the game at top speed until morning, your alarm time, a brew being done, the queue being done or a few hours later, then pauses. The same menu sets a one-time "Pause in" alarm.
 - **An alarm clock**: `AlarmTime` pauses the game at a time of day, every day or once.
 - **Sleep until**: `WakeAtHour` wakes your character from sleep at a time you pick, and `WakeOnAlert` wakes them when an alert pauses the game. Naps are never cut short. If your character slept at least 3 hours, they still get Vim and Vigor when they wake.
@@ -37,7 +37,7 @@ Time Control adds no data of its own to your save and does not edit game files. 
 | `Space` | Pause. Press again to resume the speed you had. Works at home, in the countdown before the disaster and on expeditions. The game uses `Space` for camera follow, so the mod moves that to `G`. Change it with `PauseToggleKey`. |
 | `G` | Camera follow: centers the camera on your character. The game has this on `Space`, so the mod moves it to `G`, which the game does not use by default. Change it with `CenterCameraKey`. |
 | `1`, `2`, `3` | The game's speed keys. Press `3` again at Fastest for super speed. The mod makes them work in the countdown before the disaster and on expeditions, where the game ignores them. |
-| `X` | Hold for the fastest speed. Let go to get your speed back. Change it with `HoldFastKey`. |
+| `L` | Hold for the fastest speed. Let go to get your speed back. Change it with `HoldFastKey`. |
 | `Shift` | The game's hold to speed up. Set how fast it runs with `GameHoldKeySpeed` (the game's Fastest by default). |
 | `K` | Hold for the slowest slow speed. Let go to get your speed back. Change it with `HoldSlowKey`. |
 | `5` to `9` | Off by default. Each runs at a speed you set in `SpeedKeys5To9`. |
@@ -98,7 +98,7 @@ Works in English and Chinese. The pause badge and the speed buttons follow the g
 
 ## Requirements
 
-- Survival Log 1.1.21671. A game update can break the mod until it is updated.
+- Survival Log 1.1.22055. A game update can break the mod until it is updated.
 - The [BepInEx Pack for Survival Log](https://www.nexusmods.com/survivallog/mods/12), the BepInEx 6 (IL2CPP) build for the game.
 - [Exiled's Toolkit](https://github.com/AnExiledDev/SurvivalLog-ExiledToolkit) 0.22.0 or newer. Time Control does not load without it. It applies settings changed on the Mod Manager's Mods screen without restarting the game, and keeps the speed and pause keys from doing anything while you type in another mod's window.
 - Optional: [Mod Manager](https://www.nexusmods.com/survivallog/mods/73). With it, you can change every setting in game on its Mods screen and see what each one does, without opening the config file.

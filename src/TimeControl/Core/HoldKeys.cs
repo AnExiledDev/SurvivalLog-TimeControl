@@ -65,6 +65,12 @@ public readonly record struct HoldStep(HoldKeys State, HoldCommand Command);
 /// </summary>
 public abstract record HoldKeys
 {
+    /// <summary>HoldFastKey's default. Never a key the game binds: a hold key on one of the game's keys does nothing.</summary>
+    public const string DefaultFastKey = "L";
+
+    /// <summary>HoldSlowKey's default, under the same rule.</summary>
+    public const string DefaultSlowKey = "K";
+
     public static readonly HoldKeys Start = new Idle();
 
     private HoldKeys()

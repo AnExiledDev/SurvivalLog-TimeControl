@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.11.6
+
+- The game now uses `X` to transplant vines, so `HoldFastKey` starts on `L` instead. If you already had the mod, your settings still say `X`, and a hold key on one of the game's keys does nothing. Set `HoldFastKey` to `L` or another key the game doesn't use, or move Transplant Vines to another key in the game's settings.
+- Made for Survival Log 1.1.22055.
+
 ## 0.11.5
 
 - Small speed up: the mod checks the frame in a cheaper way.
