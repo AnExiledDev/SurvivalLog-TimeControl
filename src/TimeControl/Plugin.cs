@@ -17,7 +17,7 @@ namespace TimeControl;
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.timecontrol";
-    private const string Version = "0.11.3";
+    private const string Version = "0.11.4";
     private const string ToolkitGuid = "com.dev.survivallog.exiledtoolkit";
     private const int MaxLoggedFailures = 3;
     private const long MaxLogBytes = 1024 * 1024;
@@ -26,13 +26,13 @@ public sealed class Plugin : BasePlugin
     {
         var slowSpeeds = Config.Bind("SlowButton", "SlowSpeeds", "0.5,0.25",
             new ConfigDescription(
-                "Extra slower speeds for the Slow button and the ` (~) key, separated by commas, each from 0.05 to 0.95. The first press is the game's slow speed. Press slow again to step through these speeds, and after the last one you're back at the game's slow speed. Leave it empty to keep only the game's slow. Takes effect at the next game start.\n" +
-                "慢速按钮和 ` (~) 键额外的更慢速度，用逗号分隔，每个在 0.05 到 0.95 之间。第一次按是游戏原本的慢速；已经在慢速时再按一次，会依次换到这些速度，最后一个之后回到游戏原本的慢速。留空则只保留游戏原本的慢速。下次启动游戏时生效。",
+                "Extra slower speeds for the Slow button and the ` (~) key, separated by commas, each from 0.05 to 0.95. The first press is the game's slow speed. Press slow again to step through these speeds, and after the last one you're back at the game's slow speed. Leave it empty to keep only the game's slow. Takes effect at the next game start, because the mod sets up the slow button as the game starts.\n" +
+                "慢速按钮和 ` (~) 键额外的更慢速度，用逗号分隔，每个在 0.05 到 0.95 之间。第一次按是游戏原本的慢速；已经在慢速时再按一次，会依次换到这些速度，最后一个之后回到游戏原本的慢速。留空则只保留游戏原本的慢速。下次启动游戏时生效，因为本模组在游戏启动时设置慢速按钮。",
                 null, "ModManager.Restart")).Value;
         var fastMultiples = Config.Bind("FastButton", "FastSpeeds", "2",
             new ConfigDescription(
-                "Extra speeds above the game's Fastest speed, as multiples of it, separated by commas, each from 1.1 to 10. Pressing the Fastest button or the 3 key while already at Fastest moves to the next one, and after the last one you're back at Fastest. Speeds are capped at 40x. Leave it empty to keep the game's Fastest button. Takes effect at the next game start.\n" +
-                "比游戏极速更快的额外速度，按极速的倍数填写，用逗号分隔，每个在 1.1 到 10 之间。已经在极速时再按极速按钮或 3 键，会换到下一档，最后一档之后回到极速。速度上限为 40 倍。留空则保留游戏原本的极速按钮。下次启动游戏时生效。",
+                "Extra speeds above the game's Fastest speed, as multiples of it, separated by commas, each from 1.1 to 10. Pressing the Fastest button or the 3 key while already at Fastest moves to the next one, and after the last one you're back at Fastest. Speeds are capped at 40x. Leave it empty to keep the game's Fastest button. Takes effect at the next game start, because the mod sets up the Fastest button as the game starts.\n" +
+                "比游戏极速更快的额外速度，按极速的倍数填写，用逗号分隔，每个在 1.1 到 10 之间。已经在极速时再按极速按钮或 3 键，会换到下一档，最后一档之后回到极速。速度上限为 40 倍。留空则保留游戏原本的极速按钮。下次启动游戏时生效，因为本模组在游戏启动时设置极速按钮。",
                 null, "ModManager.Restart")).Value;
         var isIdleFreezeOn = Config.Bind("Clock", "IdleFreeze", true,
             "Pause the game while your character is idle with nothing queued, and resume it on your next order. Works at home, before the disaster and on expeditions. Pick a speed or press the pause key (Space by default) while it is paused to let time run until your next order.\n" +
@@ -42,21 +42,21 @@ public sealed class Plugin : BasePlugin
             "角色空闲多少秒（现实时间）后才暂停游戏，这样两个指令之间的短暂空档不会触发暂停。设为 0 则一没有待执行的指令就立刻暂停。", null, "ModManager.ShowWhen=IdleFreeze"));
         var isSleepFastForwardOn = Config.Bind("Sleep", "FastForwardSleep", true,
             new ConfigDescription(
-                "Run sleep and naps at the fastest FastSpeeds speed (or at Fastest if FastSpeeds is empty), instead of the game's sleep speed-up. A speed you pick while asleep is kept until you wake. Off keeps the game's sleep speed-up. Takes effect at the next game start.\n" +
-                "睡觉和打盹时以 FastSpeeds 里最快的速度运行（FastSpeeds 留空时用极速），代替游戏原本的睡眠加速。睡着时你选的速度会一直保持到醒来。关闭则保留游戏原本的睡眠加速。下次启动游戏时生效。",
+                "Run sleep and naps at the fastest FastSpeeds speed (or at Fastest if FastSpeeds is empty), instead of the game's sleep speed-up. A speed you pick while asleep is kept until you wake. Off keeps the game's sleep speed-up. Takes effect at the next game start, because the mod takes over the game's sleep speed-up as the game starts.\n" +
+                "睡觉和打盹时以 FastSpeeds 里最快的速度运行（FastSpeeds 留空时用极速），代替游戏原本的睡眠加速。睡着时你选的速度会一直保持到醒来。关闭则保留游戏原本的睡眠加速。下次启动游戏时生效，因为本模组在游戏启动时接管游戏的睡眠加速。",
                 null, "ModManager.Restart")).Value;
         var isPauseOnWakeOn = Config.Bind("Sleep", "PauseOnWake", true,
             "Pause the game when your character wakes from sleep or a nap, however it ends. Your next order or the pause key (Space by default) brings back the speed you had before the sleep.\n" +
             "角色从睡觉或打盹中醒来时暂停游戏，不管是怎么醒的。下达下一个指令或按暂停键（默认 Space）会恢复睡前的速度。");
         var pauseKeyText = Config.Bind("Keys", "PauseToggleKey", "Space",
             new ConfigDescription(
-                "The key that pauses the game and, on the next press, brings back the speed you had. Works at home, before the disaster and on expeditions. The game uses Space for camera follow (centering the camera on your character), so while this is Space the mod moves camera follow to CenterCameraKey. A key the game uses for anything else does not pause. None turns it off. Takes effect at the next game start.\n" +
-                "暂停游戏的按键，再按一次恢复之前的速度。在安全屋、灾前筹备和外出探索时都有效。游戏原本用 Space（空格键）做镜头跟随，所以这里设为 Space 时，本模组会把镜头跟随改到 CenterCameraKey 设置的键。如果这个键已被游戏用于其他功能，按下不会暂停。设为 None 则关闭。下次启动游戏时生效。",
+                "The key that pauses the game and, on the next press, brings back the speed you had. Works at home, before the disaster and on expeditions. The game uses Space for camera follow (centering the camera on your character), so while this is Space the mod moves camera follow to CenterCameraKey. A key the game uses for anything else does not pause. None turns it off. Takes effect at the next game start, because the mod moves the game's camera follow key as the game starts.\n" +
+                "暂停游戏的按键，再按一次恢复之前的速度。在安全屋、灾前筹备和外出探索时都有效。游戏原本用 Space（空格键）做镜头跟随，所以这里设为 Space 时，本模组会把镜头跟随改到 CenterCameraKey 设置的键。如果这个键已被游戏用于其他功能，按下不会暂停。设为 None 则关闭。下次启动游戏时生效，因为本模组在游戏启动时调整游戏的镜头跟随键。",
                 null, "ModManager.Restart")).Value;
         var centerCameraKeyText = Config.Bind("Keys", "CenterCameraKey", "G",
             new ConfigDescription(
-                "The key for camera follow (centering the camera on your character) when PauseToggleKey is Space, which is the game's key for camera follow. By default the game does not use G for anything else. A key you set for camera follow in the game's key settings still wins. None leaves camera follow with no key. Takes effect at the next game start.\n" +
-                "当 PauseToggleKey 为 Space 时，镜头跟随（把镜头对准你的角色）改用的按键；Space 原本是游戏的镜头跟随键。游戏默认没有把 G 用在别处。你在游戏「按键」设置里给镜头跟随设的键仍然优先。设为 None 则镜头跟随没有按键。下次启动游戏时生效。",
+                "The key for camera follow (centering the camera on your character) when PauseToggleKey is Space, which is the game's key for camera follow. By default the game does not use G for anything else. A key you set for camera follow in the game's key settings still wins. None leaves camera follow with no key. Takes effect at the next game start, because the mod moves the game's camera follow key as the game starts.\n" +
+                "当 PauseToggleKey 为 Space 时，镜头跟随（把镜头对准你的角色）改用的按键；Space 原本是游戏的镜头跟随键。游戏默认没有把 G 用在别处。你在游戏「按键」设置里给镜头跟随设的键仍然优先。设为 None 则镜头跟随没有按键。下次启动游戏时生效，因为本模组在游戏启动时调整游戏的镜头跟随键。",
                 null, "ModManager.Restart")).Value;
         var isExpeditionOn = Config.Bind("Expedition", "TimeControlOnExpeditions", true,
             new ConfigDescription(

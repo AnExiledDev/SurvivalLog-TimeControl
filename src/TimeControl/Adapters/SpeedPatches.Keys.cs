@@ -235,7 +235,7 @@ internal static partial class SpeedPatches
 
             if (!AreKeysForTheGame(__instance, GameTimers.Controlled(GameClock.Timer(time), _isExpeditionOn))) return;
 
-            var now = Time.unscaledTime;
+            var now = ClockTicker.Now;
 
             if (isFastHeld && IsHoldKeyFree(keys.HoldFastKey, "HoldFastKey", ref _isFastKeyTaken, ref _hasLoggedFastKeyTaken)) _fastKeySeenAt = SeeHoldKey(_fastKeySeenAt, now);
 

@@ -1,5 +1,6 @@
 using System;
 using ExiledToolkit.Game;
+using ExiledToolkit.Kit;
 using GameCore.HotUpdate.Battle.Logic;
 using Il2CppInterop.Runtime.Attributes;
 using TimeControl.Core;
@@ -81,10 +82,18 @@ public sealed partial class ClockTicker : MonoBehaviour
         if (_isCheckWanted) Tick();
     }
 
+    /// <summary>
+    /// Real seconds since the mod loaded, from the Toolkit clock. Counted from load so a float keeps its precision
+    /// however long the computer has been on.
+    /// </summary>
+    internal static float Now => (float)(Clock.Now - LoadedAt);
+
+    private static readonly double LoadedAt = Clock.Now;
+
     [HideFromIl2Cpp]
     private void Tick()
     {
-        var now = Time.unscaledTime;
+        var now = Now;
 
         if (CheckPace.Take(_pace, now, _isCheckWanted) is not { } due) return;
 

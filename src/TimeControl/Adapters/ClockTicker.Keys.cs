@@ -30,7 +30,7 @@ public sealed partial class ClockTicker
     private void UpdateSpeedKeys(GameTimeManager time, GameTimer timer, bool isLeavingExpedition)
     {
         var keys = SpeedPatches.KeySettings;
-        var now = Time.unscaledTime;
+        var now = Now;
         var wasChangedByOthers = SpeedPatches.TakeChangedByOthers();
         var customPressed = SpeedPatches.TakeCustomSpeedPressed();
         var wheelSteps = SpeedKeysPage?.TakeWheelSteps() ?? 0;
@@ -208,7 +208,7 @@ public sealed partial class ClockTicker
 
         if (Math.Abs(time.BattleTimeScale - held) <= SpeedTolerance || IsFastForwarding(time) || time.IsHoldBoostActive()) return;
 
-        var now = Time.unscaledTime;
+        var now = Now;
 
         if (now >= _nextCustomHealLogAt)
         {
