@@ -98,6 +98,9 @@ internal static partial class SpeedPatches
     /// </summary>
     public static bool IsNormalMode => _isNormalMode;
 
+    /// <summary>Called on the main thread after each change of TimeControlOnExpeditions.</summary>
+    public static void UseExpedition(bool isOn) => _isExpeditionOn = isOn;
+
     /// <summary>The fast gear sleep runs at: the one with the largest multiple, or the game's high speed when there are none.</summary>
     public static int FastestGear => FastGear.FastestGear(_fastMultiples);
 

@@ -60,6 +60,7 @@ public sealed partial class ClockTicker : MonoBehaviour
     private float _nextHealLogAt;
     private float _nextFanOutLogAt;
     private bool _isSingleWorldLogged;
+    private bool _wasExpeditionOn = Settings.IsExpeditionOn;
     private int _failures;
 
     public ClockTicker(IntPtr pointer) : base(pointer)
@@ -129,7 +130,11 @@ public sealed partial class ClockTicker : MonoBehaviour
             return;
         }
 
-        var timer = GameTimers.Controlled(GameClock.Timer(time), Settings.IsExpeditionOn);
+        var gameTimer = GameClock.Timer(time);
+
+        HandBackExpedition(time, gameTimer);
+
+        var timer = GameTimers.Controlled(gameTimer, Settings.IsExpeditionOn);
         var isLeavingExpedition = GameClock.IsExpeditionEnding(timer);
 
         ReadLanguage(now);
@@ -176,6 +181,20 @@ public sealed partial class ClockTicker : MonoBehaviour
         SyncKeysPage(time, timer, now, isPollDue);
 
         if (isRefreshDue) Watch?.Look();
+    }
+
+    [HideFromIl2Cpp]
+    private void HandBackExpedition(GameTimeManager time, GameTimer gameTimer)
+    {
+        var isOn = Settings.IsExpeditionOn;
+        var isHandedBack = GameTimers.IsHandedBack(_wasExpeditionOn, isOn, gameTimer);
+
+        _wasExpeditionOn = isOn;
+
+        if (!isHandedBack) return;
+
+        SpeedPatches.ChangeSpeed(time, PauseToggle.Normal);
+        LogFileOnly("expedition: TimeControlOnExpeditions turned off, speed put back to normal");
     }
 
     /// <summary>The game's language is asked for at the page pace: it only changes on the settings screen.</summary>

@@ -78,7 +78,7 @@ Works in English and Chinese.
 Delete [font=Courier New]TimeControl.dll[/font] from the [font=Courier New]BepInEx\plugins[/font] folder. If centering the camera is still on G afterwards, set it back in the game's key settings.
 
 [size=5]Configuration[/size]
-To change settings, edit [font=Courier New]BepInEx\config\com.dev.survivallog.timecontrol.cfg[/font] while the game is closed, or change them in game on the Mod Manager's Mods screen. Changes there take effect right away, except [font=Courier New]SlowSpeeds[/font], [font=Courier New]FastSpeeds[/font], [font=Courier New]FastForwardSleep[/font], [font=Courier New]PauseToggleKey[/font], [font=Courier New]CenterCameraKey[/font] and [font=Courier New]TimeControlOnExpeditions[/font], which take effect the next time you start the game. Every setting is listed in [url=https://github.com/AnExiledDev/SurvivalLog-TimeControl/blob/main/CONFIG.md]CONFIG.md[/url].
+To change settings, edit [font=Courier New]BepInEx\config\com.dev.survivallog.timecontrol.cfg[/font] while the game is closed, or change them in game on the Mod Manager's Mods screen. Changes there take effect right away, except [font=Courier New]SlowSpeeds[/font], [font=Courier New]FastSpeeds[/font], [font=Courier New]FastForwardSleep[/font], [font=Courier New]PauseToggleKey[/font] and [font=Courier New]CenterCameraKey[/font], which take effect the next time you start the game. Every setting is listed in [url=https://github.com/AnExiledDev/SurvivalLog-TimeControl/blob/main/CONFIG.md]CONFIG.md[/url].
 
 [size=5]Feedback[/size]
 Found a bug or have an idea? Come say hi in the [url=https://discord.gg/pDrQtqbZgb]unofficial modding Discord for Survival Log[/url], or post in this page's Posts tab. For bugs, please include [font=Courier New]BepInEx\LogOutput.log[/font] and [font=Courier New]BepInEx\time-control.log[/font].
@@ -163,7 +163,7 @@ Time Control 不会往存档里添加自己的数据，也不会修改游戏文�
 从 [font=Courier New]BepInEx\plugins[/font] 文件夹中删除 [font=Courier New]TimeControl.dll[/font]。如果之后镜头对准角色的按键还在 G 上，请在游戏的按键设置里改回来。
 
 [size=5]配置[/size]
-如需修改设置，可以在游戏内 Mod Manager 的「模组」界面修改（改动立即生效，[font=Courier New]SlowSpeeds[/font]、[font=Courier New]FastSpeeds[/font]、[font=Courier New]FastForwardSleep[/font]、[font=Courier New]PauseToggleKey[/font]、[font=Courier New]CenterCameraKey[/font]、[font=Courier New]TimeControlOnExpeditions[/font] 在下次启动游戏时生效），也可以在游戏关闭时编辑 [font=Courier New]BepInEx\config\com.dev.survivallog.timecontrol.cfg[/font]。配置文件中每项设置都有中文说明，完整说明见 [url=https://github.com/AnExiledDev/SurvivalLog-TimeControl/blob/main/CONFIG.md]CONFIG.md[/url]（英文）。
+如需修改设置，可以在游戏内 Mod Manager 的「模组」界面修改（改动立即生效，[font=Courier New]SlowSpeeds[/font]、[font=Courier New]FastSpeeds[/font]、[font=Courier New]FastForwardSleep[/font]、[font=Courier New]PauseToggleKey[/font]、[font=Courier New]CenterCameraKey[/font] 在下次启动游戏时生效），也可以在游戏关闭时编辑 [font=Courier New]BepInEx\config\com.dev.survivallog.timecontrol.cfg[/font]。配置文件中每项设置都有中文说明，完整说明见 [url=https://github.com/AnExiledDev/SurvivalLog-TimeControl/blob/main/CONFIG.md]CONFIG.md[/url]（英文）。
 
 [size=5]反馈[/size]
 发现 bug 或有好点子？欢迎来 [url=https://discord.gg/pDrQtqbZgb]Survival Log 非官方模组 Discord[/url] 打个招呼，或在本页的「Posts」标签里发帖。报告 bug 时，请附上 [font=Courier New]BepInEx\LogOutput.log[/font] 和 [font=Courier New]BepInEx\time-control.log[/font]。

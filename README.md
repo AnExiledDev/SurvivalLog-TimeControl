@@ -117,7 +117,7 @@ Delete `TimeControl.dll` from the `BepInEx\plugins` folder. For a clean slate, a
 
 ## Configuration
 
-Settings live in `BepInEx\config\com.dev.survivallog.timecontrol.cfg`, created the first time the game starts with the mod. Change them in game on the Mod Manager's Mods screen, or edit the file while the game is closed. Settings you change on the Mods screen take effect right away, except `SlowSpeeds`, `FastSpeeds`, `FastForwardSleep`, `PauseToggleKey`, `CenterCameraKey` and `TimeControlOnExpeditions`, which take effect the next time you start the game. See [CONFIG.md](CONFIG.md) for every setting.
+Settings live in `BepInEx\config\com.dev.survivallog.timecontrol.cfg`, created the first time the game starts with the mod. Change them in game on the Mod Manager's Mods screen, or edit the file while the game is closed. Settings you change on the Mods screen take effect right away, except `SlowSpeeds`, `FastSpeeds`, `FastForwardSleep`, `PauseToggleKey` and `CenterCameraKey`, which take effect the next time you start the game. See [CONFIG.md](CONFIG.md) for every setting.
 
 ## Troubleshooting
 

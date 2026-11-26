@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.11.3
+
+- `TimeControlOnExpeditions` now applies right away instead of at the next game start. Turning it off during an expedition puts the speed back to normal.
+- Made for Survival Log 1.1.21671.
+
 ## 0.11.2
 
 - With `TimeControlOnExpeditions` off, opening a menu on an expedition stops time again like it does without the mod. The same goes for any other time the mod leaves the game's pace alone. Before, the mod still took that pause away.

@@ -57,4 +57,11 @@ public static class GameTimers
     /// <summary>With Time Control switched off on expeditions, an expedition is left at the game's pace like any other timer.</summary>
     public static GameTimer Controlled(GameTimer timer, bool isExpeditionControlOn) =>
         timer == GameTimer.Expedition && !isExpeditionControlOn ? GameTimer.Other : timer;
+
+    /// <summary>
+    /// Whether the expedition goes back to normal speed now: Time Control was just switched off on expeditions while one
+    /// is running. The game has no speed buttons there, so a pause or a speed the mod set would otherwise stay.
+    /// </summary>
+    public static bool IsHandedBack(bool wasExpeditionControlOn, bool isExpeditionControlOn, GameTimer timer) =>
+        wasExpeditionControlOn && !isExpeditionControlOn && timer == GameTimer.Expedition;
 }

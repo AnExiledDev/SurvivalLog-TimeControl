@@ -1,6 +1,6 @@
 # Time Control settings
 
-Settings live in `BepInEx\config\com.dev.survivallog.timecontrol.cfg`, created the first time the game starts with the mod. Change them in game on the Mod Manager's Mods screen, or edit the file while the game is closed. Settings you change on the Mods screen take effect right away, except `SlowSpeeds`, `FastSpeeds`, `FastForwardSleep`, `PauseToggleKey`, `CenterCameraKey` and `TimeControlOnExpeditions`, which take effect the next time you start the game. Delete the file to get the defaults back. Each setting in the file is described in English and in Simplified Chinese.
+Settings live in `BepInEx\config\com.dev.survivallog.timecontrol.cfg`, created the first time the game starts with the mod. Change them in game on the Mod Manager's Mods screen, or edit the file while the game is closed. Settings you change on the Mods screen take effect right away, except `SlowSpeeds`, `FastSpeeds`, `FastForwardSleep`, `PauseToggleKey` and `CenterCameraKey`, which take effect the next time you start the game. Delete the file to get the defaults back. Each setting in the file is described in English and in Simplified Chinese.
 
 ## SlowButton
 
@@ -104,7 +104,7 @@ The game's speed keys are `1` (normal), `2` (fast), `3` (fastest), `4` (pause) a
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| `TimeControlOnExpeditions` | `true` | Let the pause key, the game's speed keys (`1`, `2`, `3`, `4` for pause and `` ` `` (`~`) for slow, by default), the `SlowSpeeds` and `FastSpeeds` speeds, the idle pause and the alert pauses work on expeditions. Pausing there also stops the exposure meter. `false` leaves expeditions at the game's pace and hides the mod's speed buttons there. |
+| `TimeControlOnExpeditions` | `true` | Let the pause key, the game's speed keys (`1`, `2`, `3`, `4` for pause and `` ` `` (`~`) for slow, by default), the `SlowSpeeds` and `FastSpeeds` speeds, the idle pause and the alert pauses work on expeditions. Pausing there also stops the exposure meter. `false` leaves expeditions at the game's pace and hides the mod's speed buttons there. Turning it off during an expedition puts the speed back to normal. |
 
 ## Display
 

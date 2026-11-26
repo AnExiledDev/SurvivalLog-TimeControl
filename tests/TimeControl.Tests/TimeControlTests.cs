@@ -512,6 +512,22 @@ public class GameTimerTests
     }
 
     [Fact]
+    public void Switching_expedition_control_off_mid_trip_hands_the_speed_back()
+    {
+        // The game has no speed buttons on an expedition, so a pause left by the mod would never end.
+        Assert.True(GameTimers.IsHandedBack(wasExpeditionControlOn: true, isExpeditionControlOn: false, GameTimer.Expedition));
+    }
+
+    [Fact]
+    public void Expedition_speed_is_left_alone_unless_the_switch_just_went_off_on_a_trip()
+    {
+        Assert.False(GameTimers.IsHandedBack(wasExpeditionControlOn: false, isExpeditionControlOn: false, GameTimer.Expedition));
+        Assert.False(GameTimers.IsHandedBack(wasExpeditionControlOn: false, isExpeditionControlOn: true, GameTimer.Expedition));
+        Assert.False(GameTimers.IsHandedBack(wasExpeditionControlOn: true, isExpeditionControlOn: false, GameTimer.DayClock));
+        Assert.False(GameTimers.IsHandedBack(wasExpeditionControlOn: true, isExpeditionControlOn: false, GameTimer.PrologueCountdown));
+    }
+
+    [Fact]
     public void The_expedition_switch_never_touches_home_or_the_countdown()
     {
         Assert.Equal(GameTimer.DayClock, GameTimers.Controlled(GameTimer.DayClock, isExpeditionControlOn: false));

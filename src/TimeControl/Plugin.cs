@@ -17,7 +17,7 @@ namespace TimeControl;
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.timecontrol";
-    private const string Version = "0.11.2";
+    private const string Version = "0.11.3";
     private const string ToolkitGuid = "com.dev.survivallog.exiledtoolkit";
     private const int MaxLoggedFailures = 3;
     private const long MaxLogBytes = 1024 * 1024;
@@ -60,9 +60,8 @@ public sealed class Plugin : BasePlugin
                 null, "ModManager.Restart")).Value;
         var isExpeditionOn = Config.Bind("Expedition", "TimeControlOnExpeditions", true,
             new ConfigDescription(
-                "Let the pause key, the game's speed keys (1, 2, 3, 4 for pause and ` (~) for slow, by default), the SlowSpeeds and FastSpeeds speeds, the idle pause and the alert pauses work on expeditions. Pausing there also stops the exposure meter. Off leaves expeditions at the game's pace and hides the mod's speed buttons there. Takes effect at the next game start.\n" +
-                "外出探索时启用暂停键、游戏的速度键（默认 1、2、3，4 为暂停，` (~) 为慢速）、SlowSpeeds 和 FastSpeeds 的速度、空闲暂停和事件暂停。外出探索中暂停时，暴露值也会停止上涨。关闭则外出探索保持游戏原本的速度，也不显示本模组的速度按钮。下次启动游戏时生效。",
-                null, "ModManager.Restart")).Value;
+                "Let the pause key, the game's speed keys (1, 2, 3, 4 for pause and ` (~) for slow, by default), the SlowSpeeds and FastSpeeds speeds, the idle pause and the alert pauses work on expeditions. Pausing there also stops the exposure meter. Off leaves expeditions at the game's pace and hides the mod's speed buttons there. Turning it off during an expedition puts the speed back to normal.\n" +
+                "外出探索时启用暂停键、游戏的速度键（默认 1、2、3，4 为暂停，` (~) 为慢速）、SlowSpeeds 和 FastSpeeds 的速度、空闲暂停和事件暂停。外出探索中暂停时，暴露值也会停止上涨。关闭则外出探索保持游戏原本的速度，也不显示本模组的速度按钮。在外出探索中关闭时，速度会恢复为正常速度。"));
         var isPauseOnWaveOn = Config.Bind("Alerts", "PauseOnWave", true,
             "Pause the game once when a zombie wave starts. Pick a speed or press the pause key (Space by default) to carry on. The same wave does not pause the game again.\n" +
             "尸潮开始时暂停游戏一次。选一个速度或按暂停键（默认 Space）继续。同一波尸潮不会再暂停。");
@@ -95,11 +94,11 @@ public sealed class Plugin : BasePlugin
             ParseKey("PauseToggleKey", pauseKeyText, KeyCode.None, "pause toggle off", log.Write),
             ParseKey("CenterCameraKey", centerCameraKeyText, KeyCode.G, "using G", log.Write),
             isSleepFastForwardOn,
-            isExpeditionOn);
+            isExpeditionOn.Value);
         var harmony = new Harmony(Guid);
         var hooks = new PatchKit(harmony, log.Write, MaxLoggedFailures);
 
-        log.Write($"===== Time Control {Version} started: sleep fast-forward {OnOff(isSleepFastForwardOn)}, on expeditions {OnOff(isExpeditionOn)}");
+        log.Write($"===== Time Control {Version} started: sleep fast-forward {OnOff(isSleepFastForwardOn)}, on expeditions {OnOff(isExpeditionOn.Value)}");
         SpeedPatches.Apply(hooks, speeds, log.Write);
         AlertsConfig.Bind(Config, hooks, log.Write);
         KeysConfig.Bind(Config, hooks, log.Write);
@@ -112,21 +111,22 @@ public sealed class Plugin : BasePlugin
                 IdlePause.ClampDelay(idleDelay.Value),
                 isSleepFastForwardOn,
                 isPauseOnWakeOn.Value,
-                isExpeditionOn,
+                isExpeditionOn.Value,
                 alerts,
                 new BadgeSettings(isIdleBadgeOn.Value, isPauseKeyBadgeOn.Value, isAlertBadgeOn.Value),
                 areSpeedButtonsOn.Value,
                 PauseOverlay.Css(pauseOverlayOpacity.Value),
                 PauseOverlay.MenuCss(pauseOverlayOpacity.Value));
 
-            log.Write($"idle pause {(settings.IsIdleFreezeOn ? $"after {settings.IdleFreezeDelaySeconds:0.#}s" : "off")}, pause on waking {OnOff(settings.IsPauseOnWakeOn)}, " +
+            SpeedPatches.UseExpedition(settings.IsExpeditionOn);
+            log.Write($"on expeditions {OnOff(settings.IsExpeditionOn)}, idle pause {(settings.IsIdleFreezeOn ? $"after {settings.IdleFreezeDelaySeconds:0.#}s" : "off")}, pause on waking {OnOff(settings.IsPauseOnWakeOn)}, " +
                 $"pause on wave {OnOff(alerts.IsWaveOn)}, on emergency {OnOff(alerts.IsEmergencyOn)}, on drone arrival {OnOff(alerts.IsDroneArrivalOn)}, on queue empty {OnOff(alerts.IsQueueEmptyOn)}, " +
                 $"idle badge {OnOff(settings.Badges.IsIdleBadgeOn)}, pause key badge {OnOff(settings.Badges.IsPauseKeyBadgeOn)}, alert badge {OnOff(settings.Badges.IsAlertBadgeOn)}, " +
                 $"speed buttons before the disaster and on expeditions {OnOff(settings.AreSpeedButtonsOn)}, " +
                 $"game's paused banner opacity {PauseOverlay.ClampOpacity(pauseOverlayOpacity.Value):0.##}");
             AlertSignals.Use(hooks, alerts);
             ClockTicker.Settings = settings;
-        }, isIdleFreezeOn, idleDelay, isPauseOnWakeOn, isPauseOnWaveOn, isPauseOnEmergencyOn, isPauseOnDroneArrivalOn,
+        }, isExpeditionOn, isIdleFreezeOn, idleDelay, isPauseOnWakeOn, isPauseOnWaveOn, isPauseOnEmergencyOn, isPauseOnDroneArrivalOn,
             isIdleBadgeOn, isPauseKeyBadgeOn, isAlertBadgeOn, areSpeedButtonsOn, pauseOverlayOpacity);
 
         WaitConfig.Bind(Config, hooks, log.Write);
