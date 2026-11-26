@@ -335,7 +335,7 @@ internal static partial class SpeedPatches
     {
         try
         {
-            if (_changeSource == ChangeSource.Game) FanOut.Record(Time.frameCount, __instance.Pointer.ToInt64());
+            if (_changeSource == ChangeSource.Game) FanOut.Record(UnityFrame.Count(), __instance.Pointer.ToInt64());
 
             if (!GameClock.IsLive(__instance)) return;
 

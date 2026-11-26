@@ -17,7 +17,7 @@ namespace TimeControl;
 public sealed class Plugin : BasePlugin
 {
     private const string Guid = "com.dev.survivallog.timecontrol";
-    private const string Version = "0.11.4";
+    private const string Version = "0.11.5";
     private const string ToolkitGuid = "com.dev.survivallog.exiledtoolkit";
     private const int MaxLoggedFailures = 3;
     private const long MaxLogBytes = 1024 * 1024;

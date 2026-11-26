@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.11.5
+
+- Small speed up: the mod checks the frame in a cheaper way.
+- Made for Survival Log 1.1.21671.
+
 ## 0.11.4
 
 - The settings that wait for the next game start now say why.

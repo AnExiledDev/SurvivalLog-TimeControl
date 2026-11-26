@@ -118,7 +118,7 @@ internal static class AlertSignals
 
         try
         {
-            _isTripUnsettled = trip != null && Time.frameCount != _droneRestoreFrame && IsLive(__instance) && !trip.ReturnSettled;
+            _isTripUnsettled = trip != null && UnityFrame.Count() != _droneRestoreFrame && IsLive(__instance) && !trip.ReturnSettled;
         }
         catch (Exception ex)
         {
@@ -143,7 +143,7 @@ internal static class AlertSignals
     }
 
     // Marks the frame rather than setting a flag, so a restore that throws cannot leave drone landings ignored for good.
-    private static void BeforeDroneRestore() => _droneRestoreFrame = Time.frameCount;
+    private static void BeforeDroneRestore() => _droneRestoreFrame = UnityFrame.Count();
 
     /// <summary>The live world, or null before the game has made one; reading the singleton's Instance would build one.</summary>
     private static BattleLogicWorld? LiveWorld() => GameSingleton.Existing<BattleLogicWorld>();
